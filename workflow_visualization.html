@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Penetration Testing Pipeline</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+            margin: 0;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        p {
+            margin-bottom: 30px;
+            color: #555;
+            text-align: center;
+        }
+        .mermaid-container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 1000px;
+            display: flex;
+            justify-content: center;
+            overflow-x: auto;
+        }
+        
+        /* Tooltip Styles */
+        #tooltip {
+            position: absolute;
+            background: rgba(30, 41, 59, 0.95);
+            color: #f8fafc;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+            max-width: 280px;
+            z-index: 1000;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            line-height: 1.4;
+        }
+        #tooltip strong {
+            color: #38bdf8;
+            display: block;
+            margin-bottom: 5px;
+            font-size: 15px;
+        }
+        
+        /* Make nodes look clickable/hoverable */
+        .node {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>AI-Driven Reconnaissance Pipeline</h1>
+    <p>Automated execution flow for target mapping and vulnerability discovery. Hover over nodes for details.</p>
+
+    <div id="tooltip"></div>
+
+    <div class="mermaid-container">
+        <div class="mermaid">
+            graph TD
+                %% Define Custom Styles
+                classDef default fill:#f9f9f9,stroke:#333,stroke-width:2px;
+                classDef passive fill:#e1f5fe,stroke:#0288d1,stroke-width:2px;
+                classDef active fill:#ffebee,stroke:#d32f2f,stroke-width:2px;
+                classDef ai fill:#e8f5e9,stroke:#388e3c,stroke-width:3px;
+
+                %% Root
+                Start((Start: Target & Rules)) --> Passive[Passive Recon Path]
+                Start --> Active[Active Recon Path]
+
+                %% Passive Branch
+                Passive --> Shodan[Shodan API]:::passive
+                Shodan --> WhatWebPass[WhatWeb Fingerprint]:::passive
+                WhatWebPass --> DNS[DNS & WHOIS]:::passive
+                DNS --> NVD[NVD API CVE Lookup]:::passive
+
+                %% Active Branch 
+                Active --> NMAP[NMAP Port Scan]:::active
+                NMAP --> Split{Analyze Open Ports}:::active
+
+                %% Port Branches - Web Tools executed in parallel
+                Split -->|Port 80/443| WebNode{Web Server Detected}:::active
+                WebNode --> Web[Gobuster & FFuF]:::active
+                WebNode --> Nikto[Nikto Web Scanner]:::active
+                WebNode --> WhatWebAct[WhatWeb Fingerprint]:::active
+                WebNode --> Meta[Metasploit PoC Verification]:::active
+                
+                %% DB Branch
+                Split -->|Port 3306/5432| DB[Hydra DB Brute-Force]:::active
+                
+                %% SSH Branch
+                Split -->|Port 22| SSH[Check SSH Version]:::active
+                SSH --> John[John the Ripper Hash Crack]:::active
+
+                %% Convergence
+                Web --> NVD
+                Nikto --> NVD
+                WhatWebAct --> NVD
+                Meta --> NVD
+                DB --> NVD
+                John --> NVD
+                NVD --> Report{{Claude: Correlate & Report}}:::ai
+        </div>
+    </div>
+
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ 
+            startOnLoad: true, 
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#ffffff',
+                lineColor: '#555555',
+                fontFamily: 'arial'
+            }
+        });
+
+        // Dictionary of tooltips. Keys match the text inside the Mermaid nodes.
+        const tooltips = {
+            "Start": "The entry point. Claude asks the user for the target URL/IP and whether to proceed silently (Passive) or aggressively (Active).",
+            "Shodan API": "Indexes the internet for devices and open ports. Allows Claude to see what the internet already knows about the target without touching it.",
+            "WhatWeb Fingerprint": "Identifies the underlying technology stack (e.g., WordPress 5.8, PHP 7.4) running on the target.",
+            "DNS & WHOIS": "Queries public records to find domain ownership details and potentially vulnerable subdomains (like dev.target.com).",
+            "NMAP Port Scan": "Actively pings the target's network to see exactly which 'doors' (ports) are left open.",
+            "Web Server Detected": "A web server is active on the target. The pipeline now triggers multiple asynchronous web tools to run in parallel.",
+            "Gobuster & FFuF": "Rapidly fires requests to find hidden admin panels, unlinked directories, and exposed APIs.",
+            "Nikto Web Scanner": "A noisy, aggressive scanner that checks web servers for thousands of known dangerous files and misconfigurations.",
+            "Metasploit PoC Verification": "Runs a safe 'Proof of Concept' script to verify if a discovered vulnerability is a false positive, without dropping a malicious payload.",
+            "Hydra DB Brute-Force": "If an open database port is found, Hydra attempts to log in using common default credentials (e.g., root/admin).",
+            "Check SSH Version": "Grabs the server's SSH banner to see if they are running outdated, vulnerable secure shell software.",
+            "John the Ripper Hash Crack": "If hashed passwords are found in an exposed backup file, this tool attempts to crack them locally offline.",
+            "NVD API CVE Lookup": "Cross-references the discovered technology stack against the official National Vulnerability Database to find known exploits.",
+            "Claude: Correlate & Report": "The final stage. Claude parses all raw terminal logs and JSON output, creating a clean, prioritized security report."
+        };
+
+        // Attach hover events after Mermaid finishes rendering the SVG
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const nodes = document.querySelectorAll('.node');
+                const tooltipEl = document.getElementById('tooltip');
+
+                nodes.forEach(node => {
+                    node.addEventListener('mouseover', (e) => {
+                        const nodeText = node.textContent.trim();
+                        
+                        // Find the matching key in our dictionary
+                        const matchKey = Object.keys(tooltips).find(key => nodeText.includes(key));
+                        
+                        if (matchKey) {
+                            tooltipEl.innerHTML = `<strong>${matchKey}</strong>${tooltips[matchKey]}`;
+                            tooltipEl.style.opacity = '1';
+                        }
+                    });
+
+                    // Make the tooltip follow the mouse slightly offset
+                    node.addEventListener('mousemove', (e) => {
+                        tooltipEl.style.left = (e.pageX + 15) + 'px';
+                        tooltipEl.style.top = (e.pageY + 15) + 'px';
+                    });
+
+                    node.addEventListener('mouseout', () => {
+                        tooltipEl.style.opacity = '0';
+                    });
+                });
+            }, 1000); 
+        });
+    </script>
+</body>
+</html>
