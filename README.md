@@ -1,4 +1,4 @@
-# claudehack_2026
+# Pen Test MCP
 
 A React chat UI talking to a Flask orchestrator that calls Claude, plus an MCP server exposing local Python tools to Claude Code.
 
@@ -127,9 +127,9 @@ Claude Code reads `.mcp.json` from the project root.
 {
   "mcpServers": {
     "claudehack": {
-      "command": "/path/to/claudehack_2026/backend/venv/bin/python",
-      "args": ["/path/to/claudehack_2026/backend/server.py"],
-      "cwd": "/path/to/claudehack_2026/backend"
+      "command": "$(pwd)/backend/venv/bin/python",
+      "args": ["$(pwd)/backend/server.py"],
+      "cwd": "$(pwd)/backend"
     }
   }
 }
