@@ -15,6 +15,7 @@ import sys
 from mcp.server.fastmcp import FastMCP
 
 from tools.passive.shodan import run as shodan_run
+from tools.passive.whatweb import run as whatweb_passive_run
 
 mcp = FastMCP("claudehack-mcp")
 
@@ -36,6 +37,26 @@ def shodan(target: str) -> str:
         Plain text summary of everything Shodan knows about the target.
     """
     return shodan_run(target)
+
+
+@mcp.tool()
+def whatweb(target: str) -> str:
+    """
+    Fingerprint the technology stack of a target website using WhatWeb in passive
+    mode (aggression level 1 — one request only). Identifies CMS, frameworks,
+    server software, JavaScript libraries, and other technologies with version numbers.
+
+    Use this in passive scans. Version numbers returned here should be passed to
+    nvd_lookup for CVE correlation.
+
+    Args:
+        target: Domain name or URL to fingerprint (e.g. 'example.com').
+
+    Returns:
+        Plain text list of detected technologies, grouped by whether version
+        info is available.
+    """
+    return whatweb_passive_run(target)
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────
