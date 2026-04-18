@@ -5,6 +5,7 @@ import { scanFeedData } from '../../lib/scanFeedData.js'
 function getLineType(text) {
   if (text.includes('CRITICAL')) return 'critical'
   if (text.includes('HIGH')) return 'high'
+  if (text.includes('CVE lookup') || text.includes('Scan complete') || text.includes('exposed') || text.includes('active') || text.includes('detected')) return 'alert'
   return 'normal'
 }
 
@@ -16,71 +17,60 @@ function formatTimestamp(date) {
 }
 
 export default function ScanFeed() {
-  const [displayedLines, setDisplayedLines] = useState([])
+  const [topLines, setTopLines] = useState([])
+  const [bottomLines, setBottomLines] = useState([])
   const indexRef = useRef(0)
 
   useEffect(() => {
     const interval = setInterval(() => {
       const text = scanFeedData[indexRef.current % scanFeedData.length]
       indexRef.current++
+      const type = getLineType(text)
       const entry = {
         id: Date.now() + Math.random(),
         text,
         timestamp: formatTimestamp(new Date()),
-        type: getLineType(text),
+        type,
       }
-      setDisplayedLines((prev) => [...prev, entry].slice(-60))
-    }, 1500)
+      
+      if (type === 'critical' || type === 'high' || type === 'alert') {
+        setBottomLines((prev) => [...prev, entry].slice(-25))
+      } else {
+        setTopLines((prev) => [...prev, entry].slice(-25))
+      }
+    }, 600)
 
     return () => clearInterval(interval)
   }, [])
 
   return (
-    <div style={{ position: 'relative', height: '100%', overflow: 'hidden' }}>
+    <div style={{ position: 'relative', height: '100%', display: 'flex', flexDirection: 'column' }}>
+      
+      {/* Top Container: Alerts / Vulnerabilities */}
       <div
         style={{
-          height: '100%',
+          flex: 1,
+          height: '50%',
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'flex-end',
-          borderLeft: '1px solid rgba(22, 101, 52, 0.2)',
-          padding: '12px 20px 12px 16px',
+          borderLeft: '1px solid rgba(239, 68, 68, 0.2)',
+          padding: '12px 20px 24px 16px',
           boxSizing: 'border-box',
+          maskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 100%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 100%)',
         }}
       >
-        {displayedLines.map((line) => {
-          if (line.type === 'critical') {
-            return (
-              <motion.div
-                key={line.id}
-                initial={{ opacity: 0, y: 8, color: '#ffffff' }}
-                animate={{ opacity: 1, y: 0, color: '#ef4444' }}
-                transition={{
-                  opacity: { duration: 0.2 },
-                  y: { duration: 0.2 },
-                  color: { duration: 0.5, delay: 0.1 },
-                }}
-                style={{
-                  fontFamily: 'monospace',
-                  fontSize: 13,
-                  lineHeight: 1.8,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              >
-                <span style={{ color: 'rgba(255,255,255,0.2)', marginRight: 8 }}>
-                  {line.timestamp}
-                </span>
-                {line.text}
-              </motion.div>
-            )
-          }
-
+        {bottomLines.map((line) => {
+          const isCritical = line.type === 'critical'
+          const isHigh = line.type === 'high'
+          const color = isCritical ? '#ef4444' : (isHigh ? '#f97316' : '#eab308')
+          
           return (
-            <motion.div
+             <motion.div
               key={line.id}
+              layout
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
@@ -88,10 +78,11 @@ export default function ScanFeed() {
                 fontFamily: 'monospace',
                 fontSize: 13,
                 lineHeight: 1.8,
-                color: line.type === 'high' ? '#f97316' : '#166534',
+                color: color,
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
+                flexShrink: 0,
               }}
             >
               <span style={{ color: 'rgba(255,255,255,0.15)', marginRight: 8 }}>
@@ -103,7 +94,48 @@ export default function ScanFeed() {
         })}
       </div>
 
- 
+      {/* Bottom Container: Normal Logs */}
+      <div
+        style={{
+          flex: 1,
+          height: '50%',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'flex-end',
+          borderLeft: '1px solid rgba(22, 101, 52, 0.2)',
+          padding: '24px 20px 12px 16px',
+          boxSizing: 'border-box',
+          maskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 100%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 100%)',
+        }}
+      >
+        {topLines.map((line) => (
+          <motion.div
+            key={line.id}
+            layout
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            style={{
+              fontFamily: 'monospace',
+              fontSize: 13,
+              lineHeight: 1.8,
+              color: '#166534',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              flexShrink: 0,
+            }}
+          >
+            <span style={{ color: 'rgba(255,255,255,0.15)', marginRight: 8 }}>
+              {line.timestamp}
+            </span>
+            {line.text}
+          </motion.div>
+        ))}
+      </div>
+      
     </div>
   )
 }

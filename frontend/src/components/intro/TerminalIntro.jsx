@@ -3,11 +3,9 @@ import { motion } from 'framer-motion'
 
 const SCRIPT = [
   { type: 'type', text: 'root@pentest:~$ nmap -sV 10.0.1.1' },
-  { type: 'pause', ms: 200 },
+  { type: 'pause', ms: 80 },
   { type: 'type', text: 'Discovered open port 80/tcp' },
-  { type: 'pause', ms: 100 },
-  { type: 'type', text: 'CVE-2021-41773 found \u2014 CRITICAL 9.8' },
-  { type: 'pause', ms: 100 },
+  { type: 'pause', ms: 80 },
   { type: 'type', text: 'Scan complete. 1 vulnerability found.' },
 ]
 
@@ -26,7 +24,8 @@ export default function TerminalIntro({ onComplete }) {
     cancelRef.current = false
 
     const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
-    const randomDelay = () => 10 + Math.random() * 8
+    // Speed up typing characters immensely (now 2-6ms per char instead of 10-18ms)
+    const randomDelay = () => 2 + Math.random() * 4
 
     async function runScript() {
       for (const item of SCRIPT) {
@@ -43,14 +42,15 @@ export default function TerminalIntro({ onComplete }) {
           if (cancelRef.current) return
           setLines((prev) => [...prev, item.text])
           setCurrentLine('')
-          await delay(60)
+          await delay(30) // Wait significantly less between commands
         }
       }
 
-      await delay(600)
+      // Finish quickly after the last command
+      await delay(200)
       if (cancelRef.current) return
       setFadingOut(true)
-      await delay(400)
+      await delay(200)
       if (cancelRef.current) return
       onCompleteRef.current()
     }

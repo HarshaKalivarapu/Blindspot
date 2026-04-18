@@ -1,30 +1,16 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
+import { createPortal } from 'react-dom'
+import AuthModal from './AuthModal.jsx'
 
 export default function HeroPanel() {
-  const navigate = useNavigate()
   const [isHovered, setIsHovered] = useState(false)
-  const [showCursor, setShowCursor] = useState(false)
-  const [flash, setFlash] = useState(false)
-  const cursorTimerRef = useRef(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
-  const handleMouseEnter = () => {
-    setIsHovered(true)
-    setShowCursor(true)
-    clearTimeout(cursorTimerRef.current)
-    cursorTimerRef.current = setTimeout(() => setShowCursor(false), 300)
-  }
+  const handleMouseEnter = () => setIsHovered(true)
+  const handleMouseLeave = () => setIsHovered(false)
 
-  const handleMouseLeave = () => {
-    setIsHovered(false)
-    setShowCursor(false)
-  }
-
-  const handleClick = () => {
-    setFlash(true)
-    setTimeout(() => navigate('/scan'), 80)
-  }
+  const handleClick = () => setIsModalOpen(true)
 
   return (
     <div
@@ -38,8 +24,6 @@ export default function HeroPanel() {
         overflow: 'hidden',
       }}
     >
- 
-
       <div
         style={{
           position: 'relative',
@@ -47,29 +31,33 @@ export default function HeroPanel() {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: 24,
+          gap: 32,
         }}
       >
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
           <span
             style={{
-              fontFamily: 'monospace',
-              fontSize: 48,
-              fontWeight: 500,
+              fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+              fontSize: 64,
+              fontWeight: 600,
               color: '#ffffff',
-              letterSpacing: '0.08em',
-              lineHeight: 1,
+              letterSpacing: '-0.02em',
+              lineHeight: 1.1,
             }}
           >
             ShieldScan
           </span>
-          <div
+          <span
             style={{
-              width: 40,
-              height: 1,
-              background: 'rgba(255,255,255,0.2)',
+              fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+              fontSize: 18,
+              fontWeight: 400,
+              color: 'rgba(255, 255, 255, 0.6)',
+              letterSpacing: '0.01em',
             }}
-          />
+          >
+            The enterprise vulnerability scanning software for your business
+          </span>
         </div>
 
         <motion.button
@@ -77,39 +65,32 @@ export default function HeroPanel() {
           onMouseLeave={handleMouseLeave}
           onClick={handleClick}
           animate={{
-            backgroundColor: isHovered ? '#ffffff' : 'transparent',
-            color: isHovered ? '#0d0d0d' : '#ffffff',
+            backgroundColor: isHovered ? '#ffffff' : 'rgba(255, 255, 255, 0.03)',
+            color: isHovered ? '#0a0a0a' : '#ffffff',
+            borderColor: isHovered ? '#ffffff' : 'rgba(255, 255, 255, 0.15)',
           }}
-          transition={{ duration: 0.15 }}
+          transition={{ duration: 0.2 }}
           style={{
-            fontFamily: 'monospace',
-            fontSize: 14,
-            padding: '14px 32px',
-            border: '1px solid #ffffff',
-            borderRadius: 2,
+            fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            fontSize: 15,
+            fontWeight: 500,
+            padding: '14px 40px',
+            border: '1px solid rgba(255, 255, 255, 0.15)',
+            borderRadius: 6,
             cursor: 'pointer',
             outline: 'none',
-            letterSpacing: '0.04em',
-            minWidth: 140,
+            letterSpacing: '0.01em',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+            backdropFilter: 'blur(4px)',
           }}
         >
-          Get Started{showCursor ? ' |' : ''}
+          Get Started
         </motion.button>
       </div>
 
-      {flash && (
-        <motion.div
-          initial={{ opacity: 1 }}
-          animate={{ opacity: 0 }}
-          transition={{ duration: 0.08 }}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: '#ffffff',
-            zIndex: 100,
-            pointerEvents: 'none',
-          }}
-        />
+      {isModalOpen && createPortal(
+        <AuthModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />,
+        document.body
       )}
     </div>
   )

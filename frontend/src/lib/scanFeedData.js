@@ -1,14 +1,14 @@
 export const scanFeedData = [
   'Initializing scanner on 10.0.1.14...',
   'Running SYN scan on 10.0.1.14',
+  'CVE-2021-41773 found \u2014 CRITICAL 9.8 \u2014 Path traversal and RCE in Apache 2.4.49',
+  'CVE-2021-42013 found \u2014 CRITICAL 9.8 \u2014 Path traversal bypass in Apache 2.4.50',
   'Discovered open port 22/tcp on 10.0.1.14',
   'Discovered open port 80/tcp on 10.0.1.14',
   'Discovered open port 8443/tcp on 10.0.1.14',
   'Service detection: 22/tcp \u2192 OpenSSH 7.4',
   'Service detection: 80/tcp \u2192 Apache httpd 2.4.49',
   'CVE lookup: Apache httpd 2.4.49',
-  'CVE-2021-41773 found \u2014 CRITICAL 9.8 \u2014 Path traversal and RCE in Apache 2.4.49',
-  'CVE-2021-42013 found \u2014 CRITICAL 9.8 \u2014 Path traversal bypass in Apache 2.4.50',
   'Scan complete on 10.0.1.14 \u2014 2 CRITICAL vulnerabilities found',
 
   'Initializing scanner on 172.16.0.23...',
