@@ -18,6 +18,7 @@ from tools.passive.shodan import run as shodan_run
 from tools.passive.whatweb import run as whatweb_passive_run
 from tools.passive.dns_whois import run as dns_whois_run
 from tools.passive.ssl_tls import run as ssl_tls_run
+from tools.passive.http_headers import run as http_headers_run
 
 mcp = FastMCP("claudehack-mcp")
 
@@ -105,6 +106,34 @@ def ssl_tls(target: str) -> str:
         Three sections: Certificate details, Cipher info, TLS version support.
     """
     return ssl_tls_run(target)
+
+
+@mcp.tool()
+def http_headers(target: str) -> str:
+    """
+    Check the HTTP security response headers of a target website. Makes a
+    single GET request — no authorization required.
+
+    Checks for the presence of required security headers (HSTS, CSP,
+    X-Frame-Options, X-Content-Type-Options, Referrer-Policy,
+    Permissions-Policy, X-XSS-Protection) and flags missing ones with
+    severity level and remediation advice.
+
+    Also checks for information disclosure headers (Server, X-Powered-By,
+    X-AspNet-Version) that leak server software details to attackers.
+
+    For headers that are present, performs deeper analysis — e.g. flags
+    weak CSP policies containing 'unsafe-inline' or HSTS with short max-age.
+
+    Args:
+        target: Domain name or URL (e.g. 'example.com'). Scheme is added
+                automatically if missing; falls back to HTTP if HTTPS fails.
+
+    Returns:
+        Two sections: required security headers (present/missing with severity
+        and fix instructions), and information disclosure headers found.
+    """
+    return http_headers_run(target)
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────
