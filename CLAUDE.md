@@ -32,7 +32,7 @@ pentest-mcp/
     │   │   ├── Scan.jsx                 # Scan dashboard + chat interface
     │   │   ├── NewScan.jsx              # Scan configuration
     │   │   ├── Guide.jsx                # Interactive User Guide
-    │   │   └── ReportActiveVisual.jsx   # Developer mode network graph visualization
+    │   │   └── ScanReport.jsx           # Scan report viewer (developer + non-developer modes)
     │   ├── components/
     │   │   ├── intro/
     │   │   │   └── TerminalIntro.jsx  # Full screen terminal intro sequence
@@ -51,7 +51,7 @@ pentest-mcp/
 /guide (src/pages/Guide.jsx)                    → Full page interactive User Guide
 /scan (src/pages/Scan.jsx)                      → Scan dashboard + chat interface with backend
 /scan/new (src/pages/NewScan.jsx)               → Full page configuration form for generating scans
-/report/active/visual (src/pages/ReportActiveVisual.jsx) → Developer mode network graph visualization of active scan report
+/scan/report (src/pages/ScanReport.jsx)                  → Scan report viewer — renders generated report JSON
 
 ## Rules
 - ALWAYS read CLAUDE.md before creating or modifying any file
