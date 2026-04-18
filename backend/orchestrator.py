@@ -62,7 +62,7 @@ anthropic_client = Anthropic(api_key=ANTHROPIC_API_KEY) if ANTHROPIC_API_KEY els
 class ScanRequest(BaseModel):
     target: str                        # domain or IP to scan
     level: str                         # "passive" | "active"
-    scan_type: str = "simple"          # "simple" | "aggressive" (only relevant for active)
+    intensity: str = "simple"          # "simple" | "aggressive" (only relevant for active)
     authorization_confirmed: bool = False
 
 
@@ -98,10 +98,10 @@ AGGRESSIVE_TOOL_NAMES = {
 # reads requests from stdin and writes responses to stdout.
 PROMPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "prompts")
 
-def _load_prompt(level: str, scan_type: str, target: str) -> str:
+def _load_prompt(level: str, intensity: str, target: str) -> str:
     if level == "passive":
         filename = "passive.md"
-    elif scan_type == "aggressive":
+    elif intensity == "aggressive":
         filename = "active_aggressive.md"
     else:
         filename = "active_simple.md"
@@ -131,7 +131,7 @@ def _mcp_tool_to_anthropic(tool) -> dict:
 async def _get_filtered_tools(
     session: ClientSession,
     level: str,
-    scan_type: str,
+    intensity: str,
     authorized: bool,
 ) -> list[dict]:
     # Ask the MCP server for every tool it knows about.
@@ -153,7 +153,7 @@ async def _get_filtered_tools(
             continue
 
         # Rule 3: active simple scan — strip aggressive-only tools
-        if level == "active" and is_aggressive and scan_type == "simple":
+        if level == "active" and is_aggressive and intensity == "simple":
             continue
 
         filtered.append(_mcp_tool_to_anthropic(tool))
@@ -194,12 +194,12 @@ async def scan(req: ScanRequest):
 
                 yield emit("status", "Fetching available tools...")
                 tools = await _get_filtered_tools(
-                    session, req.level, req.scan_type, req.authorization_confirmed
+                    session, req.level, req.intensity, req.authorization_confirmed
                 )
                 tool_names = [t["name"] for t in tools]
                 yield emit("status", f"Tools loaded: {', '.join(tool_names)}")
 
-                system_prompt = _load_prompt(req.level, req.scan_type, req.target)
+                system_prompt = _load_prompt(req.level, req.intensity, req.target)
 
                 messages = [
                     {"role": "user", "content": f"Begin {req.level} scan of {req.target}."}

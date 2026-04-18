@@ -30,3 +30,5 @@ Thumbs.db
 myenv/
 
 .mcp.json
+
+* text=auto eol=lf

@@ -76,7 +76,7 @@ function RadioOption({ value, label, description, selected, onChange }) {
 export default function NewScan() {
   const navigate = useNavigate()
   const [target, setTarget] = useState('')
-  const [mode, setMode] = useState('passive')
+  const [level, setLevel] = useState('passive')
   const [intensity, setIntensity] = useState('simple')
 
   const canSubmit = target.trim().length > 0
@@ -87,7 +87,7 @@ export default function NewScan() {
     e?.preventDefault()
     if (!canSubmit) return
     navigate('/scan', {
-      state: { config: { target: target.trim(), mode, intensity: mode === 'active' ? intensity : null } }
+      state: { config: { target: target.trim(), level, intensity: level === 'active' ? intensity : null } }
     })
   }
 
@@ -121,7 +121,7 @@ export default function NewScan() {
           fontFamily: 'system-ui, -apple-system, sans-serif'
         }}>
           <div style={{ fontSize: 18, fontWeight: 600, color: '#ffffff', letterSpacing: '-0.02em', cursor: 'pointer' }} onClick={() => navigate('/scan')}>
-            ShieldScan
+            Blindspot
           </div>
           <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
             <motion.button
@@ -227,7 +227,7 @@ export default function NewScan() {
             </div>
 
             {/* Mode Select */}
-            <div style={{ marginBottom: mode === 'active' ? 24 : 32 }}>
+            <div style={{ marginBottom: level === 'active' ? 24 : 32 }}>
               <label style={{ display: 'block', fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.7)', marginBottom: 12 }}>
                 Scan Mode
               </label>
@@ -236,22 +236,22 @@ export default function NewScan() {
                   value="passive"
                   label="Passive Reconnaissance"
                   description={DESCRIPTIONS.passive}
-                  selected={mode === 'passive'}
-                  onChange={setMode}
+                  selected={level === 'passive'}
+                  onChange={setLevel}
                 />
                 <RadioOption
                   value="active"
                   label="Active Reconnaissance"
                   description={DESCRIPTIONS.active}
-                  selected={mode === 'active'}
-                  onChange={setMode}
+                  selected={level === 'active'}
+                  onChange={setLevel}
                 />
               </div>
             </div>
 
             {/* Intensity Select */}
             <AnimatePresence>
-              {mode === 'active' && (
+              {level === 'active' && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}

@@ -28,10 +28,11 @@ pentest-mcp/
     │   ├── main.jsx               # Entry point — BrowserRouter + Routes
     │   ├── index.css              # Tailwind import + global resets
     │   ├── pages/
-    │   │   ├── Home.jsx           # Homepage — terminal intro + split screen
-    │   │   ├── Scan.jsx           # Scan dashboard + chat interface
-    │   │   ├── NewScan.jsx        # Scan configuration
-    │   │   └── Guide.jsx          # Interactive User Guide
+    │   │   ├── Home.jsx                 # Homepage — terminal intro + split screen
+    │   │   ├── Scan.jsx                 # Scan dashboard + chat interface
+    │   │   ├── NewScan.jsx              # Scan configuration
+    │   │   ├── Guide.jsx                # Interactive User Guide
+    │   │   └── ScanReport.jsx           # Scan report viewer (developer + non-developer modes)
     │   ├── components/
     │   │   ├── intro/
     │   │   │   └── TerminalIntro.jsx  # Full screen terminal intro sequence
@@ -48,10 +49,11 @@ pentest-mcp/
     └── CLAUDE.md                  # This file — always refer here first
 
 ## Route Map
-/ (src/pages/Home.jsx)            → Homepage (terminal intro + split screen)
-/guide (src/pages/Guide.jsx)      → Full page interactive User Guide
-/scan (src/pages/Scan.jsx)        → Scan dashboard + chat interface with backend
-/scan/new (src/pages/NewScan.jsx) → Full page configuration form for generating scans
+/ (src/pages/Home.jsx)                          → Homepage (terminal intro + split screen)
+/guide (src/pages/Guide.jsx)                    → Full page interactive User Guide
+/scan (src/pages/Scan.jsx)                      → Scan dashboard + chat interface with backend
+/scan/new (src/pages/NewScan.jsx)               → Full page configuration form for generating scans
+/scan/report (src/pages/ScanReport.jsx)                  → Scan report viewer — renders generated report JSON
 
 ## Rules
 - ALWAYS read CLAUDE.md before creating or modifying any file

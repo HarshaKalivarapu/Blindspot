@@ -20,6 +20,7 @@ function Scan() {
   const [scanConfig, setScanConfig] = useState(null)
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
+  const [scanError, setScanError] = useState(false)
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
@@ -40,14 +41,21 @@ function Scan() {
       const config = location.state.config
       setScanConfig(config)
       navigate('/scan', { replace: true, state: {} })
-      
-      if (config.mode === 'active' && !authorized) {
+
+      if (config.level === 'active' && !authorized) {
         setShowWarning(true)
       } else {
         setView('chat')
       }
     }
   }, [location.state, authorized, navigate])
+
+  // Auto-start scan when we enter chat view with a config
+  useEffect(() => {
+    if (view === 'chat' && scanConfig && !sending) {
+      startScan(scanConfig, authorized)
+    }
+  }, [view]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleStartScan = () => {
     navigate('/scan/new')
@@ -71,23 +79,55 @@ function Scan() {
     if (!trimmed || sending) return
     setMessages((m) => [...m, { role: 'user', text: trimmed }])
     setInput('')
+  }
+  const startScan = async (config, isAuthorized) => {
     setSending(true)
+    setScanError(false)
+    setMessages([{ role: 'assistant', text: `Starting ${config.level} scan of ${config.target}...` }])
+
     try {
-      const res = await fetch(`${BACKEND_URL}/chat`, {
+      const res = await fetch(`${BACKEND_URL}/scan`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: trimmed }),
+        body: JSON.stringify({
+          target: config.target,
+          level: config.level,
+          intensity: config.intensity ?? 'simple',
+          authorization_confirmed: isAuthorized,
+        }),
       })
-      const data = await res.json()
-      const reply = res.ok
-        ? data.reply ?? '(empty response)'
-        : `Error: ${data.error ?? res.statusText}`
-      setMessages((m) => [...m, { role: 'assistant', text: reply }])
+
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() // keep incomplete last line
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue
+          try {
+            const event = JSON.parse(line.slice(6))
+            if (event.type === 'status') {
+              setMessages((m) => [...m, { role: 'status', text: event.message }])
+            } else if (event.type === 'progress') {
+              setMessages((m) => [...m, { role: 'assistant', text: event.message }])
+            } else if (event.type === 'report') {
+              setMessages((m) => [...m, { role: 'report', text: event.message }])
+            }
+          } catch {
+            // skip malformed lines
+          }
+        }
+      }
     } catch (err) {
-      setMessages((m) => [
-        ...m,
-        { role: 'assistant', text: `Network error: ${err.message}` },
-      ])
+      setMessages((m) => [...m, { role: 'assistant', text: `Network error: ${err.message}` }])
+      setScanError(true)
     } finally {
       setSending(false)
     }
@@ -184,6 +224,30 @@ function Scan() {
             >
               Back to Dashboard
             </button>
+            {scanError && (
+              <motion.button
+                onClick={handleStartScan}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                whileHover={{ backgroundColor: 'rgba(255,255,255,0.12)', borderColor: 'rgba(255,255,255,0.4)' }}
+                whileTap={{ scale: 0.97 }}
+                style={{
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  fontSize: 13,
+                  fontWeight: 500,
+                  padding: '6px 16px',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  color: '#ffffff',
+                  backgroundColor: 'rgba(255,255,255,0.06)',
+                  outline: 'none',
+                  letterSpacing: '0.01em',
+                }}
+              >
+                + New Scan
+              </motion.button>
+            )}
             <span
               className={`rounded-full px-3 py-1 text-xs font-medium ${authorized ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                 }`}
@@ -203,35 +267,38 @@ function Scan() {
           {messages.map((m, i) => (
             <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div
-                className={`max-w-[75%] rounded-2xl px-5 py-3 text-sm leading-relaxed ${m.role === 'user' ? 'bg-white text-black' : 'bg-white/10 text-white'
-                  }`}
-                style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}
+                style={{
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  maxWidth: m.role === 'report' ? '100%' : '75%',
+                  borderRadius: 16,
+                  padding: m.role === 'status' ? '6px 14px' : '12px 20px',
+                  fontSize: m.role === 'status' ? 12 : 14,
+                  lineHeight: 1.6,
+                  whiteSpace: 'pre-wrap',
+                  background:
+                    m.role === 'user'   ? '#ffffff' :
+                    m.role === 'status' ? 'rgba(255,255,255,0.04)' :
+                    m.role === 'report' ? 'rgba(255,255,255,0.06)' :
+                                          'rgba(255,255,255,0.1)',
+                  color:
+                    m.role === 'user'   ? '#000000' :
+                    m.role === 'status' ? 'rgba(255,255,255,0.4)' :
+                                          '#ffffff',
+                  border: m.role === 'report' ? '1px solid rgba(255,255,255,0.15)' : 'none',
+                  width: m.role === 'report' ? '100%' : undefined,
+                }}
               >
-                {m.text}
+                {m.role === 'status' && '› '}{m.text}
               </div>
             </div>
           ))}
         </div>
 
-        <form onSubmit={handleSend} className="mt-4 flex gap-2">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={authorized ? 'Send a message...' : 'Authorize to enable input'}
-            disabled={!authorized || sending}
-            className="flex-1 rounded-lg border border-white/20 bg-black/40 backdrop-blur-md px-4 py-3 text-sm placeholder-white/40 outline-none focus:border-white disabled:cursor-not-allowed disabled:opacity-50"
-            style={{ fontFamily: 'system-ui, -apple-system, sans-serif', color: 'white' }}
-          />
-          <button
-            type="submit"
-            disabled={!authorized || sending}
-            className="rounded-lg bg-white px-6 py-3 text-sm font-medium text-black hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
-            style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}
-          >
-            {sending ? 'Sending...' : 'Send'}
-          </button>
-        </form>
+        {sending && (
+          <div className="mt-4 text-center text-sm" style={{ color: 'rgba(255,255,255,0.35)', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+            Scan in progress...
+          </div>
+        )}
       </main>
     </motion.div>
   )
@@ -267,7 +334,7 @@ function Scan() {
           fontFamily: 'system-ui, -apple-system, sans-serif'
         }}>
           <div style={{ fontSize: 18, fontWeight: 600, color: '#ffffff', letterSpacing: '-0.02em', cursor: 'pointer' }} onClick={() => setView('dashboard')}>
-            ShieldScan
+            Blindspot
           </div>
           <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
             <motion.button
