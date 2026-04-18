@@ -3,14 +3,19 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import WarningModal from '../components/WarningModal'
 import ShaderBackground from '../components/homepage/ShaderBackground.jsx'
+import AuthModal from '../components/homepage/AuthModal.jsx'
+import { supabase } from '../lib/supabase.js'
+import { useAuth } from '../lib/AuthContext.jsx'
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ?? 'http://localhost:5000'
 
 function Scan() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { user, signOut } = useAuth()
   const [view, setView] = useState('dashboard') // 'dashboard' or 'chat'
   const [showWarning, setShowWarning] = useState(false)
+  const [showAuthModal, setShowAuthModal] = useState(false)
   const [authorized, setAuthorized] = useState(false)
   const [scanConfig, setScanConfig] = useState(null)
   const [input, setInput] = useState('')
@@ -22,6 +27,7 @@ function Scan() {
     },
   ])
   const scrollRef = useRef(null)
+  const scanInserted = useRef(false)
 
   useEffect(() => {
     if (view === 'chat') {
@@ -47,9 +53,17 @@ function Scan() {
     navigate('/scan/new')
   }
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
+    await signOut()
     navigate('/')
   }
+
+  useEffect(() => {
+    if (view === 'chat' && user && !scanInserted.current) {
+      scanInserted.current = true
+      supabase.from('scans').insert({ user_id: user.id, report: null })
+    }
+  }, [view, user])
 
   const handleSend = async (e) => {
     e.preventDefault()
@@ -278,28 +292,66 @@ function Scan() {
             >
               User Guide
             </motion.button>
-            <motion.button
-              type="button"
-              onClick={handleSignOut}
-              whileHover={{ backgroundColor: '#ffffff', color: '#0a0a0a', borderColor: '#ffffff' }}
-              initial={{ backgroundColor: 'rgba(255, 255, 255, 0.03)', color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.15)' }}
-              transition={{ duration: 0.2 }}
-              style={{
-                fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                fontSize: 14,
-                fontWeight: 500,
-                padding: '10px 24px',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                borderRadius: 6,
-                cursor: 'pointer',
-                outline: 'none',
-                letterSpacing: '0.01em',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                backdropFilter: 'blur(4px)',
-              }}
-            >
-              Sign Out
-            </motion.button>
+            {user ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <motion.button
+                  type="button"
+                  onClick={handleSignOut}
+                  whileHover={{ backgroundColor: '#ffffff', color: '#0a0a0a', borderColor: '#ffffff' }}
+                  initial={{ backgroundColor: 'rgba(255, 255, 255, 0.03)', color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.15)' }}
+                  transition={{ duration: 0.2 }}
+                  style={{
+                    fontFamily: 'system-ui, -apple-system, sans-serif',
+                    fontSize: 14,
+                    fontWeight: 500,
+                    padding: '10px 24px',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                    outline: 'none',
+                    letterSpacing: '0.01em',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                    backdropFilter: 'blur(4px)',
+                  }}
+                >
+                  Sign Out
+                </motion.button>
+                {user.user_metadata?.avatar_url ? (
+                  <img
+                    src={user.user_metadata.avatar_url}
+                    alt="profile"
+                    style={{ width: 32, height: 32, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.2)' }}
+                  />
+                ) : (
+                  <span style={{ fontFamily: 'system-ui, sans-serif', fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>
+                    {user.email}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <motion.button
+                type="button"
+                onClick={() => setShowAuthModal(true)}
+                whileHover={{ backgroundColor: '#ffffff', color: '#0a0a0a', borderColor: '#ffffff' }}
+                initial={{ backgroundColor: 'rgba(255, 255, 255, 0.03)', color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.15)' }}
+                transition={{ duration: 0.2 }}
+                style={{
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  fontSize: 14,
+                  fontWeight: 500,
+                  padding: '10px 24px',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  outline: 'none',
+                  letterSpacing: '0.01em',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                  backdropFilter: 'blur(4px)',
+                }}
+              >
+                Sign In
+              </motion.button>
+            )}
           </div>
         </div>
       </nav>
@@ -320,6 +372,7 @@ function Scan() {
           }}
         />
       )}
+      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
     </div>
   )
 }

@@ -1,7 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { GoogleOAuthProvider } from '@react-oauth/google'
+import { AuthProvider } from './lib/AuthContext.jsx'
 import './index.css'
 import Home from './pages/Home.jsx'
 import Scan from './pages/Scan.jsx'
@@ -10,7 +10,7 @@ import Guide from './pages/Guide.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+    <AuthProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Home />} />
@@ -19,6 +19,6 @@ createRoot(document.getElementById('root')).render(
           <Route path="/scan" element={<Scan />} />
         </Routes>
       </BrowserRouter>
-    </GoogleOAuthProvider>
+    </AuthProvider>
   </StrictMode>,
 )

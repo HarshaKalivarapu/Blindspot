@@ -42,7 +42,9 @@ pentest-mcp/
     │   │   │   └── AuthModal.jsx        # Unified signup/login popup overlay
     │   │   └── WarningModal.jsx   # Authorization confirmation modal
     │   └── lib/
-    │       └── scanFeedData.js    # Realistic pre-written scan output dataset
+    │       ├── scanFeedData.js    # Realistic pre-written scan output dataset
+    │       ├── supabase.js        # Supabase client singleton — import from here only
+    │       └── AuthContext.jsx    # Auth state provider + useAuth hook
     └── CLAUDE.md                  # This file — always refer here first
 
 ## Route Map
