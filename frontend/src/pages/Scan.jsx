@@ -15,6 +15,7 @@ function Scan() {
   const [scanConfig, setScanConfig] = useState(null)
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
+  const [scanError, setScanError] = useState(false)
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
@@ -60,6 +61,7 @@ function Scan() {
 
   const startScan = async (config, isAuthorized) => {
     setSending(true)
+    setScanError(false)
     setMessages([{ role: 'assistant', text: `Starting ${config.level} scan of ${config.target}...` }])
 
     try {
@@ -104,6 +106,7 @@ function Scan() {
       }
     } catch (err) {
       setMessages((m) => [...m, { role: 'assistant', text: `Network error: ${err.message}` }])
+      setScanError(true)
     } finally {
       setSending(false)
     }
@@ -200,6 +203,30 @@ function Scan() {
             >
               Back to Dashboard
             </button>
+            {scanError && (
+              <motion.button
+                onClick={handleStartScan}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                whileHover={{ backgroundColor: 'rgba(255,255,255,0.12)', borderColor: 'rgba(255,255,255,0.4)' }}
+                whileTap={{ scale: 0.97 }}
+                style={{
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  fontSize: 13,
+                  fontWeight: 500,
+                  padding: '6px 16px',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  color: '#ffffff',
+                  backgroundColor: 'rgba(255,255,255,0.06)',
+                  outline: 'none',
+                  letterSpacing: '0.01em',
+                }}
+              >
+                + New Scan
+              </motion.button>
+            )}
             <span
               className={`rounded-full px-3 py-1 text-xs font-medium ${authorized ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                 }`}
