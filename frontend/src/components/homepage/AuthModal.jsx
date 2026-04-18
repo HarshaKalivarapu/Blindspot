@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
+import { useGoogleLogin } from '@react-oauth/google'
 import ShaderBackground from './ShaderBackground.jsx'
 
 export default function AuthModal({ isOpen, onClose }) {
@@ -13,6 +14,14 @@ export default function AuthModal({ isOpen, onClose }) {
     onClose()
     setTimeout(() => navigate('/scan'), 300)
   }
+
+  const loginWithGoogle = useGoogleLogin({
+    onSuccess: (codeResponse) => {
+      onClose()
+      navigate('/scan')
+    },
+    onError: (error) => console.log('Login Failed:', error)
+  })
 
   return (
     <AnimatePresence>
@@ -90,7 +99,7 @@ export default function AuthModal({ isOpen, onClose }) {
 
               <button
                 type="button"
-                onClick={handleSubmit} // Proceed into the app on click
+                onClick={() => loginWithGoogle()}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
