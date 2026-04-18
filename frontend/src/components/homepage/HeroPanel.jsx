@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { createPortal } from 'react-dom'
 import AuthModal from './AuthModal.jsx'
+import { TextScramble } from '../ui/text-scramble.jsx'
 
 export default function HeroPanel() {
   const [isHovered, setIsHovered] = useState(false)
@@ -45,7 +46,7 @@ export default function HeroPanel() {
               lineHeight: 1.1,
             }}
           >
-            ShieldScan
+            <TextScramble text="ShieldScan" delay={2200} />
           </span>
           <span
             style={{
