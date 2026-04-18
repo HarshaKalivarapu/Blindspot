@@ -39,7 +39,7 @@ export default function HeroPanel({ onOpenModal }) {
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
           <span
             style={{
-              fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+              fontFamily: "'IBM Plex Mono', monospace",
               fontSize: 64,
               fontWeight: 600,
               color: '#ffffff',

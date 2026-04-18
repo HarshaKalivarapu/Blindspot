@@ -79,7 +79,7 @@ export default function ScanFeed() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
               style={{
-                fontFamily: 'monospace',
+                fontFamily: "'IBM Plex Mono', monospace",
                 fontSize: 18,
                 lineHeight: 1.8,
                 color: `rgba(${baseColor}, 0.72)`,
@@ -110,7 +110,7 @@ export default function ScanFeed() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
             style={{
-              fontFamily: 'monospace',
+              fontFamily: "'IBM Plex Mono', monospace",
               fontSize: 18,
               lineHeight: 1.8,
               color: 'rgba(22, 163, 74, 0.78)',

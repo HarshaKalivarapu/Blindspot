@@ -67,7 +67,7 @@ export default function Home() {
               justifyContent: 'space-between',
               fontFamily: 'system-ui, -apple-system, sans-serif'
             }}>
-              <div style={{ fontSize: 18, fontWeight: 600, color: '#ffffff', letterSpacing: '-0.02em' }}>
+              <div style={{ fontSize: 18, fontWeight: 600, color: '#ffffff', letterSpacing: '-0.02em', fontFamily: "'IBM Plex Mono', monospace" }}>
                 ShieldScan
               </div>
               <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
