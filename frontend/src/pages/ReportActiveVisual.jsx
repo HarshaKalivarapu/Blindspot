@@ -1,14 +1,9 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import ForceGraph2D from 'react-force-graph-2d'
+import { useNavigate } from 'react-router-dom'
 import ShaderBackground from '../components/homepage/ShaderBackground.jsx'
 
 // ─── HARDCODED SCAN DATA ────────────────────────────────────────────────────
-// TODO: replace with actual scan data from Supabase
-// const { data } = await supabase.from('scans')
-//   .select('report').eq('id', scanId).single()
-// setScanData(data.report)
-
 const SCAN_OUTPUT = {
   target: '192.168.1.1',
   scan_type: 'active',
@@ -235,7 +230,6 @@ const SCAN_OUTPUT = {
 }
 
 // ─── COLOR MAPS ─────────────────────────────────────────────────────────────
-
 const SEVERITY_COLOR = {
   Critical: '#ef4444',
   High: '#f97316',
@@ -243,1122 +237,548 @@ const SEVERITY_COLOR = {
   Low: '#6b7280',
 }
 
-// Maps risk string (from port.risk field) → color
-function riskColor(risk) {
-  return SEVERITY_COLOR[risk] ?? '#6b7280'
-}
-
-// ─── GRAPH DATA BUILDER ─────────────────────────────────────────────────────
-// Transforms scanOutput → { nodes, links } for ForceGraph2D.
-// Each field comment shows which JSON key it reads from.
-
-function buildGraphData(scanOutput) {
-  const nodes = []
-  const links = []
-
-  // Root node — reads scanOutput.target
-  nodes.push({
-    id: 'target',
-    label: scanOutput.target,
-    type: 'target',
-    size: 24,
-    color: '#ffffff',
-    data: scanOutput,
-  })
-
-  for (const port of scanOutput.ports) {
-    // Port node — reads port.port, port.service, port.risk
-    const portId = `port-${port.port}`
-    nodes.push({
-      id: portId,
-      label: `:${port.port}`,
-      sublabel: port.service,
-      type: 'port',
-      size: 18,
-      color: riskColor(port.risk),
-      risk: port.risk,
-      data: port,
-    })
-    links.push({ source: 'target', target: portId })
-
-    // Scripts node — reads port.scripts_run[]
-    if (port.scripts_run?.length > 0) {
-      const id = `scripts-${port.port}`
-      nodes.push({
-        id,
-        label: 'Scripts',
-        sublabel: `${port.scripts_run.length} ran`,
-        type: 'scripts',
-        size: 10,
-        color: '#4a9eff',
-        data: port.scripts_run,
-        portNumber: port.port,
-      })
-      links.push({ source: portId, target: id })
-    }
-
-    // Findings node — reads port.findings[]
-    if (port.findings?.length > 0) {
-      const id = `findings-${port.port}`
-      nodes.push({
-        id,
-        label: 'Findings',
-        sublabel: `${port.findings.length} found`,
-        type: 'findings',
-        size: 10,
-        color: '#f59e0b',
-        data: port.findings,
-        portNumber: port.port,
-      })
-      links.push({ source: portId, target: id })
-    }
-
-    // Fix node — reads port.recommendations[]
-    if (port.recommendations?.length > 0) {
-      const id = `fix-${port.port}`
-      nodes.push({
-        id,
-        label: 'Fixes',
-        sublabel: `${port.recommendations.length} actions`,
-        type: 'fix',
-        size: 10,
-        color: '#22c55e',
-        data: port.recommendations,
-        portNumber: port.port,
-      })
-      links.push({ source: portId, target: id })
-    }
-
-    // CVE nodes — reads port.cves[], each cve.id, cve.cvss_score, cve.severity, cve.exploit_available
-    for (const cve of port.cves ?? []) {
-      const id = `cve-${cve.id}`
-      nodes.push({
-        id,
-        label: cve.id,
-        sublabel: String(cve.cvss_score),
-        type: 'cve',
-        size: 12,
-        color: SEVERITY_COLOR[cve.severity] ?? '#6b7280',
-        severity: cve.severity,
-        pulsing: cve.exploit_available === true,
-        data: cve,
-        portNumber: port.port,
-      })
-      links.push({ source: portId, target: id })
-    }
-  }
-
-  return { nodes, links }
-}
-
-// ─── HELPER COMPONENTS ──────────────────────────────────────────────────────
-
-function StatPill({ label, borderColor }) {
-  return (
-    <div style={{
-      padding: '5px 12px',
-      background: 'rgba(0,0,0,0.75)',
-      border: `1px solid ${borderColor ?? 'rgba(255,255,255,0.2)'}`,
-      borderRadius: 20,
-      fontFamily: 'system-ui, -apple-system, sans-serif',
-      fontSize: 12,
-      fontWeight: 500,
-      color: '#ffffff',
-      backdropFilter: 'blur(8px)',
-      whiteSpace: 'nowrap',
-    }}>
-      {label}
-    </div>
-  )
-}
-
-function ZoomButton({ label, onClick }) {
-  return (
-    <motion.button
-      onClick={onClick}
-      whileHover={{ backgroundColor: '#ffffff', color: '#0a0a0a', borderColor: '#ffffff' }}
-      initial={{ backgroundColor: 'rgba(255,255,255,0.03)', color: '#ffffff', borderColor: 'rgba(255,255,255,0.15)' }}
-      transition={{ duration: 0.2 }}
-      style={{
-        width: 36,
-        height: 36,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        border: '1px solid rgba(255,255,255,0.15)',
-        borderRadius: 6,
-        fontSize: 18,
-        cursor: 'pointer',
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-        backdropFilter: 'blur(4px)',
-        lineHeight: 1,
-      }}
-    >
-      {label}
-    </motion.button>
-  )
-}
-
 function RiskBadge({ severity }) {
   const color = SEVERITY_COLOR[severity] ?? '#6b7280'
   return (
     <span style={{
-      display: 'inline-block',
-      padding: '2px 10px',
+      display: 'inline-flex',
+      alignItems: 'center',
+      padding: '4px 12px',
       background: `${color}22`,
-      border: `1px solid ${color}`,
-      borderRadius: 12,
+      border: `1px solid ${color}66`,
+      borderRadius: 16,
       color,
       fontSize: 11,
       fontWeight: 700,
       fontFamily: 'system-ui, sans-serif',
-      letterSpacing: '0.06em',
+      letterSpacing: '0.08em',
       textTransform: 'uppercase',
     }}>
+      <span style={{ width: 6, height: 6, borderRadius: '50%', background: color, marginRight: 6 }} />
       {severity}
     </span>
   )
 }
 
-// SVG half-circle arc gauge — reads score (0–10) and risk level
-function ScoreGauge({ score, riskLevel }) {
-  const color = SEVERITY_COLOR[riskLevel] ?? '#6b7280'
-  // Half circle: center (60,60), radius 48, arc from 180° to 0°
-  const cx = 60, cy = 60, r = 48
-  const startAngle = Math.PI        // 180° — left
-  const endAngle = 0                // 0° — right
-  const fraction = Math.min(score / 10, 1)
-  const sweepAngle = endAngle - startAngle  // negative = clockwise in SVG coords... use angles directly
-
-  // Convert angle to SVG coords (0° = right, positive = clockwise)
-  const toXY = (angle) => ({
-    x: cx + r * Math.cos(angle),
-    y: cy + r * Math.sin(angle),
-  })
-
-  // Track arc: full half circle (180° to 0°, going counter-clockwise = sweep-flag 0)
-  const trackStart = toXY(Math.PI)
-  const trackEnd = toXY(0)
-  const trackD = `M ${trackStart.x} ${trackStart.y} A ${r} ${r} 0 0 1 ${trackEnd.x} ${trackEnd.y}`
-
-  // Score arc: from 180° to (180° - fraction * 180°)
-  const scoreAngle = Math.PI - fraction * Math.PI
-  const scoreEnd = toXY(scoreAngle)
-  const largeArc = fraction > 0.5 ? 1 : 0
-  const scoreD = `M ${trackStart.x} ${trackStart.y} A ${r} ${r} 0 ${largeArc} 1 ${scoreEnd.x} ${scoreEnd.y}`
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-      <svg width="120" height="72" viewBox="0 0 120 72">
-        {/* Track */}
-        <path d={trackD} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="8" strokeLinecap="round" />
-        {/* Score fill */}
-        {fraction > 0 && (
-          <path d={scoreD} fill="none" stroke={color} strokeWidth="8" strokeLinecap="round" />
-        )}
-        {/* Center text */}
-        <text x="60" y="56" textAnchor="middle" fill="#ffffff"
-          style={{ fontFamily: '"JetBrains Mono", "Fira Code", monospace', fontSize: 18, fontWeight: 700 }}>
-          {score}
-        </text>
-        <text x="60" y="68" textAnchor="middle" fill="rgba(255,255,255,0.4)"
-          style={{ fontFamily: 'system-ui, sans-serif', fontSize: 10 }}>
-          / 10
-        </text>
-      </svg>
-      <RiskBadge severity={riskLevel} />
-    </div>
-  )
-}
-
-// ─── PANEL CONTENT ──────────────────────────────────────────────────────────
-// Reads node.type to decide which sub-panel to render.
-
-function PanelContent({ node, expandedScript, setExpandedScript }) {
-  switch (node.type) {
-    case 'target':   return <TargetPanel node={node} />
-    case 'port':     return <PortPanel node={node} expandedScript={expandedScript} setExpandedScript={setExpandedScript} />
-    case 'cve':      return <CvePanel node={node} />
-    case 'scripts':  return <ScriptsPanel node={node} expandedScript={expandedScript} setExpandedScript={setExpandedScript} />
-    case 'findings': return <FindingsPanel node={node} />
-    case 'fix':      return <FixPanel node={node} />
-    default:         return null
-  }
-}
-
-function TargetPanel({ node }) {
-  // node.data = full scanOutput object
-  const d = node.data
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      <div>
-        <div style={{ fontFamily: '"JetBrains Mono", "Fira Code", monospace', fontSize: 26, fontWeight: 700, color: '#ffffff', marginBottom: 4 }}>
-          {d.target}
-        </div>
-        <div style={{ fontFamily: 'system-ui, sans-serif', fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>
-          {d.scan_mode} scan · {new Date(d.timestamp).toLocaleString()}
-        </div>
-      </div>
-      <ScoreGauge score={d.overall_score} riskLevel={d.risk_level} />
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-        {[
-          { label: 'Open Ports', value: d.summary.open_ports.length },
-          { label: 'Total Findings', value: d.summary.total_findings },
-          { label: 'Confirmed Exploits', value: d.summary.confirmed_exploits },
-          { label: 'Tools Run', value: d.summary.tools_run.length },
-        ].map(({ label, value }) => (
-          <div key={label} style={{
-            padding: '12px 14px',
-            background: 'rgba(255,255,255,0.04)',
-            borderRadius: 8,
-            border: '1px solid rgba(255,255,255,0.08)',
-          }}>
-            <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 22, fontWeight: 700, color: '#ffffff' }}>{value}</div>
-            <div style={{ fontFamily: 'system-ui, sans-serif', fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>{label}</div>
-          </div>
-        ))}
-      </div>
-      <div>
-        <SectionLabel>Severity Breakdown</SectionLabel>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
-          {[
-            { sev: 'Critical', count: d.summary.critical },
-            { sev: 'High', count: d.summary.high },
-            { sev: 'Medium', count: d.summary.medium },
-            { sev: 'Low', count: d.summary.low },
-          ].map(({ sev, count }) => (
-            <div key={sev} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: SEVERITY_COLOR[sev], display: 'inline-block' }} />
-              <span style={{ fontFamily: 'system-ui, sans-serif', fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>{count} {sev}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div>
-        <SectionLabel>Tools Run</SectionLabel>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
-          {d.summary.tools_run.map(t => (
-            <span key={t} style={{
-              padding: '3px 10px',
-              background: 'rgba(74,158,255,0.1)',
-              border: '1px solid rgba(74,158,255,0.3)',
-              borderRadius: 12,
-              fontFamily: '"JetBrains Mono", monospace',
-              fontSize: 11,
-              color: '#4a9eff',
-            }}>{t}</span>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function PortPanel({ node, expandedScript, setExpandedScript }) {
-  // node.data = full port object
-  const port = node.data
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-        <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 32, fontWeight: 700, color: node.color }}>
-          :{port.port}
-        </span>
-        <RiskBadge severity={port.risk} />
-      </div>
-      <div style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.7)' }}>
-        {port.service} · <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 13 }}>{port.version}</span>
-      </div>
-
-      {port.cves?.length > 0 && (
-        <div>
-          <SectionLabel>CVEs ({port.cves.length})</SectionLabel>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
-            {port.cves.map(cve => (
-              <div key={cve.id} style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '8px 12px',
-                background: 'rgba(255,255,255,0.04)',
-                borderRadius: 6,
-                border: `1px solid ${SEVERITY_COLOR[cve.severity]}33`,
-              }}>
-                <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 12, color: '#ffffff' }}>{cve.id}</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 12, color: SEVERITY_COLOR[cve.severity], fontWeight: 700 }}>{cve.cvss_score}</span>
-                  <RiskBadge severity={cve.severity} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {port.findings?.length > 0 && (
-        <div>
-          <SectionLabel>Findings ({port.findings.length})</SectionLabel>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
-            {port.findings.map((f, i) => (
-              <div key={i} style={{
-                padding: '10px 12px',
-                background: 'rgba(255,255,255,0.04)',
-                borderRadius: 6,
-                border: '1px solid rgba(255,255,255,0.07)',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                  <RiskBadge severity={f.severity} />
-                  <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 10, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>{f.type}</span>
-                </div>
-                <div style={{ fontFamily: 'system-ui, sans-serif', fontSize: 13, color: 'rgba(255,255,255,0.7)', lineHeight: 1.5 }}>{f.detail}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {port.recommendations?.length > 0 && (
-        <div>
-          <SectionLabel>Recommendations</SectionLabel>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
-            {port.recommendations.map((r, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 0' }}>
-                <span style={{ marginTop: 1 }}><RiskBadge severity={r.priority} /></span>
-                <span style={{ fontFamily: 'system-ui, sans-serif', fontSize: 13, color: 'rgba(255,255,255,0.7)', lineHeight: 1.5 }}>{r.action}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {port.scripts_run?.length > 0 && (
-        <div>
-          <SectionLabel>Scripts Run</SectionLabel>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
-            {port.scripts_run.map((s, i) => {
-              const key = `${port.port}-${i}`
-              return (
-                <ScriptCard key={key} script={s} scriptKey={key}
-                  expanded={expandedScript === key}
-                  onToggle={() => setExpandedScript(expandedScript === key ? null : key)} />
-              )
-            })}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function CvePanel({ node }) {
-  // node.data = cve object
-  const cve = node.data
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div>
-        <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 16, fontWeight: 700, color: '#ffffff', marginBottom: 8, wordBreak: 'break-all' }}>
-          {cve.id}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 36, fontWeight: 800, color: SEVERITY_COLOR[cve.severity] }}>
-            {cve.cvss_score}
-          </span>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <RiskBadge severity={cve.severity} />
-            <span style={{ fontFamily: 'system-ui, sans-serif', fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>CVSS Score</span>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <SectionLabel>Description</SectionLabel>
-        <p style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.75)', lineHeight: 1.6, marginTop: 8 }}>
-          {cve.description}
-        </p>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-        <div style={{ padding: '10px 12px', background: 'rgba(255,255,255,0.04)', borderRadius: 6, border: '1px solid rgba(255,255,255,0.07)' }}>
-          <div style={{ fontFamily: 'system-ui, sans-serif', fontSize: 10, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Affected</div>
-          <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 12, color: '#ef4444' }}>{cve.affected_version}</div>
-        </div>
-        <div style={{ padding: '10px 12px', background: 'rgba(255,255,255,0.04)', borderRadius: 6, border: '1px solid rgba(255,255,255,0.07)' }}>
-          <div style={{ fontFamily: 'system-ui, sans-serif', fontSize: 10, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Patch</div>
-          <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 12, color: '#22c55e' }}>{cve.patch_version ?? 'No patch'}</div>
-        </div>
-      </div>
-
-      {cve.exploit_available && (
-        <div style={{ padding: '14px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444', display: 'inline-block' }} />
-            <span style={{ fontFamily: 'system-ui, sans-serif', fontSize: 12, fontWeight: 700, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-              Public Exploit Available
-            </span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {cve.exploits?.map((ex, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{
-                  padding: '2px 8px',
-                  background: ex.confirmed ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.06)',
-                  border: `1px solid ${ex.confirmed ? '#ef4444' : 'rgba(255,255,255,0.1)'}`,
-                  borderRadius: 10,
-                  fontFamily: 'system-ui, sans-serif',
-                  fontSize: 10,
-                  color: ex.confirmed ? '#ef4444' : 'rgba(255,255,255,0.5)',
-                  fontWeight: 600,
-                }}>
-                  {ex.source}
-                </span>
-                <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>{ex.name}</span>
-                {ex.confirmed && <span style={{ fontFamily: 'system-ui, sans-serif', fontSize: 10, color: '#ef4444' }}>✓ confirmed</span>}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <a
-        href={`https://nvd.nist.gov/vuln/detail/${cve.id}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 6,
-          fontFamily: 'system-ui, sans-serif',
-          fontSize: 13,
-          color: '#4a9eff',
-          textDecoration: 'underline',
-          textDecorationColor: 'rgba(74,158,255,0.4)',
-        }}
-      >
-        View on NVD ↗
-      </a>
-    </div>
-  )
-}
-
-function ScriptsPanel({ node, expandedScript, setExpandedScript }) {
-  // node.data = port.scripts_run array
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ fontFamily: 'system-ui, sans-serif', fontSize: 15, fontWeight: 600, color: '#ffffff' }}>
-        Scripts run on port {node.portNumber}
-      </div>
-      {node.data.map((s, i) => {
-        const key = `scripts-panel-${i}`
-        return (
-          <ScriptCard key={key} script={s} scriptKey={key}
-            expanded={expandedScript === key}
-            onToggle={() => setExpandedScript(expandedScript === key ? null : key)} />
-        )
-      })}
-    </div>
-  )
-}
-
-function FindingsPanel({ node }) {
-  // node.data = port.findings array
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ fontFamily: 'system-ui, sans-serif', fontSize: 15, fontWeight: 600, color: '#ffffff' }}>
-        Findings on port {node.portNumber}
-      </div>
-      {node.data.map((f, i) => (
-        <div key={i} style={{
-          padding: '12px 14px',
-          background: 'rgba(255,255,255,0.04)',
-          borderRadius: 8,
-          border: `1px solid ${SEVERITY_COLOR[f.severity]}33`,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            <RiskBadge severity={f.severity} />
-            <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 10, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>{f.type}</span>
-          </div>
-          <div style={{ fontFamily: 'system-ui, sans-serif', fontSize: 13, color: 'rgba(255,255,255,0.75)', lineHeight: 1.6 }}>{f.detail}</div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function FixPanel({ node }) {
-  // node.data = port.recommendations array
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ fontFamily: 'system-ui, sans-serif', fontSize: 15, fontWeight: 600, color: '#ffffff' }}>
-        Recommendations for port {node.portNumber}
-      </div>
-      {node.data.map((r, i) => (
-        <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-          {/* Decorative checkbox */}
-          <svg width="16" height="16" viewBox="0 0 16 16" style={{ flexShrink: 0, marginTop: 1 }}>
-            <rect x="1" y="1" width="14" height="14" rx="3" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" />
-          </svg>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <RiskBadge severity={r.priority} />
-            <span style={{ fontFamily: 'system-ui, sans-serif', fontSize: 13, color: 'rgba(255,255,255,0.75)', lineHeight: 1.5 }}>{r.action}</span>
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-// Reusable script card used in both PortPanel and ScriptsPanel
-function ScriptCard({ script, scriptKey, expanded, onToggle }) {
+function StatBox({ label, value, color }) {
   return (
     <div style={{
-      padding: '12px 14px',
-      background: 'rgba(255,255,255,0.04)',
-      borderRadius: 8,
-      border: '1px solid rgba(255,255,255,0.07)',
+      background: 'rgba(255,255,255,0.02)',
+      border: '1px solid rgba(255,255,255,0.05)',
+      borderRadius: 16,
+      padding: '20px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 8,
+      position: 'relative',
+      overflow: 'hidden'
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-        <span style={{
-          padding: '3px 10px',
-          background: 'rgba(74,158,255,0.1)',
-          border: '1px solid rgba(74,158,255,0.3)',
-          borderRadius: 12,
-          fontFamily: '"JetBrains Mono", monospace',
-          fontSize: 11,
-          color: '#4a9eff',
-          fontWeight: 600,
-        }}>
-          {script.tool}
-        </span>
-        <button
-          onClick={onToggle}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: 'rgba(255,255,255,0.4)',
-            cursor: 'pointer',
-            fontFamily: 'system-ui, sans-serif',
-            fontSize: 11,
-            padding: '2px 6px',
-          }}
-        >
-          {expanded ? 'hide output' : 'show output'}
-        </button>
+      {/* Decorative gradient blob */}
+      <div style={{
+        position: 'absolute',
+        top: -20,
+        right: -20,
+        width: 80,
+        height: 80,
+        background: `radial-gradient(circle, ${color}22 0%, transparent 70%)`,
+        filter: 'blur(10px)'
+      }} />
+      <div style={{ fontFamily: 'system-ui, sans-serif', fontSize: 12, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        {label}
       </div>
-      <pre style={{
-        margin: 0,
-        fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-        fontSize: 11,
-        color: '#10b981',
-        background: '#0a0a0a',
-        padding: '8px 10px',
-        borderRadius: 6,
-        overflowX: 'auto',
-        whiteSpace: 'pre-wrap',
-        wordBreak: 'break-all',
-      }}>
-        {script.command}
-      </pre>
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            style={{ overflow: 'hidden' }}
-          >
-            <pre style={{
-              margin: '8px 0 0',
-              fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-              fontSize: 11,
-              color: 'rgba(255,255,255,0.6)',
-              background: '#0a0a0a',
-              padding: '8px 10px',
-              borderRadius: 6,
-              maxHeight: 200,
-              overflowY: 'auto',
-              whiteSpace: 'pre-wrap',
-              wordBreak: 'break-all',
-            }}>
-              {script.output}
-            </pre>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 24, fontWeight: 700, color, position: 'relative', zIndex: 1 }}>
+        {value}
+      </div>
     </div>
   )
 }
-
-function SectionLabel({ children }) {
-  return (
-    <div style={{
-      fontFamily: 'system-ui, sans-serif',
-      fontSize: 10,
-      fontWeight: 700,
-      color: 'rgba(255,255,255,0.35)',
-      textTransform: 'uppercase',
-      letterSpacing: '0.1em',
-    }}>
-      {children}
-    </div>
-  )
-}
-
-// ─── MAIN COMPONENT ─────────────────────────────────────────────────────────
 
 export default function ReportActiveVisual() {
-  // TODO: replace with actual scan data from Supabase
-  // const { data } = await supabase.from('scans')
-  //   .select('report').eq('id', scanId).single()
-  // setScanData(data.report)
   const [scanData] = useState(SCAN_OUTPUT)
-
-  const [visibleNodes, setVisibleNodes] = useState([])
-  const [visibleLinks, setVisibleLinks] = useState([])
-  const [selectedNode, setSelectedNode] = useState(null)
-  const [expandedScript, setExpandedScript] = useState(null)
-  const [graphWidth, setGraphWidth] = useState(window.innerWidth)
-  const [currentZoom, setCurrentZoom] = useState(1)
-
-  const graphRef = useRef(null)
-  const containerRef = useRef(null)
-  const frameRef = useRef(0)        // rAF timestamp — read by nodeCanvasObject for pulse animation
-  const pulseTimerRef = useRef(null)
-
-  // Pre-compute all nodes/links once; slice into them during animation sequence
-  const { nodes: allNodes, links: allLinks } = useMemo(
-    () => buildGraphData(scanData),
-    [scanData]
-  )
-
-  // Top-bar stats derived from scanData.summary
-  const stats = useMemo(() => ({
-    score: scanData.overall_score,
-    riskLevel: scanData.risk_level,
-    critical: scanData.summary.critical,
-    ports: scanData.summary.open_ports.length,
-    exploits: scanData.summary.confirmed_exploits,
-  }), [scanData])
-
-  // ── Animation sequence: nodes reveal in cinematic order ──────────────────
-  useEffect(() => {
-    const timers = []
-
-    // T=0ms — target node glows in first
-    timers.push(setTimeout(() => {
-      const targetNode = allNodes.find(n => n.id === 'target')
-      if (targetNode) setVisibleNodes([targetNode])
-    }, 0))
-
-    // T=600ms — port nodes shoot out one by one, 150ms apart
-    const portNodes = allNodes.filter(n => n.type === 'port')
-    portNodes.forEach((pn, i) => {
-      timers.push(setTimeout(() => {
-        setVisibleNodes(prev => prev.find(n => n.id === pn.id) ? prev : [...prev, pn])
-        setVisibleLinks(prev => {
-          const lnk = allLinks.find(l => l.source === 'target' && l.target === pn.id)
-          return lnk && !prev.find(l => l.target === pn.id) ? [...prev, lnk] : prev
-        })
-      }, 600 + i * 150))
-    })
-
-    // T=1400ms — scripts/findings/fix satellites radiate, 80ms apart
-    const satNodes = allNodes.filter(n => ['scripts', 'findings', 'fix'].includes(n.type))
-    satNodes.forEach((sn, i) => {
-      timers.push(setTimeout(() => {
-        setVisibleNodes(prev => prev.find(n => n.id === sn.id) ? prev : [...prev, sn])
-        setVisibleLinks(prev => {
-          const lnk = allLinks.find(l => l.target === sn.id)
-          return lnk && !prev.find(l => l.target === sn.id) ? [...prev, lnk] : prev
-        })
-      }, 1400 + i * 80))
-    })
-
-    // T=2000ms — CVE nodes last, critical first, 100ms apart
-    const cveNodes = allNodes
-      .filter(n => n.type === 'cve')
-      .sort((a, b) => {
-        const order = { Critical: 0, High: 1, Medium: 2, Low: 3 }
-        return (order[a.severity] ?? 4) - (order[b.severity] ?? 4)
-      })
-    cveNodes.forEach((cn, i) => {
-      timers.push(setTimeout(() => {
-        setVisibleNodes(prev => prev.find(n => n.id === cn.id) ? prev : [...prev, cn])
-        setVisibleLinks(prev => {
-          const lnk = allLinks.find(l => l.target === cn.id)
-          return lnk && !prev.find(l => l.target === cn.id) ? [...prev, lnk] : prev
-        })
-      }, 2000 + i * 100))
-    })
-
-    return () => timers.forEach(clearTimeout)
-  }, [allNodes, allLinks])
-
-  // ── rAF loop: increments frameRef.current each frame for CVE pulse rings ──
-  useEffect(() => {
-    const tick = (ts) => {
-      frameRef.current = ts
-      pulseTimerRef.current = requestAnimationFrame(tick)
-    }
-    pulseTimerRef.current = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(pulseTimerRef.current)
-  }, [])
-
-  // ── graphWidth: shrink canvas when detail panel opens ──────────────────────
-  useEffect(() => {
-    setGraphWidth(selectedNode ? window.innerWidth - 380 : window.innerWidth)
-  }, [selectedNode])
-
-  useEffect(() => {
-    const onResize = () => {
-      setGraphWidth(selectedNode ? window.innerWidth - 380 : window.innerWidth)
-    }
-    window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
-  }, [selectedNode])
-
-  // ── Custom canvas node renderer ───────────────────────────────────────────
-  // Uses frameRef (a ref, not state) so sine-wave pulses don't trigger re-renders.
-  const nodeCanvasObject = useCallback((node, ctx) => {
-    const { x, y, type, size, label, sublabel, pulsing } = node
-    const baseR = (size ?? 10) / 2
-
-    ctx.save()
-
-    switch (type) {
-      case 'target': {
-        // Measure actual text width so the circle always fits the IP string
-        const fontSize = 11
-        ctx.font = `bold ${fontSize}px "JetBrains Mono", "Fira Code", monospace`
-        const textW = ctx.measureText(label).width
-        const r = Math.max(baseR, textW / 2 + 10) // 10px padding on each side
-
-        // Transparent fill, white glowing stroke
-        ctx.beginPath()
-        ctx.arc(x, y, r, 0, Math.PI * 2)
-        ctx.shadowBlur = 18
-        ctx.shadowColor = 'rgba(255,255,255,0.45)'
-        ctx.strokeStyle = 'rgba(255,255,255,0.9)'
-        ctx.lineWidth = 2
-        ctx.stroke()
-        ctx.shadowBlur = 0
-
-        // IP label inside
-        ctx.fillStyle = '#ffffff'
-        ctx.textAlign = 'center'
-        ctx.textBaseline = 'middle'
-        ctx.fillText(label, x, y)
-        break
-      }
-
-      case 'port': {
-        // Transparent fill, white outline; port number + service below
-        ctx.beginPath()
-        ctx.arc(x, y, baseR, 0, Math.PI * 2)
-        ctx.strokeStyle = 'rgba(255,255,255,0.75)'
-        ctx.lineWidth = 1.5
-        ctx.stroke()
-
-        const portFontSize = Math.max(5, baseR * 0.7)
-        ctx.fillStyle = '#ffffff'
-        ctx.font = `bold ${portFontSize}px "JetBrains Mono", "Fira Code", monospace`
-        ctx.textAlign = 'center'
-        ctx.textBaseline = 'top'
-        ctx.fillText(label, x, y + baseR + 3)
-        if (sublabel) {
-          ctx.font = `${Math.max(4, baseR * 0.5)}px system-ui, -apple-system, sans-serif`
-          ctx.fillStyle = 'rgba(255,255,255,0.5)'
-          ctx.fillText(sublabel, x, y + baseR + 3 + portFontSize + 2)
-        }
-        break
-      }
-
-      case 'cve': {
-        // Transparent fill; white outline; pulse stroke weight/opacity for exploit CVEs
-        const t = frameRef.current
-        if (pulsing) {
-          // Pulse the stroke width and opacity on the main circle
-          const pulseAlpha = 0.55 + Math.sin(t * 0.003) * 0.4
-          const pulseWidth = 1.5 + Math.sin(t * 0.003) * 1.5
-          ctx.beginPath()
-          ctx.arc(x, y, baseR, 0, Math.PI * 2)
-          ctx.strokeStyle = `rgba(255,255,255,${pulseAlpha})`
-          ctx.lineWidth = pulseWidth
-          ctx.stroke()
-        } else {
-          ctx.beginPath()
-          ctx.arc(x, y, baseR, 0, Math.PI * 2)
-          ctx.strokeStyle = 'rgba(255,255,255,0.65)'
-          ctx.lineWidth = 1.5
-          ctx.stroke()
-        }
-
-        // Last 5 chars of CVE ID inside (e.g. "41773")
-        const shortId = label.slice(-5)
-        ctx.fillStyle = '#ffffff'
-        ctx.font = `bold ${Math.max(4, baseR * 0.55)}px "JetBrains Mono", monospace`
-        ctx.textAlign = 'center'
-        ctx.textBaseline = 'middle'
-        ctx.fillText(shortId, x, y)
-        if (sublabel) {
-          ctx.fillStyle = 'rgba(255,255,255,0.7)'
-          ctx.font = `${Math.max(4, baseR * 0.5)}px "JetBrains Mono", monospace`
-          ctx.textBaseline = 'top'
-          ctx.fillText(sublabel, x, y + baseR + 2)
-        }
-        break
-      }
-
-      case 'scripts':
-      case 'findings':
-      case 'fix': {
-        // Transparent fill, white outline; letter inside (S/F/R); count below
-        ctx.beginPath()
-        ctx.arc(x, y, baseR, 0, Math.PI * 2)
-        ctx.strokeStyle = 'rgba(255,255,255,0.6)'
-        ctx.lineWidth = 1.5
-        ctx.stroke()
-
-        const letter = type === 'scripts' ? 'S' : type === 'findings' ? 'F' : 'R'
-        ctx.fillStyle = '#ffffff'
-        ctx.font = `bold ${Math.max(4, baseR * 0.8)}px system-ui, -apple-system, sans-serif`
-        ctx.textAlign = 'center'
-        ctx.textBaseline = 'middle'
-        ctx.fillText(letter, x, y)
-        if (sublabel) {
-          ctx.fillStyle = 'rgba(255,255,255,0.5)'
-          ctx.font = `${Math.max(3, baseR * 0.6)}px system-ui, -apple-system, sans-serif`
-          ctx.textBaseline = 'top'
-          ctx.fillText(sublabel, x, y + baseR + 2)
-        }
-        break
-      }
-
-      default:
-        ctx.beginPath()
-        ctx.arc(x, y, baseR, 0, Math.PI * 2)
-        ctx.strokeStyle = 'rgba(255,255,255,0.5)'
-        ctx.lineWidth = 1.5
-        ctx.stroke()
-    }
-
-    ctx.restore()
-  }, []) // frameRef is a ref — .current is always current even with empty deps
-
-  // Glowing cable links using the shader's blue-green palette, saturated and thick
-  const linkCanvasObject = useCallback((link, ctx) => {
-    const start = link.source
-    const end = link.target
-    if (typeof start !== 'object' || typeof end !== 'object') return
-    if (start.x == null || end.x == null) return
-
-    ctx.save()
-    ctx.beginPath()
-    ctx.moveTo(start.x, start.y)
-    ctx.lineTo(end.x, end.y)
-    ctx.strokeStyle = 'rgba(30, 115, 200, 0.8)'
-    ctx.lineWidth = 2.5
-    ctx.lineCap = 'round'
-    ctx.shadowColor = 'rgba(30, 115, 200, 0.55)'
-    ctx.shadowBlur = 8
-    ctx.stroke()
-    ctx.restore()
-  }, [])
-
-  const handleNodeClick = useCallback((node) => {
-    setSelectedNode(node)
-  }, [])
-
-  const handleBackgroundClick = useCallback(() => {
-    setSelectedNode(null)
-  }, [])
-
-  const handleZoomIn = useCallback(() => {
-    const z = Math.min(currentZoom * 1.4, 8)
-    graphRef.current?.zoom(z, 400)
-    setCurrentZoom(z)
-  }, [currentZoom])
-
-  const handleZoomOut = useCallback(() => {
-    const z = Math.max(currentZoom / 1.4, 0.1)
-    graphRef.current?.zoom(z, 400)
-    setCurrentZoom(z)
-  }, [currentZoom])
+  const navigate = useNavigate()
+  
+  const [selectedPort, setSelectedPort] = useState(null)
+  const [selectedVuln, setSelectedVuln] = useState(null)
 
   return (
-    <div style={{
-      position: 'relative',
-      width: '100vw',
-      height: '100vh',
-      overflow: 'hidden',
-      background: '#070a0d',
-    }}>
-
-      {/* Shader background — same as every other page in the app */}
+    <div style={{ position: 'relative', height: '100vh', width: '100vw', overflow: 'hidden', background: '#070a0d', display: 'flex' }}>
       <ShaderBackground />
 
-      {/* Graph canvas container — narrows when detail panel opens */}
-      <div
-        ref={containerRef}
+      {/* Global App Navbar */}
+      <nav
         style={{
           position: 'absolute',
           top: 0,
           left: 0,
-          width: graphWidth,
-          height: '100vh',
-          transition: 'width 0.3s ease',
-          zIndex: 1,
+          right: 0,
+          height: 64,
+          zIndex: 50,
+          background: 'linear-gradient(180deg, rgba(30, 35, 42, 0.6) 0%, rgba(20, 25, 30, 0.2) 100%)',
+          backdropFilter: 'blur(16px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '0 32px',
         }}
       >
-        <ForceGraph2D
-          ref={graphRef}
-          graphData={{ nodes: visibleNodes, links: visibleLinks }}
-          nodeCanvasObject={nodeCanvasObject}
-          nodeCanvasObjectMode={() => 'replace'}
-          linkCanvasObject={linkCanvasObject}
-          linkCanvasObjectMode={() => 'replace'}
-          onNodeClick={handleNodeClick}
-          onBackgroundClick={handleBackgroundClick}
-          backgroundColor="transparent"
-          width={graphWidth}
-          height={window.innerHeight}
-          nodeRelSize={1}
-          cooldownTicks={80}
-          d3AlphaDecay={0.02}
-          d3VelocityDecay={0.3}
-        />
-      </div>
-
-      {/* Top-left: stats bar */}
-      <div style={{
-        position: 'fixed',
-        top: 20,
-        left: 20,
-        zIndex: 10,
-        display: 'flex',
-        gap: 8,
-        flexWrap: 'wrap',
-      }}>
-        <StatPill label={`Score ${stats.score}/10`} borderColor={SEVERITY_COLOR[stats.riskLevel]} />
-        <StatPill label={`${stats.critical} Critical`} borderColor="#ef4444" />
-        <StatPill label={`${stats.ports} Ports`} borderColor="rgba(255,255,255,0.2)" />
-        <StatPill label={`${stats.exploits} Confirmed Exploits`} borderColor="#f97316" />
-      </div>
-
-      {/* Top-right: developer mode toggle */}
-      {/* TODO: wire to non-developer report view when that route exists */}
-      <div style={{
-        position: 'fixed',
-        top: 20,
-        right: selectedNode ? 400 : 20,
-        zIndex: 10,
-        transition: 'right 0.3s ease',
-      }}>
-        <motion.button
-          whileHover={{ backgroundColor: '#ffffff', color: '#0a0a0a', borderColor: '#ffffff' }}
-          initial={{ backgroundColor: 'rgba(255,255,255,0.03)', color: '#ffffff', borderColor: 'rgba(255,255,255,0.15)' }}
-          transition={{ duration: 0.2 }}
-          style={{
-            padding: '8px 16px',
-            border: '1px solid rgba(255,255,255,0.15)',
-            borderRadius: 6,
-            fontFamily: 'system-ui, -apple-system, sans-serif',
-            fontSize: 13,
-            fontWeight: 500,
-            cursor: 'pointer',
-            letterSpacing: '0.01em',
-            backdropFilter: 'blur(4px)',
-          }}
-        >
-          Developer Mode
-        </motion.button>
-      </div>
-
-      {/* Bottom-left: zoom controls */}
-      <div style={{
-        position: 'fixed',
-        bottom: 24,
-        left: 24,
-        zIndex: 10,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 8,
-      }}>
-        <ZoomButton label="+" onClick={handleZoomIn} />
-        <ZoomButton label="−" onClick={handleZoomOut} />
-      </div>
-
-      {/* Slide-in detail panel */}
-      <AnimatePresence>
-        {selectedNode && (
-          <motion.div
-            key="detail-panel"
-            initial={{ x: 380, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 380, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 280, damping: 30 }}
+        <div style={{
+          width: '100%',
+          maxWidth: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          fontFamily: 'system-ui, -apple-system, sans-serif'
+        }}>
+          <div style={{ fontSize: 18, fontWeight: 600, color: '#ffffff', letterSpacing: '-0.02em', cursor: 'pointer' }} onClick={() => navigate('/scan')}>
+            ShieldScan
+          </div>
+          <motion.button
+            onClick={() => navigate('/scan')}
+            whileHover={{ backgroundColor: '#ffffff', color: '#0a0a0a', borderColor: '#ffffff' }}
+            initial={{ backgroundColor: 'rgba(255, 255, 255, 0.03)', color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.15)' }}
+            transition={{ duration: 0.2 }}
             style={{
-              position: 'fixed',
-              top: 0,
-              right: 0,
-              width: 380,
-              height: '100vh',
-              background: 'rgba(8, 14, 20, 0.88)',
-              backdropFilter: 'blur(20px)',
-              borderLeft: '1px solid rgba(255,255,255,0.09)',
-              zIndex: 20,
-              display: 'flex',
-              flexDirection: 'column',
-              overflowY: 'hidden',
+              fontFamily: 'system-ui, sans-serif',
+              fontSize: 14,
+              fontWeight: 500,
+              padding: '8px 20px',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              borderRadius: 6,
+              cursor: 'pointer',
+              outline: 'none',
+              backdropFilter: 'blur(4px)',
             }}
           >
-            {/* Panel header */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '18px 24px 14px',
-              borderBottom: '1px solid rgba(255,255,255,0.07)',
-              flexShrink: 0,
-            }}>
-              <span style={{
-                fontFamily: 'system-ui, -apple-system, sans-serif',
-                fontSize: 11,
-                fontWeight: 700,
-                color: 'rgba(255,255,255,0.35)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em',
+            Back to Console
+          </motion.button>
+        </div>
+      </nav>
+
+      {/* Main Document Box Container */}
+      <motion.div
+        initial={{ x: 0 }}
+        animate={{ x: selectedPort ? '-23vw' : '0vw' }}
+        transition={{ type: 'spring', stiffness: 220, damping: 28 }}
+        style={{
+          position: 'absolute',
+          inset: '64px 0 0 0',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          padding: '40px 32px',
+          zIndex: 10,
+          overflowY: 'auto'
+        }}
+      >
+        <motion.div
+           initial={{ opacity: 0, y: 20 }}
+           animate={{ opacity: 1, y: 0 }}
+           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+           style={{
+             width: '100%',
+             maxWidth: 820,
+             background: 'transparent',
+             backdropFilter: 'blur(8px)',
+             border: '1px solid rgba(255, 255, 255, 0.08)',
+             borderRadius: 24,
+             padding: '48px 56px',
+             color: '#ffffff',
+             boxShadow: '0 30px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)',
+             marginBottom: 64, 
+           }}
+        >
+          {/* Header Row */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 48 }}>
+            <div>
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                background: 'rgba(255,255,255,0.06)',
+                padding: '6px 14px',
+                borderRadius: 20,
+                border: '1px solid rgba(255,255,255,0.1)',
+                marginBottom: 20
               }}>
-                {selectedNode.type}
-              </span>
-              <motion.button
-                onClick={() => setSelectedNode(null)}
-                whileHover={{ backgroundColor: '#ffffff', color: '#0a0a0a', borderColor: '#ffffff' }}
-                initial={{ backgroundColor: 'rgba(255,255,255,0.03)', color: 'rgba(255,255,255,0.6)', borderColor: 'rgba(255,255,255,0.15)' }}
-                transition={{ duration: 0.2 }}
-                style={{
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  borderRadius: 6,
-                  padding: '4px 10px',
-                  cursor: 'pointer',
-                  fontSize: 16,
-                  lineHeight: 1,
-                  fontFamily: 'system-ui, -apple-system, sans-serif',
-                  backdropFilter: 'blur(4px)',
-                }}
-              >
-                ×
-              </motion.button>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ffffff' }} />
+                <span style={{ fontFamily: 'system-ui, sans-serif', fontSize: 13, fontWeight: 600, letterSpacing: '0.04em', color: '#ffffff' }}>
+                  {scanData.scan_mode.toUpperCase()} SCAN CAPTURE
+                </span>
+              </div>
+              <h1 style={{
+                fontFamily: 'system-ui, sans-serif',
+                fontSize: 36,
+                fontWeight: 600,
+                letterSpacing: '-0.02em',
+                margin: '0 0 12px 0'
+              }}>Vulnerability Report</h1>
+              <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 16, color: 'rgba(255,255,255,0.5)' }}>
+                Target IP: <span style={{ color: '#ffffff', fontWeight: 600 }}>{scanData.target}</span>
+              </div>
+            </div>
+            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+              <div style={{ fontFamily: 'system-ui, sans-serif', fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>
+                Captured On
+              </div>
+              <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 14, color: '#ffffff', opacity: 0.9 }}>
+                {new Date(scanData.timestamp).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+              </div>
+            </div>
+          </div>
+
+          {/* Summary Stats Row */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: 16,
+            marginBottom: 48,
+            paddingBottom: 48,
+            borderBottom: '1px solid rgba(255,255,255,0.1)'
+          }}>
+            <StatBox label="Overall Risk" value={scanData.risk_level} color={SEVERITY_COLOR[scanData.risk_level]} />
+            <StatBox label="Threat Score" value={`${scanData.overall_score}/10`} color="#ffffff" />
+            <StatBox label="Open Ports" value={scanData.summary.open_ports.length} color="#ffffff" />
+            <StatBox label="Critical CVEs" value={scanData.summary.critical} color={SEVERITY_COLOR['Critical']} />
+          </div>
+
+          {/* Ports List */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 24 }}>
+              <h2 style={{
+                fontFamily: 'system-ui, sans-serif',
+                fontSize: 22,
+                fontWeight: 600,
+                letterSpacing: '-0.01em',
+                margin: 0
+              }}>Discovered Attack Port #</h2>
+              <span style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.4)' }}>Select a port to investigate details</span>
             </div>
 
-            {/* Scrollable panel content */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px 40px' }}>
-              <PanelContent
-                node={selectedNode}
-                expandedScript={expandedScript}
-                setExpandedScript={setExpandedScript}
-              />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {scanData.ports.map((port, i) => {
+                const isActive = selectedPort && selectedPort.port === port.port;
+                return (
+                  <motion.div
+                    key={port.port}
+                    onClick={() => {
+                      setSelectedPort(isActive ? null : port);
+                      setSelectedVuln(null);
+                    }}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.4, delay: i * 0.1 }}
+                    whileHover={{ scale: 1.01, backgroundColor: 'rgba(255,255,255,0.06)' }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '24px',
+                      background: isActive ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)',
+                      border: '1px solid',
+                      borderColor: isActive ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.08)',
+                      borderRadius: 16,
+                      cursor: 'pointer',
+                      transition: 'border-color 0.2sease, box-shadow 0.2s ease, background 0.2s ease',
+                      boxShadow: isActive ? '0 8px 24px rgba(0,0,0,0.3)' : 'none'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+                      <div style={{
+                        fontFamily: '"JetBrains Mono", monospace',
+                        fontSize: 28,
+                        fontWeight: 700,
+                        color: SEVERITY_COLOR[port.risk] ?? '#ffffff',
+                        width: 80,
+                        letterSpacing: '-0.02em'
+                      }}>
+                        :{port.port}
+                      </div>
+                      <div>
+                        <div style={{ fontFamily: 'system-ui, sans-serif', fontSize: 18, fontWeight: 600, color: '#ffffff', marginBottom: 4 }}>
+                          {port.service.toUpperCase()} Service
+                        </div>
+                        <div style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.5)' }}>
+                          Version: {port.version}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                        <span style={{ fontFamily: 'system-ui, sans-serif', fontSize: 13, color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>
+                          {(port.cves?.length || 0) + (port.findings?.length || 0)} Vulnerabilities
+                        </span>
+                      </div>
+                      <motion.div style={{
+                        color: isActive ? '#ffffff' : 'rgba(255,255,255,0.4)',
+                        padding: '8px',
+                        background: isActive ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          {isActive ? <polyline points="9 18 15 12 9 6"></polyline> : <polyline points="9 18 15 12 9 6"></polyline>}
+                        </svg>
+                      </motion.div>
+                    </div>
+                  </motion.div>
+                )
+              })}
             </div>
-          </motion.div>
+          </div>
+        </motion.div>
+      </motion.div>
+
+      {/* Central Network Lines Overlay */}
+      <AnimatePresence mode="wait">
+        {selectedPort && (
+           <WireNetwork key="wire-network" selectedPort={selectedPort} selectedVuln={selectedVuln} setSelectedVuln={setSelectedVuln} />
         )}
       </AnimatePresence>
+
     </div>
   )
 }
+
+function WireNetwork({ selectedPort, selectedVuln, setSelectedVuln }) {
+  if (!selectedPort) return null;
+
+  const vulnerabilities = [
+    ...(selectedPort.findings || []).map((f, i) => ({ id: `f-${i}`, type: 'Finding', title: f.type.replace(/_/g, ' ').toUpperCase(), detail: f.detail, severity: f.severity })),
+    ...(selectedPort.cves || []).map((cve, i) => ({ id: `cve-${i}`, type: 'CVE', title: cve.id, detail: cve.description, severity: cve.severity, data: cve }))
+  ];
+
+  if (vulnerabilities.length === 0) {
+    vulnerabilities.push({ id: 'none', type: 'System', title: 'CLEAN', detail: 'No vulnerabilities discovered on this port.', severity: 'Low' });
+  }
+
+  const ITEM_HEIGHT = 100;
+  const BRANCH_X_START = 60; 
+  const BRANCH_X_END = 80;
+  const TEXT_LINE_WIDTH = 350;
+  const TOTAL_HEIGHT = vulnerabilities.length * ITEM_HEIGHT;
+  const CENTER_Y = TOTAL_HEIGHT / 2;
+
+  const generatePath = (i) => {
+    const targetY = (i * ITEM_HEIGHT) + (ITEM_HEIGHT / 2);
+    // Smooth angled branch lines like a circuit board
+    return `M 0,${CENTER_Y} L ${BRANCH_X_START},${CENTER_Y} L ${BRANCH_X_START},${targetY} L ${BRANCH_X_START + BRANCH_X_END + TEXT_LINE_WIDTH},${targetY}`;
+  }
+
+  return (
+    <motion.div
+       initial={{ opacity: 0 }}
+       animate={{ opacity: 1 }}
+       exit={{ opacity: 0 }}
+       style={{ 
+         position: 'absolute', 
+         left: '46vw', 
+         top: '25%', 
+         zIndex: 0
+       }}
+    >
+      {/* Background SVG routing the lines */}
+      <svg width={BRANCH_X_START + BRANCH_X_END + TEXT_LINE_WIDTH + 60} height={TOTAL_HEIGHT} style={{ overflow: 'visible', position: 'absolute', left: 0, top: 0 }}>
+        {vulnerabilities.map((v, i) => {
+          return (
+             <motion.path
+                key={`path-${v.id}`}
+                d={generatePath(i)}
+                stroke="rgba(255,255,255,0.7)"
+                strokeWidth="2"
+                fill="none"
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: 1 }}
+                transition={{ duration: 0.8, ease: 'easeOut', delay: i * 0.1 }}
+             />
+          )
+        })}
+      </svg>
+
+      {/* Trunk Port Label */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2 }}
+        style={{
+           position: 'absolute',
+           left: 0,
+           top: CENTER_Y - 30, // Directly above the trunk line
+           fontFamily: '"JetBrains Mono", monospace',
+           fontSize: 16,
+           fontWeight: 700,
+           color: '#ffffff',
+           letterSpacing: '0.1em'
+        }}
+      >
+        PORT {selectedPort.port}
+      </motion.div>
+
+      {/* Foreground React Branch Content */}
+      <div style={{ position: 'relative', width: BRANCH_X_START + BRANCH_X_END + TEXT_LINE_WIDTH, height: TOTAL_HEIGHT }}>
+        {vulnerabilities.map((v, i) => {
+          const targetY = (i * ITEM_HEIGHT) + (ITEM_HEIGHT / 2);
+          const textX = BRANCH_X_START + BRANCH_X_END;
+          const isSelected = selectedVuln && selectedVuln.id === v.id;
+
+          return (
+            <motion.div
+              key={`content-${v.id}`}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.6 + i * 0.1 }}
+              style={{
+                 position: 'absolute',
+                 left: textX + 16,
+                 top: targetY - 48, // Placed precisely above the horizontal wire
+                 width: TEXT_LINE_WIDTH - 32,
+                 display: 'flex',
+                 flexDirection: 'column',
+                 gap: 4
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ fontFamily: 'system-ui, sans-serif', fontSize: 13, fontWeight: 700, color: '#ffffff', letterSpacing: '0.04em', paddingRight: 10 }}>
+                  {v.title}
+                </div>
+                <RiskBadge severity={v.severity} />
+              </div>
+              <div style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.7)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {v.detail}
+              </div>
+
+              {/* Action Icon Node at the very end of this wire */}
+              <motion.div
+                 onClick={() => setSelectedVuln(isSelected ? null : v)}
+                 whileHover={{ scale: 1.1, backgroundColor: 'rgba(255,255,255,0.1)' }}
+                 whileTap={{ scale: 0.95 }}
+                 style={{
+                    position: 'absolute',
+                    right: -36, 
+                    bottom: -20, 
+                    width: 32,
+                    height: 32,
+                    borderRadius: '50%',
+                    border: `1px solid ${isSelected ? '#ffffff' : 'rgba(255,255,255,0.3)'}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: isSelected ? 'rgba(255,255,255,0.15)' : 'rgba(10,15,20,0.8)',
+                    backdropFilter: 'blur(4px)',
+                    cursor: 'pointer',
+                    zIndex: 20
+                 }}
+              >
+                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    {isSelected ? <line x1="18" y1="6" x2="6" y2="18"></line> : <line x1="5" y1="12" x2="19" y2="12"></line>}
+                    {isSelected ? <line x1="6" y1="6" x2="18" y2="18"></line> : <polyline points="12 5 19 12 12 19"></polyline>}
+                 </svg>
+              </motion.div>
+            </motion.div>
+          )
+        })}
+      </div>
+      
+      {/* Level 3: The Trust Cards */}
+      <AnimatePresence>
+        {selectedVuln && (
+           <motion.div
+             initial={{ opacity: 0, x: -30 }}
+             animate={{ opacity: 1, x: 0 }}
+             exit={{ opacity: 0, x: 20 }}
+             transition={{ type: 'spring', stiffness: 280, damping: 25 }}
+             style={{
+                position: 'absolute',
+                left: BRANCH_X_START + BRANCH_X_END + TEXT_LINE_WIDTH + 60,
+                top: Math.max(-100, (vulnerabilities.findIndex(v => v.id === selectedVuln.id) * ITEM_HEIGHT) + (ITEM_HEIGHT / 2) - 180),
+                width: 400,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 16,
+                zIndex: 30
+             }}
+           >
+              {/* Short line connecting selected node to cards */}
+              <svg style={{ position: 'absolute', left: -50, top: 180, overflow: 'visible', zIndex: -1 }}>
+                 <motion.path 
+                    d="M 0,0 L 40,0" 
+                    stroke="rgba(255,255,255,0.8)" strokeWidth="2" fill="none"
+                    initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.4 }}
+                 />
+              </svg>
+              
+              <TrustCards vuln={selectedVuln} port={selectedPort} />
+           </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  )
+}
+
+function TrustCards({ vuln, port }) {
+  return (
+    <>
+       {/* Card 1: Evidence / Description */}
+       <div style={{ background: 'rgba(12, 16, 22, 0.85)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 16, padding: '24px', boxShadow: '0 10px 30px rgba(0,0,0,0.3)' }}>
+          <div style={{ fontFamily: 'system-ui, sans-serif', fontSize: 11, fontWeight: 700, color: '#4a9eff', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
+            Observation
+          </div>
+          <div style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: '#ffffff', lineHeight: 1.5, marginBottom: 16 }}>
+            {vuln.type === 'CVE' ? 'Our scanners matched this public CVE record against the detected service version.' : 'Our security scanner flagged this directly over the network during active inspection.'}
+          </div>
+          <div style={{ background: 'rgba(0,0,0,0.4)', borderRadius: 8, padding: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
+             <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 13, color: 'rgba(255,255,255,0.85)', lineHeight: 1.5 }}>
+                {vuln.detail}
+             </div>
+          </div>
+       </div>
+       
+       {/* Card 2: Threat Level & Effort */}
+       <div style={{ background: 'rgba(12, 16, 22, 0.85)', backdropFilter: 'blur(20px)', border: `1px solid ${SEVERITY_COLOR[vuln.severity]}55`, borderRadius: 16, padding: '24px', boxShadow: '0 10px 30px rgba(0,0,0,0.3)' }}>
+          <div style={{ fontFamily: 'system-ui, sans-serif', fontSize: 11, fontWeight: 700, color: SEVERITY_COLOR[vuln.severity], letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 12 }}>
+            Exploitability
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 12 }}>
+             <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 28, fontWeight: 700, color: SEVERITY_COLOR[vuln.severity] }}>
+                {vuln.type === 'CVE' ? vuln.data.cvss_score : vuln.severity}
+             </div>
+             <RiskBadge severity={vuln.severity} />
+          </div>
+          <div style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.7)', lineHeight: 1.5 }}>
+             {vuln.severity === 'Critical' ? 'A hacker does not require special skills to attack this; automated exploit scripts exist publicly online.' : 
+              vuln.severity === 'High' ? 'This represents a significant exposure that an attacker will aggressively target.' :
+              'Requires more effort to exploit, but can be chained with other attacks.'}
+          </div>
+       </div>
+
+       {/* Card 3: The Fix */}
+       <div style={{ background: '#0a0a0a', border: '1px solid rgba(34, 197, 94, 0.4)', borderRadius: 16, padding: '24px', boxShadow: '0 10px 30px rgba(0,0,0,0.3)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+             <div style={{ fontFamily: 'system-ui, sans-serif', fontSize: 11, fontWeight: 700, color: '#22c55e', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+               Remediation Plan
+             </div>
+             <button style={{ 
+               background: 'rgba(34, 197, 94, 0.15)', border: '1px solid rgba(34, 197, 94, 0.3)', borderRadius: 6, color: '#22c55e', padding: '6px 12px', fontSize: 12, cursor: 'pointer', fontFamily: 'system-ui, sans-serif', fontWeight: 500 
+             }}>
+               Copy to IT
+             </button>
+          </div>
+          <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}>
+             {port.recommendations?.slice(0,3).map((rec, i) => (
+                <li key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                   <div style={{ width: 16, height: 16, marginTop: 2, background: 'rgba(34,197,94,0.2)', border: '1px solid rgba(34,197,94,0.5)', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                   </div>
+                   <div style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: '#ffffff', lineHeight: 1.5 }}>
+                      {rec.action}
+                   </div>
+                </li>
+             ))}
+          </ul>
+       </div>
+    </>
+  )
+}
+
