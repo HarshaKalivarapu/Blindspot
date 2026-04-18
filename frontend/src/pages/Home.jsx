@@ -19,16 +19,38 @@ export default function Home() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="flex flex-col md:flex-row"
-          style={{ height: '100vh', background: '#0a0a0a', position: 'relative' }}
+          style={{ height: '100vh', background: '#0a0a0a', position: 'relative', overflow: 'hidden' }}
         >
           <ShaderBackground />
-          <div className="h-[35vh] md:h-auto md:flex-1 relative overflow-hidden" style={{ zIndex: 1 }}>
+
+          {/* Full-screen terminal background */}
+          <div style={{ position: 'absolute', inset: 0, zIndex: 1 }}>
             <ScanFeed />
           </div>
-          <div className="flex-1 relative overflow-hidden" style={{ zIndex: 1 }}>
+
+          {/* Radial vignette so hero text is legible */}
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 2,
+            background: 'radial-gradient(ellipse 55% 65% at 50% 50%, rgba(10,10,10,0.82) 0%, transparent 100%)',
+          }} />
+
+          {/* Centered hero */}
+          <motion.div
+            initial={{ opacity: 0, filter: 'blur(12px)', zIndex: 0 }}
+            animate={{ opacity: 1, filter: 'blur(0px)', zIndex: 3 }}
+            transition={{ duration: 0.75, delay: 2.0, ease: 'easeOut' }}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
             <HeroPanel />
-          </div>
+          </motion.div>
         </motion.div>
       )}
     </div>

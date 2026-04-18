@@ -38,37 +38,41 @@ export default function ScanFeed() {
       } else {
         setTopLines((prev) => [...prev, entry].slice(-25))
       }
-    }, 600)
+    }, 475) // 475ms interval for a steady stream of logs
 
     return () => clearInterval(interval)
   }, [])
 
+  const sectionStyle = {
+    width: '100%',
+    overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'flex-end',
+    padding: '0 20px',
+    boxSizing: 'border-box',
+  }
+
   return (
-    <div style={{ position: 'relative', height: '100%', display: 'flex', flexDirection: 'column' }}>
-      
-      {/* Top Container: Alerts / Vulnerabilities */}
-      <div
-        style={{
-          flex: 1,
-          height: '50%',
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'flex-end',
-          borderLeft: '1px solid rgba(239, 68, 68, 0.2)',
-          padding: '12px 20px 24px 16px',
-          boxSizing: 'border-box',
-          maskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 100%)',
-          WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 100%)',
-        }}
-      >
+    <div style={{
+      position: 'relative',
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      maskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)',
+      WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)',
+    }}>
+
+      {/* Top section: Alerts / Vulnerabilities (red + orange) */}
+      <div style={{ ...sectionStyle, maxWidth: 900 }}>
         {bottomLines.map((line) => {
           const isCritical = line.type === 'critical'
           const isHigh = line.type === 'high'
-          const color = isCritical ? '#ef4444' : (isHigh ? '#f97316' : '#eab308')
-          
+          const baseColor = isCritical ? '239,68,68' : isHigh ? '249,115,22' : '234,179,8'
           return (
-             <motion.div
+            <motion.div
               key={line.id}
               layout
               initial={{ opacity: 0, y: 8 }}
@@ -76,16 +80,16 @@ export default function ScanFeed() {
               transition={{ duration: 0.3 }}
               style={{
                 fontFamily: 'monospace',
-                fontSize: 13,
+                fontSize: 18,
                 lineHeight: 1.8,
-                color: color,
+                color: `rgba(${baseColor}, 0.72)`,
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 flexShrink: 0,
               }}
             >
-              <span style={{ color: 'rgba(255,255,255,0.15)', marginRight: 8 }}>
+              <span style={{ color: 'rgba(255,255,255,0.12)', marginRight: 8 }}>
                 {line.timestamp}
               </span>
               {line.text}
@@ -94,22 +98,10 @@ export default function ScanFeed() {
         })}
       </div>
 
-      {/* Bottom Container: Normal Logs */}
-      <div
-        style={{
-          flex: 1,
-          height: '50%',
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'flex-end',
-          borderLeft: '1px solid rgba(22, 101, 52, 0.2)',
-          padding: '24px 20px 12px 16px',
-          boxSizing: 'border-box',
-          maskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 100%)',
-          WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 100%)',
-        }}
-      >
+      <div style={{ height: 74 }} />
+
+      {/* Bottom section: Normal logs (green) */}
+      <div style={{ ...sectionStyle, maxWidth: 900 }}>
         {topLines.map((line) => (
           <motion.div
             key={line.id}
@@ -119,23 +111,23 @@ export default function ScanFeed() {
             transition={{ duration: 0.3 }}
             style={{
               fontFamily: 'monospace',
-              fontSize: 13,
+              fontSize: 18,
               lineHeight: 1.8,
-              color: '#166534',
+              color: 'rgba(22, 163, 74, 0.78)',
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               flexShrink: 0,
             }}
           >
-            <span style={{ color: 'rgba(255,255,255,0.15)', marginRight: 8 }}>
+            <span style={{ color: 'rgba(255,255,255,0.12)', marginRight: 8 }}>
               {line.timestamp}
             </span>
             {line.text}
           </motion.div>
         ))}
       </div>
-      
+
     </div>
   )
 }
