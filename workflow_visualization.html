@@ -5,182 +5,423 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Penetration Testing Pipeline</title>
     <style>
+        * { box-sizing: border-box; }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f4f4f9;
-            color: #333;
+            background-color: #0f172a;
+            color: #e2e8f0;
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 40px 20px;
+            padding: 40px 20px 220px 20px;
             margin: 0;
+            min-height: 100vh;
         }
+
         h1 {
-            color: #2c3e50;
-            margin-bottom: 10px;
+            color: #f1f5f9;
+            margin-bottom: 6px;
             text-align: center;
+            font-size: 1.8rem;
+            letter-spacing: -0.5px;
         }
-        p {
-            margin-bottom: 30px;
-            color: #555;
+
+        .subtitle {
+            margin-bottom: 12px;
+            color: #94a3b8;
             text-align: center;
+            font-size: 0.95rem;
         }
+
+        .legend {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 0.82rem;
+            color: #94a3b8;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            border: 2px solid;
+        }
+
+        .dot-passive  { background: #e1f5fe; border-color: #0288d1; }
+        .dot-simple   { background: #fff8e1; border-color: #f59e0b; }
+        .dot-aggro    { background: #ffebee; border-color: #d32f2f; }
+        .dot-ai       { background: #e8f5e9; border-color: #388e3c; }
+
         .mermaid-container {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            background: #1e293b;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
             width: 100%;
-            max-width: 1000px;
+            max-width: 1400px;
             display: flex;
             justify-content: center;
             overflow-x: auto;
+            border: 1px solid #334155;
         }
-        
-        /* Tooltip Styles */
-        #tooltip {
-            position: absolute;
-            background: rgba(30, 41, 59, 0.95);
-            color: #f8fafc;
-            padding: 12px 16px;
-            border-radius: 8px;
-            font-size: 14px;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.2s ease-in-out;
-            max-width: 280px;
+
+        .mermaid svg {
+            min-width: 900px;
+            height: auto;
+        }
+
+        /* ── Fixed info panel at bottom ── */
+        #info-panel {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #1e293b;
+            border-top: 2px solid #334155;
+            padding: 18px 32px;
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            min-height: 80px;
+            transition: all 0.2s ease;
             z-index: 1000;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        #info-panel.empty {
+            border-top-color: #1e293b;
+            background: #0f172a;
+        }
+
+        #info-icon {
+            font-size: 1.6rem;
+            line-height: 1;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        #info-content {
+            flex: 1;
+        }
+
+        #info-name {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #38bdf8;
+            margin-bottom: 4px;
+        }
+
+        #info-what {
+            font-size: 0.88rem;
+            color: #cbd5e1;
+            line-height: 1.5;
+            margin-bottom: 6px;
+        }
+
+        #info-user {
+            font-size: 0.85rem;
+            color: #86efac;
+            font-style: italic;
             line-height: 1.4;
         }
-        #tooltip strong {
-            color: #38bdf8;
-            display: block;
-            margin-bottom: 5px;
-            font-size: 15px;
+
+        #info-hint {
+            font-size: 0.82rem;
+            color: #475569;
+            text-align: center;
+            align-self: center;
+            flex-shrink: 0;
         }
-        
-        /* Make nodes look clickable/hoverable */
-        .node {
-            cursor: pointer;
-        }
+
+        .node { cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <h1>AI-Driven Reconnaissance Pipeline</h1>
-    <p>Automated execution flow for target mapping and vulnerability discovery. Hover over nodes for details.</p>
+    <h1>AI-Driven Penetration Testing Pipeline</h1>
+    <p class="subtitle">Hover over any node to learn what it does and why it matters for your business.</p>
 
-    <div id="tooltip"></div>
+    <div class="legend">
+        <div class="legend-item"><div class="legend-dot dot-passive"></div> Passive (no target contact)</div>
+        <div class="legend-item"><div class="legend-dot dot-simple"></div> Active — Simple Scan</div>
+        <div class="legend-item"><div class="legend-dot dot-aggro"></div> Active — Aggressive Scan</div>
+        <div class="legend-item"><div class="legend-dot dot-ai"></div> AI Report</div>
+    </div>
 
     <div class="mermaid-container">
         <div class="mermaid">
             graph TD
-                %% Define Custom Styles
-                classDef default fill:#f9f9f9,stroke:#333,stroke-width:2px;
-                classDef passive fill:#e1f5fe,stroke:#0288d1,stroke-width:2px;
-                classDef active fill:#ffebee,stroke:#d32f2f,stroke-width:2px;
-                classDef ai fill:#e8f5e9,stroke:#388e3c,stroke-width:3px;
+                classDef passive   fill:#e1f5fe,stroke:#0288d1,stroke-width:2px,color:#0d47a1;
+                classDef simple    fill:#fff8e1,stroke:#f59e0b,stroke-width:2px,color:#78350f;
+                classDef aggro     fill:#ffebee,stroke:#d32f2f,stroke-width:2px,color:#7f1d1d;
+                classDef decision  fill:#f3e8ff,stroke:#7c3aed,stroke-width:2px,color:#3b0764;
+                classDef ai        fill:#e8f5e9,stroke:#388e3c,stroke-width:3px,color:#14532d;
 
-                %% Root
-                Start((Start: Target & Rules)) --> Passive[Passive Recon Path]
-                Start --> Active[Active Recon Path]
+                Start((Start\nTarget + Auth)) --> PassivePath[Passive Scan]
+                Start --> ActivePath[Active Scan]
 
-                %% Passive Branch
-                Passive --> Shodan[Shodan API]:::passive
-                Shodan --> WhatWebPass[WhatWeb Fingerprint]:::passive
-                WhatWebPass --> DNS[DNS & WHOIS]:::passive
-                DNS --> NVD[NVD API CVE Lookup]:::passive
+                %% ── PASSIVE BRANCH ──────────────────────────────────────
+                PassivePath --> Shodan[Shodan API]:::passive
+                PassivePath --> WhatWebPass[WhatWeb]:::passive
+                PassivePath --> DNS[DNS & WHOIS\n+ crt.sh Subdomains]:::passive
 
-                %% Active Branch 
-                Active --> NMAP[NMAP Port Scan]:::active
-                NMAP --> Split{Analyze Open Ports}:::active
+                Shodan      --> SSLCheck[SSL / TLS Check]:::passive
+                WhatWebPass --> SSLCheck
+                DNS         --> SSLCheck
 
-                %% Port Branches - Web Tools executed in parallel
-                Split -->|Port 80/443| WebNode{Web Server Detected}:::active
-                WebNode --> Web[Gobuster & FFuF]:::active
-                WebNode --> Nikto[Nikto Web Scanner]:::active
-                WebNode --> WhatWebAct[WhatWeb Fingerprint]:::active
-                WebNode --> Meta[Metasploit PoC Verification]:::active
-                
-                %% DB Branch
-                Split -->|Port 3306/5432| DB[Hydra DB Brute-Force]:::active
-                
-                %% SSH Branch
-                Split -->|Port 22| SSH[Check SSH Version]:::active
-                SSH --> John[John the Ripper Hash Crack]:::active
+                SSLCheck --> HTTPHeaders[HTTP Security Headers]:::passive
+                HTTPHeaders --> NVDPass[NVD API CVE Lookup]:::passive
+                NVDPass --> Report{{Claude: Correlate & Report}}:::ai
 
-                %% Convergence
-                Web --> NVD
-                Nikto --> NVD
-                WhatWebAct --> NVD
-                Meta --> NVD
-                DB --> NVD
-                John --> NVD
-                NVD --> Report{{Claude: Correlate & Report}}:::ai
+                %% ── ACTIVE BRANCH ────────────────────────────────────────
+                ActivePath --> ScanType{Simple or\nAggressive?}:::decision
+
+                ScanType -->|Simple\nnmap ip| NMAPSimple[NMAP Basic Scan]:::simple
+                ScanType -->|Aggressive\nnmap -p-| NMAPAggro[NMAP Full Port Scan]:::aggro
+
+                NMAPSimple --> Ports{Analyze\nOpen Ports}:::decision
+                NMAPAggro  --> Ports
+
+                %% Port 80/443
+                Ports -->|Port 80 / 443| WebServer[Web Server Detected]:::decision
+                WebServer --> Nikto[Nikto]:::simple
+                WebServer --> FFuF[FFuF\nDirectory Brute-Force]:::aggro
+                WebServer --> WhatWebAct[WhatWeb]:::simple
+
+                %% Port 3306/5432
+                Ports -->|Port 3306 / 5432| HydraDB[Hydra\nDB Brute-Force]:::simple
+
+                %% Port 21
+                Ports -->|Port 21| HydraFTP[Hydra\nFTP Brute-Force]:::simple
+
+                %% Port 22
+                Ports -->|Port 22| SSH[SSH Version Check]:::simple
+
+                %% Port 23
+                Ports -->|Port 23| Telnet[Telnet\nAuto-Flag Critical]:::simple
+
+                %% Port 445
+                Ports -->|Port 445| EternalBlue[SMB\nEternalBlue Check]:::aggro
+
+                %% Other
+                Ports -->|Other Ports| OtherNVD[NVD Lookup\nfor Service Version]:::simple
+
+                %% Convergence → searchsploit → NVD → Report
+                Nikto       --> Searchsploit
+                FFuF        --> Searchsploit
+                WhatWebAct  --> Searchsploit
+                HydraDB     --> Searchsploit
+                HydraFTP    --> Searchsploit
+                SSH         --> Searchsploit
+                Telnet      --> Searchsploit
+                EternalBlue --> Searchsploit
+                OtherNVD    --> Searchsploit
+
+                Searchsploit[searchsploit\nExploitDB Lookup]:::simple --> NVDAct[NVD API\nCVE Lookup]:::simple
+                NVDAct --> Report
         </div>
+    </div>
+
+    <!-- Fixed info panel -->
+    <div id="info-panel" class="empty">
+        <div id="info-icon">🔍</div>
+        <div id="info-content">
+            <div id="info-name">Hover over any node to learn more</div>
+            <div id="info-what"></div>
+            <div id="info-user"></div>
+        </div>
+        <div id="info-hint">click to pin</div>
     </div>
 
     <script type="module">
         import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-        mermaid.initialize({ 
-            startOnLoad: true, 
+        mermaid.initialize({
+            startOnLoad: true,
             theme: 'base',
             themeVariables: {
                 primaryColor: '#ffffff',
-                lineColor: '#555555',
-                fontFamily: 'arial'
+                lineColor: '#64748b',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+                fontSize: '18px'
             }
         });
 
-        // Dictionary of tooltips. Keys match the text inside the Mermaid nodes.
-        const tooltips = {
-            "Start": "The entry point. Claude asks the user for the target URL/IP and whether to proceed silently (Passive) or aggressively (Active).",
-            "Shodan API": "Indexes the internet for devices and open ports. Allows Claude to see what the internet already knows about the target without touching it.",
-            "WhatWeb Fingerprint": "Identifies the underlying technology stack (e.g., WordPress 5.8, PHP 7.4) running on the target.",
-            "DNS & WHOIS": "Queries public records to find domain ownership details and potentially vulnerable subdomains (like dev.target.com).",
-            "NMAP Port Scan": "Actively pings the target's network to see exactly which 'doors' (ports) are left open.",
-            "Web Server Detected": "A web server is active on the target. The pipeline now triggers multiple asynchronous web tools to run in parallel.",
-            "Gobuster & FFuF": "Rapidly fires requests to find hidden admin panels, unlinked directories, and exposed APIs.",
-            "Nikto Web Scanner": "A noisy, aggressive scanner that checks web servers for thousands of known dangerous files and misconfigurations.",
-            "Metasploit PoC Verification": "Runs a safe 'Proof of Concept' script to verify if a discovered vulnerability is a false positive, without dropping a malicious payload.",
-            "Hydra DB Brute-Force": "If an open database port is found, Hydra attempts to log in using common default credentials (e.g., root/admin).",
-            "Check SSH Version": "Grabs the server's SSH banner to see if they are running outdated, vulnerable secure shell software.",
-            "John the Ripper Hash Crack": "If hashed passwords are found in an exposed backup file, this tool attempts to crack them locally offline.",
-            "NVD API CVE Lookup": "Cross-references the discovered technology stack against the official National Vulnerability Database to find known exploits.",
-            "Claude: Correlate & Report": "The final stage. Claude parses all raw terminal logs and JSON output, creating a clean, prioritized security report."
+        const tools = {
+            "Shodan API": {
+                icon: "🌐",
+                what: "Searches a public internet database that has already crawled and catalogued your target — so we never send a single packet to your servers. It reveals every port, service, and software version the open internet can already see.",
+                user: "\"We found your database port is publicly visible on the internet. Anyone can attempt to connect to it — and you had no idea.\""
+            },
+            "WhatWeb": {
+                icon: "🏷️",
+                what: "Makes a standard HTTP request (the same as a browser visit) and reads fingerprints in the response headers and HTML to identify the exact software stack: WordPress version, PHP version, server type, frameworks, and more.",
+                user: "\"Your site is running WordPress 5.8 with a PHP version from 2021. Both have known exploits that are publicly available and trivial to use.\""
+            },
+            "DNS & WHOIS\n+ crt.sh Subdomains": {
+                icon: "📋",
+                what: "Queries public DNS records to map every subdomain and IP tied to the domain, plus WHOIS registration records for ownership info. crt.sh scans public SSL certificate logs to find subdomains that have ever had a cert issued — revealing forgotten infrastructure.",
+                user: "\"You have a staging site (staging.yourcompany.com) still publicly accessible that you forgot about. It has no authentication and runs software from 2019.\""
+            },
+            "SSL / TLS Check": {
+                icon: "🔒",
+                what: "Connects to port 443 and audits the entire encryption configuration: certificate expiry, cipher strength, TLS version, HSTS enforcement. Finds expired certs, weak cipher suites, and outdated protocol support.",
+                user: "\"Your SSL certificate expires in 3 days, and you still accept TLS 1.0 — a standard broken in 2016. Customer data transmitted to your site could be intercepted.\""
+            },
+            "HTTP Security Headers": {
+                icon: "🛡️",
+                what: "Makes one HTTP request and reads the instructions your web server sends to browsers. Missing headers like Content-Security-Policy, X-Frame-Options, and HSTS leave browsers unprotected against entire classes of attacks.",
+                user: "\"Your site is missing X-Frame-Options. Attackers can embed your login page invisibly inside their own site and steal your customers' credentials without them knowing (clickjacking).\""
+            },
+            "NVD API CVE Lookup": {
+                icon: "📚",
+                what: "Takes every software version discovered and cross-references it against the National Vulnerability Database. Returns real CVE IDs, CVSS severity scores (Critical/High/Medium/Low), and links to public exploit code.",
+                user: "\"The software you're running has 3 critical vulnerabilities with public exploit scripts. Here's exactly what an attacker could do with each one.\""
+            },
+            "NMAP Basic Scan": {
+                icon: "📡",
+                what: "Sends packets to the most common ports (top 1000) to find which ones respond. This is the foundation of the entire active pipeline — you can't run anything else intelligently without knowing what doors are open.",
+                user: "\"You have 4 ports open that shouldn't be — including your database, which is directly reachable from the public internet.\""
+            },
+            "NMAP Full Port Scan": {
+                icon: "📡",
+                what: "Same as the basic scan but checks all 65,535 ports instead of just the top 1000. Takes longer but finds services running on non-standard ports that attackers would also find with a thorough scan.",
+                user: "\"We found an admin panel running on port 8888 that doesn't appear in a basic scan. It was completely unprotected.\""
+            },
+            "Nikto": {
+                icon: "🔎",
+                what: "Fires thousands of pre-written checks against a web server: known dangerous file paths, default credentials left in place, outdated software signatures, and common misconfigurations. It's comprehensive but noisy.",
+                user: "\"Your server is still serving /phpinfo.php — a file that exposes your entire server configuration, file paths, and installed software to anyone who visits that URL.\""
+            },
+            "FFuF\nDirectory Brute-Force": {
+                icon: "🚪",
+                what: "Rapidly fires hundreds of thousands of HTTP requests to guess hidden directory and file names from large wordlists. Finds pages that aren't linked from anywhere — admin panels, backup files, exposed APIs, config dumps.",
+                user: "\"We found /admin, /backup.zip, and /api/v1/users — none linked from your site, but all publicly accessible with no authentication.\""
+            },
+            "Hydra\nDB Brute-Force": {
+                icon: "🔑",
+                what: "Attempts to log in to an exposed database port (MySQL on 3306, Postgres on 5432) using thousands of common username/password combinations. Tests default credentials that are frequently never changed.",
+                user: "\"Your database accepted the password 'admin123'. Default credentials are one of the most common ways small businesses get breached.\""
+            },
+            "Hydra\nFTP Brute-Force": {
+                icon: "🔑",
+                what: "Same as DB brute-force but targets an open FTP port. FTP transmits files and credentials in plaintext and is frequently misconfigured with default or weak passwords.",
+                user: "\"Your FTP server accepted 'admin/admin'. Anyone who finds this port can download or overwrite files on your server.\""
+            },
+            "SSH Version Check": {
+                icon: "💻",
+                what: "NMAP reads the SSH banner from port 22, which reveals the exact version of the SSH software. Old OpenSSH versions have known vulnerabilities including user enumeration and authentication bypasses.",
+                user: "\"Your server runs OpenSSH 7.2, which has a user enumeration vulnerability — attackers can confirm valid usernames before attempting passwords, dramatically speeding up a brute-force attack.\""
+            },
+            "Telnet\nAuto-Flag Critical": {
+                icon: "🚨",
+                what: "Telnet transmits everything — including passwords — in plain unencrypted text. There is no legitimate reason for Telnet to be open on a modern server. This is an automatic critical finding.",
+                user: "\"Port 23 (Telnet) is open on your server. Any password typed over this connection is readable by anyone on the same network. This must be closed immediately.\""
+            },
+            "SMB\nEternalBlue Check": {
+                icon: "💀",
+                what: "Runs a targeted Metasploit auxiliary module to test if the server is vulnerable to EternalBlue (MS17-010) — the exploit behind the WannaCry ransomware attack that caused billions in damage worldwide. Only tests, does not exploit.",
+                user: "\"Your server is vulnerable to EternalBlue — the same exploit used by WannaCry ransomware. An attacker can gain full remote control of your machine without a password.\""
+            },
+            "NVD Lookup\nfor Service Version": {
+                icon: "📚",
+                what: "For any open port running an identified service, looks up the exact version in the National Vulnerability Database to check for known CVEs — even if no specific tool targets that service.",
+                user: "\"The custom service running on port 9090 is version 2.3.1 — which has a known remote code execution vulnerability (CVE-2022-XXXXX).\""
+            },
+            "searchsploit\nExploitDB Lookup": {
+                icon: "🗄️",
+                what: "Queries a local copy of Exploit-DB — a public archive of exploit scripts — to find ready-made attack code matching every software version and CVE found. It doesn't run anything, just tells you what weapons exist.",
+                user: "\"There are 3 public exploit scripts targeting your exact WordPress version. A beginner attacker could download and run these with no modification.\""
+            },
+            "Claude: Correlate & Report": {
+                icon: "🤖",
+                what: "Claude reads all raw tool outputs, correlates findings across the full pipeline, eliminates false positives, and writes a clean human-readable report prioritized by severity (Critical → High → Medium → Low) with specific remediation steps for each finding.",
+                user: "\"Here is your full security report: 2 critical issues, 4 high severity, 3 medium. Each finding explains what it is, what an attacker could do with it, and exactly how to fix it.\""
+            },
+            "Start\nTarget + Auth": {
+                icon: "🎯",
+                what: "The user provides a target domain or IP address and confirms authorization for active scanning. The authorization gate is enforced at the server level — active tools are physically withheld if authorization is not confirmed.",
+                user: "\"Enter the domain or IP of your own website or infrastructure. For passive scans, no authorization is needed. For active scans, you must confirm you own or have permission to test the target.\""
+            },
+            "Simple or\nAggressive?": {
+                icon: "⚙️",
+                what: "Simple scan checks the top 1000 most common ports — fast (1-2 minutes) and covers 99% of typical vulnerabilities. Aggressive scan checks all 65,535 ports — thorough but takes significantly longer.",
+                user: "\"Choose Simple for a quick health check. Choose Aggressive for the most thorough scan — recommended if you suspect a serious issue or want maximum coverage.\""
+            },
+            "Analyze\nOpen Ports": {
+                icon: "🔀",
+                what: "Claude reads the NMAP output and branches the pipeline based on which ports are open. Different ports mean different services, which require different specialized tools to test properly.",
+                user: "\"Based on what's open on your server, we now run the right tools for each service — web tools for your website, database tools for your database, etc.\""
+            },
+            "Web Server Detected": {
+                icon: "🌍",
+                what: "Port 80 (HTTP) or 443 (HTTPS) is open, confirming a web server is running. This triggers the full web vulnerability toolkit: Nikto for known vulnerabilities, FFuF for hidden pages, WhatWeb for technology fingerprinting.",
+                user: "\"Your web server is active. We'll now check it for thousands of known vulnerabilities, hidden pages, and technology-specific exploits.\""
+            }
         };
 
-        // Attach hover events after Mermaid finishes rendering the SVG
+        let pinned = false;
+
+        function showInfo(key) {
+            const data = tools[key];
+            if (!data) return;
+
+            document.getElementById('info-icon').textContent = data.icon;
+            document.getElementById('info-name').textContent = key.replace(/\n/g, ' ');
+            document.getElementById('info-what').textContent = data.what;
+            document.getElementById('info-user').textContent = data.user;
+            document.getElementById('info-panel').classList.remove('empty');
+        }
+
+        function clearInfo() {
+            if (pinned) return;
+            document.getElementById('info-name').textContent = 'Hover over any node to learn more';
+            document.getElementById('info-what').textContent = '';
+            document.getElementById('info-user').textContent = '';
+            document.getElementById('info-panel').classList.add('empty');
+        }
+
         window.addEventListener('load', () => {
             setTimeout(() => {
                 const nodes = document.querySelectorAll('.node');
-                const tooltipEl = document.getElementById('tooltip');
 
                 nodes.forEach(node => {
-                    node.addEventListener('mouseover', (e) => {
+                    node.addEventListener('mouseover', () => {
+                        if (pinned) return;
                         const nodeText = node.textContent.trim();
-                        
-                        // Find the matching key in our dictionary
-                        const matchKey = Object.keys(tooltips).find(key => nodeText.includes(key));
-                        
-                        if (matchKey) {
-                            tooltipEl.innerHTML = `<strong>${matchKey}</strong>${tooltips[matchKey]}`;
-                            tooltipEl.style.opacity = '1';
-                        }
-                    });
-
-                    // Make the tooltip follow the mouse slightly offset
-                    node.addEventListener('mousemove', (e) => {
-                        tooltipEl.style.left = (e.pageX + 15) + 'px';
-                        tooltipEl.style.top = (e.pageY + 15) + 'px';
+                        const matchKey = Object.keys(tools).find(k => nodeText.includes(k.split('\n')[0]));
+                        if (matchKey) showInfo(matchKey);
                     });
 
                     node.addEventListener('mouseout', () => {
-                        tooltipEl.style.opacity = '0';
+                        if (!pinned) clearInfo();
+                    });
+
+                    node.addEventListener('click', () => {
+                        const nodeText = node.textContent.trim();
+                        const matchKey = Object.keys(tools).find(k => nodeText.includes(k.split('\n')[0]));
+                        if (!matchKey) return;
+
+                        if (pinned && document.getElementById('info-name').textContent === matchKey.replace(/\n/g, ' ')) {
+                            pinned = false;
+                            document.getElementById('info-hint').textContent = 'click to pin';
+                            clearInfo();
+                        } else {
+                            pinned = true;
+                            document.getElementById('info-hint').textContent = 'click again to unpin';
+                            showInfo(matchKey);
+                        }
                     });
                 });
-            }, 1000); 
+            }, 1000);
         });
     </script>
 </body>
