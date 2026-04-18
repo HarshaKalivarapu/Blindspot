@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import WarningModal from '../components/WarningModal'
 import ShaderBackground from '../components/homepage/ShaderBackground.jsx'
@@ -8,9 +8,11 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ?? 'http://localhost:5000'
 
 function Scan() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [view, setView] = useState('dashboard') // 'dashboard' or 'chat'
   const [showWarning, setShowWarning] = useState(false)
   const [authorized, setAuthorized] = useState(false)
+  const [scanConfig, setScanConfig] = useState(null)
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
   const [messages, setMessages] = useState([
@@ -27,11 +29,22 @@ function Scan() {
     }
   }, [messages, view])
 
-  const handleStartScan = () => {
-    setView('chat')
-    if (!authorized) {
-      setShowWarning(true)
+  useEffect(() => {
+    if (location.state?.config) {
+      const config = location.state.config
+      setScanConfig(config)
+      navigate('/scan', { replace: true, state: {} })
+      
+      if (config.mode === 'active' && !authorized) {
+        setShowWarning(true)
+      } else {
+        setView('chat')
+      }
     }
+  }, [location.state, authorized, navigate])
+
+  const handleStartScan = () => {
+    navigate('/scan/new')
   }
 
   const handleSignOut = () => {
@@ -245,6 +258,7 @@ function Scan() {
           <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
             <motion.button
               type="button"
+              onClick={() => navigate('/guide')}
               whileHover={{ backgroundColor: '#ffffff', color: '#0a0a0a', borderColor: '#ffffff' }}
               initial={{ backgroundColor: 'rgba(255, 255, 255, 0.03)', color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.15)' }}
               transition={{ duration: 0.2 }}
@@ -262,7 +276,7 @@ function Scan() {
                 backdropFilter: 'blur(4px)',
               }}
             >
-              User Manual
+              User Guide
             </motion.button>
             <motion.button
               type="button"
@@ -299,9 +313,9 @@ function Scan() {
           onConfirm={() => {
             setAuthorized(true)
             setShowWarning(false)
+            setView('chat')
           }}
           onCancel={() => {
-            setAuthorized(false)
             setShowWarning(false)
           }}
         />

@@ -4,14 +4,15 @@ import { createPortal } from 'react-dom'
 import AuthModal from './AuthModal.jsx'
 import { TextScramble } from '../ui/text-scramble.jsx'
 
-export default function HeroPanel() {
+export default function HeroPanel({ onOpenModal }) {
   const [isHovered, setIsHovered] = useState(false)
-  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const handleMouseEnter = () => setIsHovered(true)
   const handleMouseLeave = () => setIsHovered(false)
 
-  const handleClick = () => setIsModalOpen(true)
+  const handleClick = () => {
+    if (onOpenModal) onOpenModal()
+  }
 
   return (
     <div
@@ -57,7 +58,7 @@ export default function HeroPanel() {
               letterSpacing: '0.01em',
             }}
           >
-            The enterprise vulnerability scanning software for your business
+            Next generation vulnerability scanning software for your business
           </span>
         </div>
 
@@ -89,10 +90,6 @@ export default function HeroPanel() {
         </motion.button>
       </div>
 
-      {isModalOpen && createPortal(
-        <AuthModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />,
-        document.body
-      )}
     </div>
   )
 }

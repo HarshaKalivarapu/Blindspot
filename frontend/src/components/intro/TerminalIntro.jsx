@@ -3,9 +3,9 @@ import { motion } from 'framer-motion'
 
 const SCRIPT = [
   { type: 'type', text: 'root@pentest:~$ nmap -sV 10.0.1.1' },
-  { type: 'pause', ms: 80 },
+  { type: 'pause', ms: 300 },
   { type: 'type', text: 'Discovered open port 80/tcp' },
-  { type: 'pause', ms: 80 },
+  { type: 'pause', ms: 300 },
   { type: 'type', text: 'Scan complete. 1 vulnerability found.' },
 ]
 
@@ -24,8 +24,8 @@ export default function TerminalIntro({ onComplete }) {
     cancelRef.current = false
 
     const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
-    // Speed up typing characters immensely (now 2-6ms per char instead of 10-18ms)
-    const randomDelay = () => 2 + Math.random() * 4
+    // Tuned to ~2.5s total time
+    const randomDelay = () => 10 + Math.random() * 5
 
     async function runScript() {
       for (const item of SCRIPT) {
@@ -42,12 +42,12 @@ export default function TerminalIntro({ onComplete }) {
           if (cancelRef.current) return
           setLines((prev) => [...prev, item.text])
           setCurrentLine('')
-          await delay(30) // Wait significantly less between commands
+          await delay(100) // Wait briefly before the next line types
         }
       }
 
-      // Finish quickly after the last command
-      await delay(200)
+      // Finish with a cinematic pause to reach ~2.5s elapsed
+      await delay(500)
       if (cancelRef.current) return
       setFadingOut(true)
       await delay(200)
@@ -95,9 +95,9 @@ export default function TerminalIntro({ onComplete }) {
             borderBottom: '1px solid #1e1e1e',
           }}
         >
-          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#2a2a2a' }} />
-          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#252525' }} />
-          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#202020' }} />
+          <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#ff5f56' }} /> {/* Close (Red) */}
+          <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#ffbd2e' }} /> {/* Minimize (Yellow) */}
+          <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#27c93f' }} /> {/* Maximize (Green) */}
         </div>
 
         <div

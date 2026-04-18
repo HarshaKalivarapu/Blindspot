@@ -29,22 +29,27 @@ pentest-mcp/
     │   ├── index.css              # Tailwind import + global resets
     │   ├── pages/
     │   │   ├── Home.jsx           # Homepage — terminal intro + split screen
-    │   │   └── Scan.jsx           # Scan input page (chat interface)
+    │   │   ├── Scan.jsx           # Scan dashboard + chat interface
+    │   │   ├── NewScan.jsx        # Scan configuration
+    │   │   └── Guide.jsx          # Interactive User Guide
     │   ├── components/
     │   │   ├── intro/
     │   │   │   └── TerminalIntro.jsx  # Full screen terminal intro sequence
     │   │   ├── homepage/
     │   │   │   ├── ScanFeed.jsx         # Left panel — scrolling live scan feed
     │   │   │   ├── HeroPanel.jsx        # Right panel — app name + Get Started
-    │   │   │   └── ShaderBackground.jsx # GLSL shader background (Phase 2 only)
+    │   │   │   ├── ShaderBackground.jsx # GLSL shader background (Phase 2 only)
+    │   │   │   └── AuthModal.jsx        # Unified signup/login popup overlay
     │   │   └── WarningModal.jsx   # Authorization confirmation modal
     │   └── lib/
     │       └── scanFeedData.js    # Realistic pre-written scan output dataset
     └── CLAUDE.md                  # This file — always refer here first
 
 ## Route Map
-/ (src/pages/Home.jsx)        → Homepage (terminal intro + split screen)
-/scan (src/pages/Scan.jsx)    → Scan input page — chat interface with backend
+/ (src/pages/Home.jsx)            → Homepage (terminal intro + split screen)
+/guide (src/pages/Guide.jsx)      → Full page interactive User Guide
+/scan (src/pages/Scan.jsx)        → Scan dashboard + chat interface with backend
+/scan/new (src/pages/NewScan.jsx) → Full page configuration form for generating scans
 
 ## Rules
 - ALWAYS read CLAUDE.md before creating or modifying any file
