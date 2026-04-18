@@ -34,14 +34,21 @@ function Scan() {
       const config = location.state.config
       setScanConfig(config)
       navigate('/scan', { replace: true, state: {} })
-      
-      if (config.mode === 'active' && !authorized) {
+
+      if (config.level === 'active' && !authorized) {
         setShowWarning(true)
       } else {
         setView('chat')
       }
     }
   }, [location.state, authorized, navigate])
+
+  // Auto-start scan when we enter chat view with a config
+  useEffect(() => {
+    if (view === 'chat' && scanConfig && !sending) {
+      startScan(scanConfig, authorized)
+    }
+  }, [view]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleStartScan = () => {
     navigate('/scan/new')
@@ -51,29 +58,52 @@ function Scan() {
     navigate('/')
   }
 
-  const handleSend = async (e) => {
-    e.preventDefault()
-    const trimmed = input.trim()
-    if (!trimmed || sending) return
-    setMessages((m) => [...m, { role: 'user', text: trimmed }])
-    setInput('')
+  const startScan = async (config, isAuthorized) => {
     setSending(true)
+    setMessages([{ role: 'assistant', text: `Starting ${config.level} scan of ${config.target}...` }])
+
     try {
-      const res = await fetch(`${BACKEND_URL}/chat`, {
+      const res = await fetch(`${BACKEND_URL}/scan`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: trimmed }),
+        body: JSON.stringify({
+          target: config.target,
+          level: config.level,
+          intensity: config.intensity ?? 'simple',
+          authorization_confirmed: isAuthorized,
+        }),
       })
-      const data = await res.json()
-      const reply = res.ok
-        ? data.reply ?? '(empty response)'
-        : `Error: ${data.error ?? res.statusText}`
-      setMessages((m) => [...m, { role: 'assistant', text: reply }])
+
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() // keep incomplete last line
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue
+          try {
+            const event = JSON.parse(line.slice(6))
+            if (event.type === 'status') {
+              setMessages((m) => [...m, { role: 'status', text: event.message }])
+            } else if (event.type === 'progress') {
+              setMessages((m) => [...m, { role: 'assistant', text: event.message }])
+            } else if (event.type === 'report') {
+              setMessages((m) => [...m, { role: 'report', text: event.message }])
+            }
+          } catch {
+            // skip malformed lines
+          }
+        }
+      }
     } catch (err) {
-      setMessages((m) => [
-        ...m,
-        { role: 'assistant', text: `Network error: ${err.message}` },
-      ])
+      setMessages((m) => [...m, { role: 'assistant', text: `Network error: ${err.message}` }])
     } finally {
       setSending(false)
     }
@@ -189,35 +219,38 @@ function Scan() {
           {messages.map((m, i) => (
             <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div
-                className={`max-w-[75%] rounded-2xl px-5 py-3 text-sm leading-relaxed ${m.role === 'user' ? 'bg-white text-black' : 'bg-white/10 text-white'
-                  }`}
-                style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}
+                style={{
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  maxWidth: m.role === 'report' ? '100%' : '75%',
+                  borderRadius: 16,
+                  padding: m.role === 'status' ? '6px 14px' : '12px 20px',
+                  fontSize: m.role === 'status' ? 12 : 14,
+                  lineHeight: 1.6,
+                  whiteSpace: 'pre-wrap',
+                  background:
+                    m.role === 'user'   ? '#ffffff' :
+                    m.role === 'status' ? 'rgba(255,255,255,0.04)' :
+                    m.role === 'report' ? 'rgba(255,255,255,0.06)' :
+                                          'rgba(255,255,255,0.1)',
+                  color:
+                    m.role === 'user'   ? '#000000' :
+                    m.role === 'status' ? 'rgba(255,255,255,0.4)' :
+                                          '#ffffff',
+                  border: m.role === 'report' ? '1px solid rgba(255,255,255,0.15)' : 'none',
+                  width: m.role === 'report' ? '100%' : undefined,
+                }}
               >
-                {m.text}
+                {m.role === 'status' && '› '}{m.text}
               </div>
             </div>
           ))}
         </div>
 
-        <form onSubmit={handleSend} className="mt-4 flex gap-2">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={authorized ? 'Send a message...' : 'Authorize to enable input'}
-            disabled={!authorized || sending}
-            className="flex-1 rounded-lg border border-white/20 bg-black/40 backdrop-blur-md px-4 py-3 text-sm placeholder-white/40 outline-none focus:border-white disabled:cursor-not-allowed disabled:opacity-50"
-            style={{ fontFamily: 'system-ui, -apple-system, sans-serif', color: 'white' }}
-          />
-          <button
-            type="submit"
-            disabled={!authorized || sending}
-            className="rounded-lg bg-white px-6 py-3 text-sm font-medium text-black hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
-            style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}
-          >
-            {sending ? 'Sending...' : 'Send'}
-          </button>
-        </form>
+        {sending && (
+          <div className="mt-4 text-center text-sm" style={{ color: 'rgba(255,255,255,0.35)', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+            Scan in progress...
+          </div>
+        )}
       </main>
     </motion.div>
   )

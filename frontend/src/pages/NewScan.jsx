@@ -76,7 +76,7 @@ function RadioOption({ value, label, description, selected, onChange }) {
 export default function NewScan() {
   const navigate = useNavigate()
   const [target, setTarget] = useState('')
-  const [mode, setMode] = useState('passive')
+  const [level, setLevel] = useState('passive')
   const [intensity, setIntensity] = useState('simple')
 
   const canSubmit = target.trim().length > 0
@@ -87,7 +87,7 @@ export default function NewScan() {
     e?.preventDefault()
     if (!canSubmit) return
     navigate('/scan', {
-      state: { config: { target: target.trim(), mode, intensity: mode === 'active' ? intensity : null } }
+      state: { config: { target: target.trim(), level, intensity: level === 'active' ? intensity : null } }
     })
   }
 
@@ -236,22 +236,22 @@ export default function NewScan() {
                   value="passive"
                   label="Passive Reconnaissance"
                   description={DESCRIPTIONS.passive}
-                  selected={mode === 'passive'}
-                  onChange={setMode}
+                  selected={level === 'passive'}
+                  onChange={setLevel}
                 />
                 <RadioOption
                   value="active"
                   label="Active Reconnaissance"
                   description={DESCRIPTIONS.active}
-                  selected={mode === 'active'}
-                  onChange={setMode}
+                  selected={level === 'active'}
+                  onChange={setLevel}
                 />
               </div>
             </div>
 
             {/* Intensity Select */}
             <AnimatePresence>
-              {mode === 'active' && (
+              {level === 'active' && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
