@@ -7,6 +7,8 @@ import Home from './pages/Home.jsx'
 import Scan from './pages/Scan.jsx'
 import NewScan from './pages/NewScan.jsx'
 import Guide from './pages/Guide.jsx'
+import VisualizationDemo from './pages/VisualizationDemo.jsx'
+import VisualizationDemoActive from './pages/VisualizationDemoActive.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -17,6 +19,8 @@ createRoot(document.getElementById('root')).render(
           <Route path="/guide" element={<Guide />} />
           <Route path="/scan/new" element={<NewScan />} />
           <Route path="/scan" element={<Scan />} />
+          <Route path="/demo" element={<VisualizationDemo />} />
+          <Route path="/demo-active" element={<VisualizationDemoActive />} />
         </Routes>
       </BrowserRouter>
     </GoogleOAuthProvider>
