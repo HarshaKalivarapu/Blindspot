@@ -16,7 +16,7 @@ from mcp.server.fastmcp import FastMCP
 
 # Import tool functions from their modules
 from tools.active.example_command import run as example_command_run
-
+from tools.active.nmap import run as nmap_run
 # ── Server setup ────────────────────────────────────────────────────────────
 
 mcp = FastMCP("claudehack-mcp")
@@ -38,6 +38,20 @@ def example_command(message: str) -> str:
     """
     result = example_command_run({"message": message})
     return result["result"]
+
+@mcp.tool()
+def nmap(ip: str, aggressive: bool = False) -> str:
+    """
+    Runs an nmap scan on a target IP to discover open ports and service versions.
+    Always use this tool for nmap scans. Never run nmap manually and never modify or add any flags.
+    Use aggressive=True for a full port scan (-p-), False for a standard scan.
+    Args:
+        ip: Target IP address to scan.
+        aggressive: If True, scans all 65535 ports. If False, scans common ports only.
+    Returns:
+        Raw nmap output with open ports, services, and versions.
+    """
+    return nmap_run({"ip": ip, "aggressive": aggressive})["result"]
 
 
 # ── Entry point ──────────────────────────────────────────────────────────────
