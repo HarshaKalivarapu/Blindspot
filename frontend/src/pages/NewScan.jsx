@@ -79,7 +79,27 @@ export default function NewScan() {
   const [level, setLevel] = useState('passive')
   const [intensity, setIntensity] = useState('simple')
 
-  const canSubmit = target.trim().length > 0
+  const isValidIPv4 = (v) =>
+    /^(\d{1,3}\.){3}\d{1,3}$/.test(v) &&
+    v.split('.').every((n) => Number(n) >= 0 && Number(n) <= 255)
+
+  const isValidDomain = (v) =>
+    /^(?!-)[a-zA-Z0-9-]{1,63}(?<!-)(\.[a-zA-Z0-9-]{1,63})*\.[a-zA-Z]{2,}$/.test(v)
+
+  const trimmed = target.trim()
+  const hasProtocol = /^https?:\/\//i.test(trimmed)
+  const hasPath = /[/?#]/.test(trimmed.replace(/^https?:\/\//i, ''))
+  const clean = trimmed.replace(/^https?:\/\//i, '').split(/[/?#]/)[0]
+
+  let targetError = null
+  if (trimmed.length > 0) {
+    if (hasProtocol) targetError = 'Remove the http:// or https:// prefix — enter the host only'
+    else if (hasPath) targetError = 'Remove any path or query string — enter the host only'
+    else if (!isValidIPv4(clean) && !isValidDomain(clean))
+      targetError = 'Must be a valid IP address (e.g. 192.168.1.1) or domain (e.g. yoursite.com)'
+  }
+
+  const canSubmit = trimmed.length > 0 && !targetError
 
   const handleSignOut = () => navigate('/')
 
@@ -222,8 +242,32 @@ export default function NewScan() {
                   transition: 'border-color 0.2s',
                 }}
                 onFocus={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.5)')}
-                onBlur={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.15)')}
+                onBlur={(e) => (e.target.style.borderColor = targetError ? 'rgba(248,113,113,0.6)' : 'rgba(255,255,255,0.15)')}
               />
+
+              <AnimatePresence>
+                {targetError && (
+                  <motion.p
+                    key="target-err"
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.15 }}
+                    style={{ margin: '6px 0 0', color: '#f87171', fontSize: 12, fontFamily: 'system-ui, -apple-system, sans-serif' }}
+                  >
+                    ⚠ {targetError}
+                  </motion.p>
+                )}
+              </AnimatePresence>
+
+              <div style={{ marginTop: 10, color: 'rgba(255,255,255,0.3)', fontSize: 12, fontFamily: 'system-ui, -apple-system, sans-serif', lineHeight: 1.8 }}>
+                <p style={{ margin: '0 0 2px' }}>Valid formats:</p>
+                <ul style={{ margin: 0, paddingLeft: 16 }}>
+                  <li>IPv4 — 4 numbers from 0–255 separated by dots <span style={{ opacity: 0.6 }}>(e.g. 192.168.1.1)</span></li>
+                  <li>Domain — letters, numbers, hyphens, and dots <span style={{ opacity: 0.6 }}>(e.g. yoursite.com)</span></li>
+                  <li>No <code style={{ fontFamily: 'monospace', fontSize: 11 }}>http://</code> prefix or trailing path</li>
+                </ul>
+              </div>
             </div>
 
             {/* Mode Select */}
