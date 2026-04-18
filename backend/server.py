@@ -1,7 +1,7 @@
 """
 server.py — MCP Server entry point
 ------------------------------------
-Uses FastMCP to expose tools to any MCP-compatible client (e.g. Antigravity).
+Uses FastMCP to expose tools to any MCP-compatible client.
 
 Run with:
     python backend/server.py
@@ -14,33 +14,31 @@ output to stderr instead.
 import sys
 from mcp.server.fastmcp import FastMCP
 
-# Import tool functions from their modules
-from tools.active.example_command import run as example_command_run
-
-# ── Server setup ────────────────────────────────────────────────────────────
+from tools.passive.shodan import run as shodan_run
 
 mcp = FastMCP("claudehack-mcp")
 
 
-# ── Tool registrations ───────────────────────────────────────────────────────
+# ── Passive tools ─────────────────────────────────────────────────────────────
 
 @mcp.tool()
-def example_command(message: str) -> str:
+def shodan(target: str) -> str:
     """
-    Echoes the provided message back to the caller.
-    Use this to verify the MCP server is connected and working.
+    Query Shodan's public database for information about the target.
+    Returns open ports, running services, software versions, banners,
+    and any CVEs Shodan has already flagged. Never contacts the target
+    directly — only queries Shodan's existing index.
 
     Args:
-        message: Any string you want echoed back.
+        target: Domain name or IP address to look up (e.g. 'example.com').
 
     Returns:
-        The echoed string, prefixed with 'Echo: '.
+        Plain text summary of everything Shodan knows about the target.
     """
-    result = example_command_run({"message": message})
-    return result["result"]
+    return shodan_run(target)
 
 
-# ── Entry point ──────────────────────────────────────────────────────────────
+# ── Entry point ───────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     print("MCP server starting...", file=sys.stderr)
