@@ -104,7 +104,7 @@ export default function TerminalIntro({ onComplete }) {
           style={{
             background: '#000',
             padding: '18px 20px',
-            fontFamily: 'monospace',
+            fontFamily: "'IBM Plex Mono', monospace",
             fontSize: 13,
             color: '#fff',
             lineHeight: 1.8,
