@@ -227,7 +227,7 @@ export default function NewScan() {
             </div>
 
             {/* Mode Select */}
-            <div style={{ marginBottom: mode === 'active' ? 24 : 32 }}>
+            <div style={{ marginBottom: level === 'active' ? 24 : 32 }}>
               <label style={{ display: 'block', fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.7)', marginBottom: 12 }}>
                 Scan Mode
               </label>
