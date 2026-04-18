@@ -17,6 +17,7 @@ from mcp.server.fastmcp import FastMCP
 from tools.passive.shodan import run as shodan_run
 from tools.passive.whatweb import run as whatweb_passive_run
 from tools.passive.dns_whois import run as dns_whois_run
+from tools.passive.ssl_tls import run as ssl_tls_run
 
 mcp = FastMCP("claudehack-mcp")
 
@@ -81,6 +82,29 @@ def dns_whois(target: str) -> str:
         subdomains discovered via certificate transparency logs.
     """
     return dns_whois_run(target)
+
+
+@mcp.tool()
+def ssl_tls(target: str) -> str:
+    """
+    Audit the SSL/TLS configuration of the target's HTTPS endpoint (port 443).
+    Checks certificate validity and expiry, hostname matching, cipher suite
+    strength, and which TLS protocol versions the server accepts.
+
+    Flags: expired or near-expiry certs, deprecated TLS 1.0/1.1 support,
+    weak cipher suites (RC4, DES, NULL, EXPORT), self-signed certificates,
+    and hostname mismatches.
+
+    Does not require authorization — port 443 is publicly accessible.
+
+    Args:
+        target: Domain name or URL (e.g. 'example.com'). Scheme is stripped
+                automatically.
+
+    Returns:
+        Three sections: Certificate details, Cipher info, TLS version support.
+    """
+    return ssl_tls_run(target)
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────
