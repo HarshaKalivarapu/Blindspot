@@ -47,7 +47,7 @@ export default function HeroPanel({ onOpenModal }) {
               lineHeight: 1.1,
             }}
           >
-            <TextScramble text="ShieldScan" delay={2200} />
+            <TextScramble text="Blindspot" delay={2200} />
           </span>
           <span
             style={{

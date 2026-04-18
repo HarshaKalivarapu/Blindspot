@@ -464,7 +464,7 @@ export default function Guide() {
           fontFamily: 'system-ui, -apple-system, sans-serif'
         }}>
           <div style={{ fontSize: 18, fontWeight: 600, color: '#ffffff', letterSpacing: '-0.02em', cursor: 'pointer' }} onClick={() => navigate('/')}>
-            ShieldScan
+            Blindspot
           </div>
           <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
             <motion.button 
