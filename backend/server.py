@@ -19,6 +19,7 @@ from tools.passive.whatweb import run as whatweb_passive_run
 from tools.passive.dns_whois import run as dns_whois_run
 from tools.passive.ssl_tls import run as ssl_tls_run
 from tools.passive.http_headers import run as http_headers_run
+from tools.shared.nvd_lookup import run as nvd_lookup_run
 
 mcp = FastMCP("claudehack-mcp")
 
@@ -134,6 +135,33 @@ def http_headers(target: str) -> str:
         and fix instructions), and information disclosure headers found.
     """
     return http_headers_run(target)
+
+
+@mcp.tool()
+def nvd_lookup(software_list: str) -> str:
+    """
+    Query the National Vulnerability Database (NVD) for known CVEs affecting
+    the software versions discovered during the scan.
+
+    Call this ONCE after all other tools have finished — pass ALL software
+    names and versions found in a single call, comma or newline separated.
+    Do NOT call this after each individual tool.
+
+    Example input:
+        "WordPress 5.8, PHP 7.4.3, Apache 2.4.51, OpenSSH 7.2"
+
+    Results are grouped by severity (Critical → High → Medium → Low).
+    After this tool completes, pass the CVE IDs to searchsploit to check
+    for public exploit scripts.
+
+    Args:
+        software_list: Comma or newline separated list of "Name Version" pairs
+                       collected from shodan, whatweb, ssl_tls, nmap, etc.
+
+    Returns:
+        Per-software CVE listings and a grouped severity summary.
+    """
+    return nvd_lookup_run(software_list)
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────
