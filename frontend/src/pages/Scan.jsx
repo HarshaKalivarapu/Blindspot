@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
-import WarningModal from './components/WarningModal'
+import WarningModal from '../components/WarningModal'
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ?? 'http://localhost:5000'
 
-function App() {
+function Scan() {
   const [showWarning, setShowWarning] = useState(true)
   const [authorized, setAuthorized] = useState(false)
   const [input, setInput] = useState('')
@@ -136,4 +136,4 @@ function App() {
   )
 }
 
-export default App
+export default Scan
