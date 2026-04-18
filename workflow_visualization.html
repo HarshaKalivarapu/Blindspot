@@ -169,65 +169,55 @@
                 Start((Start\nTarget + Auth)) --> PassivePath[Passive Scan]
                 Start --> ActivePath[Active Scan]
 
-                %% ── PASSIVE BRANCH ──────────────────────────────────────
+                %% ── PASSIVE BRANCH (all 5 run in parallel → NVD) ────────
                 PassivePath --> Shodan[Shodan API]:::passive
                 PassivePath --> WhatWebPass[WhatWeb]:::passive
-                PassivePath --> DNS[DNS & WHOIS\n+ crt.sh Subdomains]:::passive
+                PassivePath --> DNS[DNS & WHOIS + crt.sh]:::passive
+                PassivePath --> SSLCheck[SSL / TLS Check]:::passive
+                PassivePath --> HTTPHeaders[HTTP Security Headers]:::passive
 
-                Shodan      --> SSLCheck[SSL / TLS Check]:::passive
-                WhatWebPass --> SSLCheck
-                DNS         --> SSLCheck
-
-                SSLCheck --> HTTPHeaders[HTTP Security Headers]:::passive
-                HTTPHeaders --> NVDPass[NVD API CVE Lookup]:::passive
+                Shodan       --> NVDPass[NVD CVE Lookup]:::passive
+                WhatWebPass  --> NVDPass
+                DNS          --> NVDPass
+                SSLCheck     --> NVDPass
+                HTTPHeaders  --> NVDPass
                 NVDPass --> Report{{Claude: Correlate & Report}}:::ai
 
                 %% ── ACTIVE BRANCH ────────────────────────────────────────
                 ActivePath --> ScanType{Simple or\nAggressive?}:::decision
 
-                ScanType -->|Simple\nnmap ip| NMAPSimple[NMAP Basic Scan]:::simple
-                ScanType -->|Aggressive\nnmap -p-| NMAPAggro[NMAP Full Port Scan]:::aggro
+                ScanType -->|Simple nmap ip| NMAPSimple[NMAP Basic Scan]:::simple
+                ScanType -->|Aggressive nmap -p-| NMAPAggro[NMAP Full Port Scan]:::aggro
 
                 NMAPSimple --> Ports{Analyze\nOpen Ports}:::decision
                 NMAPAggro  --> Ports
 
-                %% Port 80/443
-                Ports -->|Port 80 / 443| WebServer[Web Server Detected]:::decision
+                %% Port branches — all run in parallel
+                Ports -->|Port 80/443| WebServer[Web Server Detected]:::decision
+                Ports -->|Port 3306/5432| HydraDB[Hydra DB Brute-Force]:::simple
+                Ports -->|Port 21| HydraFTP[Hydra FTP Brute-Force]:::simple
+                Ports -->|Port 22| SSH[SSH Version Check]:::simple
+                Ports -->|Port 23| Telnet[Telnet Auto-Flag Critical]:::simple
+                Ports -->|Port 445| EternalBlue[SMB EternalBlue Check]:::aggro
+                Ports -->|Other Ports| NVDAct[NVD CVE Lookup]:::simple
+
+                %% Web tools — run in parallel
                 WebServer --> Nikto[Nikto]:::simple
-                WebServer --> FFuF[FFuF\nDirectory Brute-Force]:::aggro
+                WebServer --> FFuF[FFuF Directory Brute-Force]:::aggro
                 WebServer --> WhatWebAct[WhatWeb]:::simple
 
-                %% Port 3306/5432
-                Ports -->|Port 3306 / 5432| HydraDB[Hydra\nDB Brute-Force]:::simple
+                %% All converge → NVD first (find CVEs) → searchsploit (find exploits) → Report
+                Nikto       --> NVDAct
+                FFuF        --> NVDAct
+                WhatWebAct  --> NVDAct
+                HydraDB     --> NVDAct
+                HydraFTP    --> NVDAct
+                SSH         --> NVDAct
+                Telnet      --> NVDAct
+                EternalBlue --> NVDAct
 
-                %% Port 21
-                Ports -->|Port 21| HydraFTP[Hydra\nFTP Brute-Force]:::simple
-
-                %% Port 22
-                Ports -->|Port 22| SSH[SSH Version Check]:::simple
-
-                %% Port 23
-                Ports -->|Port 23| Telnet[Telnet\nAuto-Flag Critical]:::simple
-
-                %% Port 445
-                Ports -->|Port 445| EternalBlue[SMB\nEternalBlue Check]:::aggro
-
-                %% Other
-                Ports -->|Other Ports| OtherNVD[NVD Lookup\nfor Service Version]:::simple
-
-                %% Convergence → searchsploit → NVD → Report
-                Nikto       --> Searchsploit
-                FFuF        --> Searchsploit
-                WhatWebAct  --> Searchsploit
-                HydraDB     --> Searchsploit
-                HydraFTP    --> Searchsploit
-                SSH         --> Searchsploit
-                Telnet      --> Searchsploit
-                EternalBlue --> Searchsploit
-                OtherNVD    --> Searchsploit
-
-                Searchsploit[searchsploit\nExploitDB Lookup]:::simple --> NVDAct[NVD API\nCVE Lookup]:::simple
-                NVDAct --> Report
+                NVDAct --> Searchsploit[searchsploit ExploitDB]:::simple
+                Searchsploit --> Report
         </div>
     </div>
 
@@ -256,7 +246,7 @@
         });
 
         const tools = {
-            "Shodan API": {
+            "Shodan": {
                 icon: "🌐",
                 what: "Searches a public internet database that has already crawled and catalogued your target — so we never send a single packet to your servers. It reveals every port, service, and software version the open internet can already see.",
                 user: "\"We found your database port is publicly visible on the internet. Anyone can attempt to connect to it — and you had no idea.\""
@@ -266,7 +256,7 @@
                 what: "Makes a standard HTTP request (the same as a browser visit) and reads fingerprints in the response headers and HTML to identify the exact software stack: WordPress version, PHP version, server type, frameworks, and more.",
                 user: "\"Your site is running WordPress 5.8 with a PHP version from 2021. Both have known exploits that are publicly available and trivial to use.\""
             },
-            "DNS & WHOIS\n+ crt.sh Subdomains": {
+            "DNS & WHOIS": {
                 icon: "📋",
                 what: "Queries public DNS records to map every subdomain and IP tied to the domain, plus WHOIS registration records for ownership info. crt.sh scans public SSL certificate logs to find subdomains that have ever had a cert issued — revealing forgotten infrastructure.",
                 user: "\"You have a staging site (staging.yourcompany.com) still publicly accessible that you forgot about. It has no authentication and runs software from 2019.\""
@@ -281,7 +271,7 @@
                 what: "Makes one HTTP request and reads the instructions your web server sends to browsers. Missing headers like Content-Security-Policy, X-Frame-Options, and HSTS leave browsers unprotected against entire classes of attacks.",
                 user: "\"Your site is missing X-Frame-Options. Attackers can embed your login page invisibly inside their own site and steal your customers' credentials without them knowing (clickjacking).\""
             },
-            "NVD API CVE Lookup": {
+            "NVD CVE": {
                 icon: "📚",
                 what: "Takes every software version discovered and cross-references it against the National Vulnerability Database. Returns real CVE IDs, CVSS severity scores (Critical/High/Medium/Low), and links to public exploit code.",
                 user: "\"The software you're running has 3 critical vulnerabilities with public exploit scripts. Here's exactly what an attacker could do with each one.\""
@@ -301,17 +291,17 @@
                 what: "Fires thousands of pre-written checks against a web server: known dangerous file paths, default credentials left in place, outdated software signatures, and common misconfigurations. It's comprehensive but noisy.",
                 user: "\"Your server is still serving /phpinfo.php — a file that exposes your entire server configuration, file paths, and installed software to anyone who visits that URL.\""
             },
-            "FFuF\nDirectory Brute-Force": {
+            "FFuF": {
                 icon: "🚪",
                 what: "Rapidly fires hundreds of thousands of HTTP requests to guess hidden directory and file names from large wordlists. Finds pages that aren't linked from anywhere — admin panels, backup files, exposed APIs, config dumps.",
                 user: "\"We found /admin, /backup.zip, and /api/v1/users — none linked from your site, but all publicly accessible with no authentication.\""
             },
-            "Hydra\nDB Brute-Force": {
+            "Hydra DB": {
                 icon: "🔑",
                 what: "Attempts to log in to an exposed database port (MySQL on 3306, Postgres on 5432) using thousands of common username/password combinations. Tests default credentials that are frequently never changed.",
                 user: "\"Your database accepted the password 'admin123'. Default credentials are one of the most common ways small businesses get breached.\""
             },
-            "Hydra\nFTP Brute-Force": {
+            "Hydra FTP": {
                 icon: "🔑",
                 what: "Same as DB brute-force but targets an open FTP port. FTP transmits files and credentials in plaintext and is frequently misconfigured with default or weak passwords.",
                 user: "\"Your FTP server accepted 'admin/admin'. Anyone who finds this port can download or overwrite files on your server.\""
@@ -321,22 +311,17 @@
                 what: "NMAP reads the SSH banner from port 22, which reveals the exact version of the SSH software. Old OpenSSH versions have known vulnerabilities including user enumeration and authentication bypasses.",
                 user: "\"Your server runs OpenSSH 7.2, which has a user enumeration vulnerability — attackers can confirm valid usernames before attempting passwords, dramatically speeding up a brute-force attack.\""
             },
-            "Telnet\nAuto-Flag Critical": {
+            "Telnet": {
                 icon: "🚨",
                 what: "Telnet transmits everything — including passwords — in plain unencrypted text. There is no legitimate reason for Telnet to be open on a modern server. This is an automatic critical finding.",
                 user: "\"Port 23 (Telnet) is open on your server. Any password typed over this connection is readable by anyone on the same network. This must be closed immediately.\""
             },
-            "SMB\nEternalBlue Check": {
+            "EternalBlue": {
                 icon: "💀",
                 what: "Runs a targeted Metasploit auxiliary module to test if the server is vulnerable to EternalBlue (MS17-010) — the exploit behind the WannaCry ransomware attack that caused billions in damage worldwide. Only tests, does not exploit.",
                 user: "\"Your server is vulnerable to EternalBlue — the same exploit used by WannaCry ransomware. An attacker can gain full remote control of your machine without a password.\""
             },
-            "NVD Lookup\nfor Service Version": {
-                icon: "📚",
-                what: "For any open port running an identified service, looks up the exact version in the National Vulnerability Database to check for known CVEs — even if no specific tool targets that service.",
-                user: "\"The custom service running on port 9090 is version 2.3.1 — which has a known remote code execution vulnerability (CVE-2022-XXXXX).\""
-            },
-            "searchsploit\nExploitDB Lookup": {
+            "searchsploit": {
                 icon: "🗄️",
                 what: "Queries a local copy of Exploit-DB — a public archive of exploit scripts — to find ready-made attack code matching every software version and CVE found. It doesn't run anything, just tells you what weapons exist.",
                 user: "\"There are 3 public exploit scripts targeting your exact WordPress version. A beginner attacker could download and run these with no modification.\""
@@ -346,17 +331,17 @@
                 what: "Claude reads all raw tool outputs, correlates findings across the full pipeline, eliminates false positives, and writes a clean human-readable report prioritized by severity (Critical → High → Medium → Low) with specific remediation steps for each finding.",
                 user: "\"Here is your full security report: 2 critical issues, 4 high severity, 3 medium. Each finding explains what it is, what an attacker could do with it, and exactly how to fix it.\""
             },
-            "Start\nTarget + Auth": {
+            "Start": {
                 icon: "🎯",
                 what: "The user provides a target domain or IP address and confirms authorization for active scanning. The authorization gate is enforced at the server level — active tools are physically withheld if authorization is not confirmed.",
                 user: "\"Enter the domain or IP of your own website or infrastructure. For passive scans, no authorization is needed. For active scans, you must confirm you own or have permission to test the target.\""
             },
-            "Simple or\nAggressive?": {
+            "Simple or": {
                 icon: "⚙️",
                 what: "Simple scan checks the top 1000 most common ports — fast (1-2 minutes) and covers 99% of typical vulnerabilities. Aggressive scan checks all 65,535 ports — thorough but takes significantly longer.",
                 user: "\"Choose Simple for a quick health check. Choose Aggressive for the most thorough scan — recommended if you suspect a serious issue or want maximum coverage.\""
             },
-            "Analyze\nOpen Ports": {
+            "Analyze": {
                 icon: "🔀",
                 what: "Claude reads the NMAP output and branches the pipeline based on which ports are open. Different ports mean different services, which require different specialized tools to test properly.",
                 user: "\"Based on what's open on your server, we now run the right tools for each service — web tools for your website, database tools for your database, etc.\""
@@ -397,7 +382,7 @@
                     node.addEventListener('mouseover', () => {
                         if (pinned) return;
                         const nodeText = node.textContent.trim();
-                        const matchKey = Object.keys(tools).find(k => nodeText.includes(k.split('\n')[0]));
+                        const matchKey = Object.keys(tools).find(k => nodeText.includes(k));
                         if (matchKey) showInfo(matchKey);
                     });
 
@@ -407,7 +392,7 @@
 
                     node.addEventListener('click', () => {
                         const nodeText = node.textContent.trim();
-                        const matchKey = Object.keys(tools).find(k => nodeText.includes(k.split('\n')[0]));
+                        const matchKey = Object.keys(tools).find(k => nodeText.includes(k));
                         if (!matchKey) return;
 
                         if (pinned && document.getElementById('info-name').textContent === matchKey.replace(/\n/g, ' ')) {
