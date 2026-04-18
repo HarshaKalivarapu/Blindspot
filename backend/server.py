@@ -16,6 +16,7 @@ from mcp.server.fastmcp import FastMCP
 
 from tools.passive.shodan import run as shodan_run
 from tools.passive.whatweb import run as whatweb_passive_run
+from tools.passive.dns_whois import run as dns_whois_run
 
 mcp = FastMCP("claudehack-mcp")
 
@@ -57,6 +58,29 @@ def whatweb(target: str) -> str:
         info is available.
     """
     return whatweb_passive_run(target)
+
+
+@mcp.tool()
+def dns_whois(target: str) -> str:
+    """
+    Perform DNS record lookup, WHOIS registration query, and certificate
+    transparency search (crt.sh) for the target domain. All three are fully
+    passive — no packets are sent to the target's servers.
+
+    DNS reveals IP addresses, mail servers, nameservers, and TXT records.
+    WHOIS reveals domain ownership, registration dates, and expiry (domains
+    expiring soon can be hijacked). crt.sh reveals every subdomain that has
+    ever had an SSL certificate issued — including forgotten dev/staging sites.
+
+    Args:
+        target: Domain name to investigate (e.g. 'example.com'). Schemes
+                (http://) are stripped automatically.
+
+    Returns:
+        Three clearly labelled sections: DNS records, WHOIS data, and
+        subdomains discovered via certificate transparency logs.
+    """
+    return dns_whois_run(target)
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────
