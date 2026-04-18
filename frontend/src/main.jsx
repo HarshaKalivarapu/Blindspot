@@ -7,6 +7,7 @@ import Home from './pages/Home.jsx'
 import Scan from './pages/Scan.jsx'
 import NewScan from './pages/NewScan.jsx'
 import Guide from './pages/Guide.jsx'
+import ScanReport from './pages/ScanReport.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -17,6 +18,7 @@ createRoot(document.getElementById('root')).render(
           <Route path="/guide" element={<Guide />} />
           <Route path="/scan/new" element={<NewScan />} />
           <Route path="/scan" element={<Scan />} />
+          <Route path="/scan/report" element={<ScanReport />} />
         </Routes>
       </BrowserRouter>
     </GoogleOAuthProvider>
