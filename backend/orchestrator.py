@@ -31,7 +31,6 @@ load_dotenv()
 
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-6")
-PORT = int(os.environ.get("PORT", "5000"))
 
 if not ANTHROPIC_API_KEY:
     print(
@@ -80,7 +79,8 @@ ACTIVE_TOOL_NAMES = {
     "hydra_db", "hydra_ftp",
     "ssh_check", "telnet_check",
     "eternalblue", "searchsploit",
-    "nvd_lookup",
+    # nvd_lookup is intentionally excluded — it's a passive-safe API query
+    # needed in both passive and active scans
 }
 
 # Tools that only run in aggressive mode (a subset of active tools)
@@ -202,7 +202,7 @@ async def scan(req: ScanRequest):
                 system_prompt = _load_prompt(req.level, req.scan_type, req.target)
 
                 messages = [
-                    {"role": "user", "content": f"Begin {scan_description} scan of {req.target}."}
+                    {"role": "user", "content": f"Begin {req.level} scan of {req.target}."}
                 ]
 
                 # ── Tool-use loop ─────────────────────────────────────────
