@@ -211,7 +211,7 @@ function Scan() {
         </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-6 py-6 pb-8">
+      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-6 py-6 pb-8 min-h-0 overflow-hidden">
         <div
           ref={scrollRef}
           className="flex-1 space-y-4 overflow-y-auto rounded-xl border border-white/10 bg-black/30 backdrop-blur-md p-4"
