@@ -29,18 +29,38 @@ def run(target: str) -> str:
     lines.append(f"Open ports   : {', '.join(str(p) for p in host.get('ports', []))}")
     lines.append("")
 
-    for item in host.get("data", []):
+    tags = host.get("tags", [])
+    if tags:
+        lines.append(f"Tags: {', '.join(tags)}")
+
+    hostnames = host.get("hostnames", [])
+    if hostnames:
+        lines.append(f"Hostnames: {', '.join(hostnames)}")
+
+    lines.append("")
+
+    # Collect versioned software as we go — used for NVD section at the end
+    nvd_candidates = []
+    all_shodan_cves = []
+
+    data_items = host.get("data", [])
+    if len(data_items) > 25:
+        lines.append(f"(Showing 25 of {len(data_items)} services — capped to keep output manageable)")
+        data_items = data_items[:25]
+
+    for item in data_items:
         port = item.get("port")
         transport = item.get("transport", "tcp")
         product = item.get("product", "")
         version = item.get("version", "")
-        banner = (item.get("data", "") or "").strip()[:300]
+        banner = (item.get("data", "") or "").strip()[:150]
 
         service_line = f"Port {port}/{transport}"
         if product:
             service_line += f" — {product}"
         if version:
             service_line += f" {version}"
+            nvd_candidates.append(f"{product} {version}".strip())
         lines.append(service_line)
 
         if banner:
@@ -53,15 +73,23 @@ def run(target: str) -> str:
                 cvss = details.get("cvss", "N/A")
                 summary = details.get("summary", "")[:150]
                 lines.append(f"    {cve} (CVSS {cvss}): {summary}")
+                all_shodan_cves.append(cve)
 
         lines.append("")
 
-    tags = host.get("tags", [])
-    if tags:
-        lines.append(f"Tags: {', '.join(tags)}")
+    # Explicit NVD section so Claude knows exactly what to pass to nvd_lookup
+    lines.append("── Software Versions for NVD Lookup ──")
+    if nvd_candidates:
+        lines.append("Pass these to nvd_lookup (combine with versions from other tools):")
+        for candidate in nvd_candidates:
+            lines.append(f"  {candidate}")
+    else:
+        lines.append("  No versioned software detected — Shodan may not have banner data for this host.")
 
-    hostnames = host.get("hostnames", [])
-    if hostnames:
-        lines.append(f"Hostnames: {', '.join(hostnames)}")
+    if all_shodan_cves:
+        lines.append("")
+        lines.append(f"CVEs already flagged by Shodan (include in report):")
+        for cve in all_shodan_cves:
+            lines.append(f"  {cve}")
 
     return "\n".join(lines)

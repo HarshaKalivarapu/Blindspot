@@ -14,7 +14,10 @@ def _dns_section(domain: str) -> list[str]:
         try:
             answers = dns.resolver.resolve(domain, rtype, lifetime=10)
             for rdata in answers:
-                lines.append(f"  {rtype:6} {rdata.to_text()}")
+                val = rdata.to_text()
+                if len(val) > 120:
+                    val = val[:117] + "..."
+                lines.append(f"  {rtype:6} {val}")
         except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN):
             pass
         except dns.exception.Timeout:
@@ -109,17 +112,33 @@ def _crtsh_section(domain: str) -> list[str]:
         return lines
 
     sorted_subs = sorted(subdomains)
-    lines.append(f"  {len(sorted_subs)} subdomain(s) found in certificate transparency logs:")
-    for sub in sorted_subs:
-        # Flag potentially sensitive subdomains
-        sensitive_keywords = [
-            "dev", "staging", "stage", "test", "qa", "uat",
-            "admin", "internal", "vpn", "api", "old", "backup",
-            "beta", "demo", "portal", "jenkins", "gitlab", "jira",
-        ]
+    total_count = len(sorted_subs)
+    cap = 50
+
+    # Always show flagged subdomains first, then fill remaining slots with others
+    sensitive_keywords = [
+        "dev", "staging", "stage", "test", "qa", "uat",
+        "admin", "internal", "vpn", "api", "old", "backup",
+        "beta", "demo", "portal", "jenkins", "gitlab", "jira",
+    ]
+
+    flagged = [s for s in sorted_subs if any(kw in s.split(".")[0] for kw in sensitive_keywords)]
+    unflagged = [s for s in sorted_subs if s not in flagged]
+
+    shown = flagged + unflagged
+    truncated = len(shown) > cap
+    shown = shown[:cap]
+
+    lines.append(f"  {total_count} subdomain(s) found in certificate transparency logs" +
+                 (f" — showing {cap} (flagged first):" if truncated else ":"))
+
+    for sub in shown:
         flags = [kw for kw in sensitive_keywords if kw in sub.split(".")[0]]
         flag_str = f"  ← REVIEW: matches '{flags[0]}'" if flags else ""
         lines.append(f"    {sub}{flag_str}")
+
+    if truncated:
+        lines.append(f"  ... and {total_count - cap} more subdomains not shown.")
 
     return lines
 
