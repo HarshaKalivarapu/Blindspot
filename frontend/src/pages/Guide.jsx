@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import ShaderBackground from '../components/homepage/ShaderBackground.jsx'
+import CopyButton from '../components/ui/CopyButton.jsx'
 
 // Intersection Reveal Wrapper for Text Sections
 function SectionReveal({ children, id }) {
@@ -69,7 +70,10 @@ function TypewriterCommand({ command, attachBadge }) {
           {attachBadge}
         </div>
       )}
-      <div style={{ padding: '14px 18px', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontFamily: 'monospace', fontSize: 13, color: '#10b981', overflowX: 'auto', whiteSpace: 'pre' }}>
+      <div style={{ position: 'relative', padding: '14px 18px', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontFamily: 'monospace', fontSize: 13, color: '#10b981', overflowX: 'auto', whiteSpace: 'pre' }}>
+        <div style={{ position: 'absolute', top: 8, right: 8 }}>
+          <CopyButton text={command} />
+        </div>
         <span>{displayedText}</span>
         {isTyping && <motion.span animate={{ opacity: [1, 0] }} transition={{ repeat: Infinity, duration: 0.5, ease: 'steps(2)' }}>█</motion.span>}
         {!hasTyped && !isTyping && <span style={{ opacity: 0 }}>█</span>}
@@ -197,14 +201,14 @@ function NonDeveloperTab() {
       <SectionReveal>
         <h2 style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 24, fontWeight: 600, color: '#ffffff', marginBottom: 16, letterSpacing: '-0.02em' }}>1. What is this app?</h2>
         <p style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 15, color: 'rgba(255,255,255,0.65)', lineHeight: 1.6, marginBottom: 16 }}>
-          Think of this tool as a digital home inspector for your website. It scans your server the exact same way a hacker would, looks for unlocked doors and broken windows, and then hands you a plain-english checklist explaining what was found and exactly how to fix it before anyone else finds out.
+          Think of this tool as a digital security guard for your entire network. It scans every device and entry point on your network the exact same way a hacker would, looks for unlocked doors and open pathways, and then hands you a plain-english checklist explaining what was found and exactly how to fix it before anyone else does.
         </p>
       </SectionReveal>
 
       <SectionReveal>
         <h2 style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 24, fontWeight: 600, color: '#ffffff', marginBottom: 16, letterSpacing: '-0.02em' }}>2. What is an IP address?</h2>
         <p style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 15, color: 'rgba(255,255,255,0.65)', lineHeight: 1.6, marginBottom: 16 }}>
-          Just like your real house has a physical street address so the post office can find it, your website's server has a digital address on the internet called an IP Address (e.g. 192.168.1.1). This tool just needs that address so our inspector knows where to go.
+          Just like every building on a street has a unique address, every device on a network has a digital address called an IP Address (e.g. 192.168.1.1). This tool just needs that address so our scanner knows exactly where to look.
         </p>
       </SectionReveal>
 
@@ -228,13 +232,13 @@ function NonDeveloperTab() {
       <SectionReveal>
         <h2 style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 24, fontWeight: 600, color: '#ffffff', marginBottom: 16, letterSpacing: '-0.02em' }}>4. What happens during a scan?</h2>
         <ul style={{ listStyleType: 'disc', paddingLeft: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <li style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 15, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>We check how your server is known publicly across the internet.</li>
-          <li style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 15, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>We look for open digital doors (ports) on your server.</li>
-          <li style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 15, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>We check what specific software is running right behind each door.</li>
-          <li style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 15, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>We look up whether that specific software has any famous, known weaknesses.</li>
-          <li style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 15, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>We try common default passwords on any databases we find exposed to the public.</li>
-          <li style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 15, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>We check your website for any hidden or unprotected admin pages.</li>
-          <li style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 15, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>We compile everything we find into a massive final report with a strict score out of 10.</li>
+          <li style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 15, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>We look up how your network is publicly visible across the internet.</li>
+          <li style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 15, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>We map every open digital door (port) across all devices on your network.</li>
+          <li style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 15, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>We identify what software and services are running behind each of those doors.</li>
+          <li style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 15, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>We check whether that software has any known, publicly documented weaknesses.</li>
+          <li style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 15, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>We test common default passwords on any services exposed to the internet (SSH, databases, remote access).</li>
+          <li style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 15, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>We check for shared drives, file servers, and remote management tools left open by mistake.</li>
+          <li style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 15, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>We compile everything into a final report with a risk score out of 10.</li>
         </ul>
       </SectionReveal>
 
