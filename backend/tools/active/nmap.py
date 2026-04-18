@@ -10,8 +10,10 @@ def run(params: dict[str, Any]) -> dict[str, Any]:
 
     if aggressive:
         cmd = ["nmap", "-p-", "-sV", "-O", "-A", "--script", "vuln", ip]
+        timeout = 300
     else:
         cmd = ["nmap", "-sV", "-A", ip]
+        timeout = 60
 
     result = subprocess.run(cmd, capture_output=True, text=True)
     return {"result": result.stdout}
