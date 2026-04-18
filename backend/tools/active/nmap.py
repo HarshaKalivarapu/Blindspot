@@ -7,15 +7,20 @@ TOOL_DESCRIPTION = "Runs an nmap scan on a target IP to find open ports and serv
 def run(params: dict[str, Any]) -> dict[str, Any]:
     ip = params["ip"]
     aggressive = params.get("aggressive", False)
-
+    
     if aggressive:
-        cmd = ["nmap", "-p-", "-sV", "-O", "-A", "--script", "vuln", ip]
-        timeout = 300
+        cmd = ["nmap", "-p-", "-sV", "-A", "--script", "vuln", ip]
+        timeout = 600
     else:
         cmd = ["nmap", "-sV", "-A", ip]
         timeout = 60
 
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    return {"result": result.stdout}
-
-
+    try:
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        stdout, stderr = process.communicate(timeout=timeout)
+        return {"result": stdout + stderr}
+    except subprocess.TimeoutExpired:
+        process.kill()
+        return {"result": "[TIMEOUT] nmap exceeded time limit."}
+    except Exception as e:
+        return {"result": f"[ERROR] nmap failed: {str(e)}"}
