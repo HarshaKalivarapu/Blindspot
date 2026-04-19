@@ -217,7 +217,7 @@ const mdComponents = {
   blockquote: ({children}) => <blockquote style={{borderLeft:'3px solid rgba(255,255,255,0.2)',paddingLeft:16,margin:'16px 0',color:'rgba(255,255,255,0.6)'}}>{children}</blockquote>,
 }
 
-export default function ScanVisualizationActive({ target, nmapType = 'basic', onComplete, externalDone = {}, generatingReport = false, reportDev = null, reportNonDev = null, devChunkLen = 0, nondevChunkLen = 0, topOffset = 0 }) {
+export default function ScanVisualizationActive({ target, nmapType = 'basic', onComplete, externalDone = {}, externalRunning = {}, generatingReport = false, reportDev = null, reportNonDev = null, devChunkLen = 0, nondevChunkLen = 0, topOffset = 0 }) {
   const report = reportNonDev || reportDev
   const tools = nmapType === 'aggressive' ? AGGRESSIVE_TOOLS : SIMPLE_TOOLS
   const toolXs = toolXPositions(tools.length)
@@ -237,6 +237,8 @@ export default function ScanVisualizationActive({ target, nmapType = 'basic', on
 
   const externalDoneRef = useRef(externalDone)
   useEffect(() => { externalDoneRef.current = externalDone }, [externalDone])
+  const externalRunningRef = useRef(externalRunning)
+  useEffect(() => { externalRunningRef.current = externalRunning }, [externalRunning])
 
   // When report generation starts, snap all tools done and advance past tools phase
   useEffect(() => {
@@ -265,27 +267,44 @@ export default function ScanVisualizationActive({ target, nmapType = 'basic', on
   useEffect(() => {
     if (phase !== 'nmap') return
     const duration = nmapType === 'aggressive' ? 4000 + Math.random() * 2000 : 2500 + Math.random() * 1500
-    const start = Date.now()
+    const phaseStart = Date.now()
+    let animStart = null
     const iv = setInterval(() => {
+      const now = Date.now()
       const forceDone = externalDoneRef.current['nmap']
-      const p = forceDone ? 100 : Math.min(100, ((Date.now() - start) / duration) * 100)
+      if (forceDone) {
+        setNmapProgress(100)
+        clearInterval(iv); setNmapDone(true); setTimeout(() => setPhase('tools'), 700)
+        return
+      }
+      // Start animation when SSE says nmap is running, or after 3s fallback
+      const isRunning = externalRunningRef.current['nmap'] || (now - phaseStart > 3000)
+      if (!isRunning) { setNmapProgress(0); return }
+      if (!animStart) animStart = now
+      const p = Math.min(100, ((now - animStart) / duration) * 100)
       setNmapProgress(p)
       if (p >= 100) { clearInterval(iv); setNmapDone(true); setTimeout(() => setPhase('tools'), 700) }
     }, 50)
     return () => clearInterval(iv)
-  }, [phase, nmapType])
+  }, [phase, nmapType]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (phase !== 'tools') return
     const keyframes = tools.map(() => generateKeyframes())
-    const start = Date.now()
+    const toolStartTimes = {}
+    const phaseStart = Date.now()
     const iv = setInterval(() => {
-      const elapsed = Date.now() - start
+      const now = Date.now()
+      const elapsedPhase = now - phaseStart
       const newProg = {}, newDone = {}
       let allDone = true
       tools.forEach((t, i) => {
         const forceDone = externalDoneRef.current[t.id]
-        const p = forceDone ? 100 : interpolateKeyframes(elapsed, keyframes[i])
+        if (forceDone) { newProg[t.id] = 100; newDone[t.id] = true; return }
+        const isRunning = externalRunningRef.current[t.id] || elapsedPhase > 5000
+        if (!isRunning) { newProg[t.id] = 0; newDone[t.id] = false; allDone = false; return }
+        if (!toolStartTimes[t.id]) toolStartTimes[t.id] = now
+        const p = interpolateKeyframes(now - toolStartTimes[t.id], keyframes[i])
         newProg[t.id] = p
         newDone[t.id] = p >= 100
         if (p < 100) allDone = false
@@ -295,7 +314,7 @@ export default function ScanVisualizationActive({ target, nmapType = 'basic', on
       if (allDone) { clearInterval(iv); setTimeout(() => setPhase('nvd'), 700) }
     }, 50)
     return () => clearInterval(iv)
-  }, [phase, tools.length])
+  }, [phase, tools.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (phase !== 'nvd') return
