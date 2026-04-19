@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import WarningModal from '../components/WarningModal'
 import ShaderBackground from '../components/homepage/ShaderBackground.jsx'
 import AuthModal from '../components/homepage/AuthModal.jsx'
+import ScanVisualization from '../components/ScanVisualization.jsx'
+import ScanVisualizationActive from '../components/ScanVisualizationActive.jsx'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../lib/AuthContext.jsx'
 
@@ -21,12 +23,9 @@ function Scan() {
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
   const [scanError, setScanError] = useState(false)
-  const [messages, setMessages] = useState([
-    {
-      role: 'assistant',
-      text: 'Scanner ready. Describe a target or ask a question to begin.',
-    },
-  ])
+  const [messages, setMessages] = useState([])
+  const [externalDone, setExternalDone] = useState({})
+  const [report, setReport] = useState(null)
   const scrollRef = useRef(null)
   const scanInserted = useRef(false)
 
@@ -84,7 +83,9 @@ function Scan() {
   const startScan = async (config, isAuthorized) => {
     setSending(true)
     setScanError(false)
-    setMessages([{ role: 'assistant', text: `Starting ${config.level} scan of ${config.target}...` }])
+    setExternalDone({})
+    setReport(null)
+    setMessages([])
 
     try {
       const res = await fetch(`${BACKEND_URL}/scan`, {
@@ -115,11 +116,13 @@ function Scan() {
           try {
             const event = JSON.parse(line.slice(6))
             if (event.type === 'status') {
-              setMessages((m) => [...m, { role: 'status', text: event.message }])
-            } else if (event.type === 'progress') {
-              setMessages((m) => [...m, { role: 'assistant', text: event.message }])
+              // Detect tool completion: "shodan complete." → externalDone['shodan'] = true
+              if (event.message.endsWith(' complete.')) {
+                const toolName = event.message.slice(0, -' complete.'.length)
+                setExternalDone(prev => ({ ...prev, [toolName]: true }))
+              }
             } else if (event.type === 'report') {
-              setMessages((m) => [...m, { role: 'report', text: event.message }])
+              setReport(event.message)
             }
           } catch {
             // skip malformed lines
@@ -260,47 +263,23 @@ function Scan() {
         </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-6 py-6 pb-8 min-h-0 overflow-hidden">
-        <div
-          ref={scrollRef}
-          className="flex-1 space-y-4 overflow-y-auto rounded-xl border border-white/10 bg-black/30 backdrop-blur-md p-4"
-        >
-          {messages.map((m, i) => (
-            <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div
-                style={{
-                  fontFamily: 'system-ui, -apple-system, sans-serif',
-                  maxWidth: m.role === 'report' ? '100%' : '75%',
-                  borderRadius: 16,
-                  padding: m.role === 'status' ? '6px 14px' : '12px 20px',
-                  fontSize: m.role === 'status' ? 12 : 14,
-                  lineHeight: 1.6,
-                  whiteSpace: 'pre-wrap',
-                  background:
-                    m.role === 'user'   ? '#ffffff' :
-                    m.role === 'status' ? 'rgba(255,255,255,0.04)' :
-                    m.role === 'report' ? 'rgba(255,255,255,0.06)' :
-                                          'rgba(255,255,255,0.1)',
-                  color:
-                    m.role === 'user'   ? '#000000' :
-                    m.role === 'status' ? 'rgba(255,255,255,0.4)' :
-                                          '#ffffff',
-                  border: m.role === 'report' ? '1px solid rgba(255,255,255,0.15)' : 'none',
-                  width: m.role === 'report' ? '100%' : undefined,
-                }}
-              >
-                {m.role === 'status' && '› '}{m.text}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {sending && (
-          <div className="mt-4 text-center text-sm" style={{ color: 'rgba(255,255,255,0.35)', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-            Scan in progress...
-          </div>
-        )}
-      </main>
+      <div style={{ position: 'absolute', inset: '64px 0 0 0' }}>
+        {scanConfig?.level === 'active'
+          ? <ScanVisualizationActive
+              target={scanConfig.target}
+              nmapType={scanConfig.intensity ?? 'simple'}
+              externalDone={externalDone}
+              report={report}
+              topOffset={64}
+              onComplete={() => setSending(false)} />
+          : <ScanVisualization
+              target={scanConfig?.target ?? ''}
+              externalDone={externalDone}
+              report={report}
+              topOffset={64}
+              onComplete={() => setSending(false)} />
+        }
+      </div>
     </motion.div>
   )
 

@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import ReactMarkdown from 'react-markdown'
 
 // ── SVG canvas dimensions ────────────────────────────────────────────────────
 const W = 1000
@@ -138,7 +139,31 @@ function Block({ label, done, wide }) {
 }
 
 // ── Main visualization component ──────────────────────────────────────────────
-export default function ScanVisualization({ target, onComplete }) {
+// ── Markdown report renderer ──────────────────────────────────────────────────
+const mdComponents = {
+  h1: ({children}) => <h1 style={{fontSize:26,fontWeight:700,marginBottom:12,letterSpacing:'-0.02em',color:'#fff'}}>{children}</h1>,
+  h2: ({children}) => <h2 style={{fontSize:20,fontWeight:600,marginTop:36,marginBottom:10,color:'rgba(255,255,255,0.95)',borderBottom:'1px solid rgba(255,255,255,0.08)',paddingBottom:8}}>{children}</h2>,
+  h3: ({children}) => <h3 style={{fontSize:16,fontWeight:600,marginTop:20,marginBottom:6,color:'rgba(255,255,255,0.9)'}}>{children}</h3>,
+  p: ({children}) => <p style={{marginBottom:12,color:'rgba(255,255,255,0.8)',lineHeight:1.75}}>{children}</p>,
+  ul: ({children}) => <ul style={{paddingLeft:20,marginBottom:12}}>{children}</ul>,
+  ol: ({children}) => <ol style={{paddingLeft:20,marginBottom:12}}>{children}</ol>,
+  li: ({children}) => <li style={{marginBottom:4,color:'rgba(255,255,255,0.8)',lineHeight:1.7}}>{children}</li>,
+  strong: ({children}) => <strong style={{color:'#fff',fontWeight:600}}>{children}</strong>,
+  code: ({children}) => <code style={{background:'rgba(255,255,255,0.08)',padding:'2px 6px',borderRadius:4,fontSize:12,fontFamily:'monospace'}}>{children}</code>,
+  hr: () => <hr style={{border:'none',borderTop:'1px solid rgba(255,255,255,0.1)',margin:'24px 0'}} />,
+  blockquote: ({children}) => <blockquote style={{borderLeft:'3px solid rgba(255,255,255,0.2)',paddingLeft:16,margin:'16px 0',color:'rgba(255,255,255,0.6)'}}>{children}</blockquote>,
+}
+
+function ReportMarkdown({ content }) {
+  if (!content) return (
+    <p style={{ color: 'rgba(255,255,255,0.4)' }}>Scan complete — waiting for report...</p>
+  )
+  return <ReactMarkdown components={mdComponents}>{content}</ReactMarkdown>
+}
+
+// externalDone: { [toolId]: boolean } — tools confirmed done by real SSE events
+// report: the actual markdown report text from the backend
+export default function ScanVisualization({ target, onComplete, externalDone = {}, report = null, topOffset = 0 }) {
   const [phase, setPhase] = useState('intro')
   const [toolProgress, setToolProgress] = useState(
     Object.fromEntries(TOOLS.map(t => [t.id, 0]))
@@ -151,16 +176,26 @@ export default function ScanVisualization({ target, onComplete }) {
   const [nvdDone, setNvdDone] = useState(false)
   const [showReport, setShowReport] = useState(false)
 
-  // intro → tools after 1.2s (gives time to read the target block)
+  // Keep a ref so intervals always read the latest externalDone without stale closures
+  const externalDoneRef = useRef(externalDone)
+  useEffect(() => { externalDoneRef.current = externalDone }, [externalDone])
+
+  // When the real report arrives, fast-forward to showing it
+  useEffect(() => {
+    if (!report) return
+    setNvdDone(true)
+    setPhase('fading')
+  }, [report])
+
+  // intro → tools
   useEffect(() => {
     if (phase !== 'intro') return
     const t = setTimeout(() => setPhase('tools'), 1200)
     return () => clearTimeout(t)
   }, [phase])
 
-  // tools: run all 5 progress bars simultaneously
-  // Each tool has a random visual duration between 1.5s and 4s so they finish
-  // at different times and always animate — even if the real tool is instant
+  // tools: animated progress bars. Real tool completions (externalDoneRef) snap to 100%.
+  // Minimum 1.5s visual duration ensures bars always animate even for instant tools.
   useEffect(() => {
     if (phase !== 'tools') return
 
@@ -172,18 +207,19 @@ export default function ScanVisualization({ target, onComplete }) {
     const interval = setInterval(() => {
       const elapsed = Date.now() - start
       const newProgress = {}
+      const newDone = {}
       let allDone = true
 
-      const newDone = {}
       TOOLS.forEach((tool, i) => {
-        const p = Math.min(100, (elapsed / durations[i]) * 100)
+        const forceDone = externalDoneRef.current[tool.id]
+        const p = forceDone ? 100 : Math.min(100, (elapsed / durations[i]) * 100)
         newProgress[tool.id] = p
         newDone[tool.id] = p >= 100
         if (p < 100) allDone = false
       })
 
       setToolProgress(newProgress)
-      setToolDone(newDone)  // checkmark appears per-tool as soon as its bar hits 100%
+      setToolDone(newDone)
 
       if (allDone) {
         clearInterval(interval)
@@ -194,7 +230,8 @@ export default function ScanVisualization({ target, onComplete }) {
     return () => clearInterval(interval)
   }, [phase])
 
-  // nvd: branches fill in fixed 500ms, then trunk fills over 3-6s
+  // nvd: branches fill in 500ms, trunk fills over 3-6s.
+  // Snaps to done immediately if nvd_lookup is confirmed complete externally.
   useEffect(() => {
     if (phase !== 'nvd') return
 
@@ -204,10 +241,14 @@ export default function ScanVisualization({ target, onComplete }) {
 
     const interval = setInterval(() => {
       const elapsed = Date.now() - start
-      const bp = Math.min(100, (elapsed / BRANCH_MS) * 100)
-      const tp = elapsed > BRANCH_MS
-        ? Math.min(100, ((elapsed - BRANCH_MS) / trunkDuration) * 100)
-        : 0
+      const nvdConfirmed = externalDoneRef.current['nvd_lookup']
+
+      const bp = nvdConfirmed ? 100 : Math.min(100, (elapsed / BRANCH_MS) * 100)
+      const tp = nvdConfirmed
+        ? 100
+        : elapsed > BRANCH_MS
+          ? Math.min(100, ((elapsed - BRANCH_MS) / trunkDuration) * 100)
+          : 0
 
       setConvBranchProgress(bp)
       setTrunkProgress(tp)
@@ -243,7 +284,7 @@ export default function ScanVisualization({ target, onComplete }) {
   const trunkY2 = NVD_CY - BH / 2 - 4
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: '#070a0d' }}>
+    <div style={{ position: 'fixed', top: topOffset, left: 0, right: 0, bottom: 0, background: '#070a0d' }}>
       <AnimatePresence>
         {!showReport && (
           <motion.div
@@ -340,26 +381,16 @@ export default function ScanVisualization({ target, onComplete }) {
             transition={{ duration: 0.6 }}
             style={{
               position: 'absolute',
-              inset: '60px 80px 60px',
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              borderRadius: 16,
-              padding: '36px 48px',
+              inset: 0,
               overflowY: 'auto',
+              padding: '48px 12%',
               color: 'white',
               fontFamily: 'system-ui, sans-serif',
               fontSize: 14,
               lineHeight: 1.75,
-              whiteSpace: 'pre-wrap',
             }}
           >
-            {/* Placeholder — real report content goes here */}
-            <h2 style={{ marginTop: 0, fontSize: 22, fontWeight: 600, letterSpacing: '-0.02em' }}>
-              Security Report
-            </h2>
-            <p style={{ color: 'rgba(255,255,255,0.5)', marginBottom: 24 }}>
-              Scan complete — report will appear here when connected to the backend.
-            </p>
+            <ReportMarkdown content={report} />
           </motion.div>
         )}
       </AnimatePresence>
