@@ -74,20 +74,20 @@ class ScanRequest(BaseModel):
 
 # Tools that touch the target directly — require authorization_confirmed = True
 ACTIVE_TOOL_NAMES = {
-    "nmap_basic", "nmap_full",
-    "nikto", "ffuf",
-    "hydra_db", "hydra_ftp",
-    "ssh_check", "telnet_check",
-    "eternalblue", "searchsploit",
+    "nmap",           # handles both basic and aggressive via its aggressive param
+    "nikto",
+    "ffuf",
+    "hydra",          # handles db and ftp via its service param
+    "whatweb_active",
+    "searchsploit",
     # nvd_lookup is intentionally excluded — it's a passive-safe API query
     # needed in both passive and active scans
 }
 
 # Tools that only run in aggressive mode (a subset of active tools)
+# nmap's aggressive mode is controlled by its own parameter, not by withholding the tool
 AGGRESSIVE_TOOL_NAMES = {
-    "nmap_full",    # scans all 65535 ports instead of top 1000
-    "ffuf",         # directory brute-force (very noisy, many requests)
-    "eternalblue",  # SMB exploit check
+    "ffuf",   # directory brute-force — very noisy, aggressive only
 }
 
 

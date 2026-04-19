@@ -10,19 +10,19 @@ An active simple scan touches the target directly. It scans the most common port
 
 ## Tool execution order
 
-1. Run `nmap_basic` first — this scans the top 1000 ports and tells you what services are running. Everything else depends on this output.
+1. Run `nmap` first with `aggressive=False` — this scans the top 1000 ports and tells you what services are running. Everything else depends on this output.
 
-2. Based on NMAP results, run the relevant tools in parallel for each open port:
-   - Port 80 or 443 open → run `nikto` and `whatweb`
-   - Port 3306 or 5432 open → run `hydra_db`
-   - Port 21 open → run `hydra_ftp`
-   - Port 22 open → run `ssh_check`
-   - Port 23 open → flag as critical finding immediately (Telnet is always a critical vulnerability)
+2. Based on NMAP results, run the relevant tools for each open port:
+   - Port 80 or 443 open → run `nikto` and `whatweb_active`
+   - Port 3306 or 5432 open → run `hydra` with `service="mysql"` or `service="postgres"`
+   - Port 21 open → run `hydra` with `service="ftp"`
+   - Port 22 open → note the SSH version from NMAP output for NVD lookup
+   - Port 23 open → flag as critical finding immediately (Telnet is always a critical vulnerability — no tool needed)
    - Any other port → note the service and version for NVD lookup
 
 3. Once all port-specific tools have finished, run `nvd_lookup` with all discovered service versions.
 
-4. Then run `searchsploit` with the CVEs found by NVD to check for public exploit scripts.
+4. Then run `searchsploit` for each significant CVE or service found to check for public exploit scripts.
 
 Do NOT run `nvd_lookup` or `searchsploit` after each individual tool. Wait until all port tools have finished.
 

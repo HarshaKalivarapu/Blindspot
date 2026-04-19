@@ -28,10 +28,11 @@ pentest-mcp/
     │   ├── main.jsx               # Entry point — BrowserRouter + Routes
     │   ├── index.css              # Tailwind import + global resets
     │   ├── pages/
-    │   │   ├── Home.jsx           # Homepage — terminal intro + split screen
-    │   │   ├── Scan.jsx           # Scan dashboard + chat interface
-    │   │   ├── NewScan.jsx        # Scan configuration
-    │   │   └── Guide.jsx          # Interactive User Guide
+    │   │   ├── Home.jsx                 # Homepage — terminal intro + split screen
+    │   │   ├── Scan.jsx                 # Scan dashboard + chat interface
+    │   │   ├── NewScan.jsx              # Scan configuration
+    │   │   ├── Guide.jsx                # Interactive User Guide
+    │   │   └── ScanReport.jsx           # Scan report viewer (developer + non-developer modes)
     │   ├── components/
     │   │   ├── intro/
     │   │   │   └── TerminalIntro.jsx  # Full screen terminal intro sequence
@@ -42,14 +43,17 @@ pentest-mcp/
     │   │   │   └── AuthModal.jsx        # Unified signup/login popup overlay
     │   │   └── WarningModal.jsx   # Authorization confirmation modal
     │   └── lib/
-    │       └── scanFeedData.js    # Realistic pre-written scan output dataset
+    │       ├── scanFeedData.js    # Realistic pre-written scan output dataset
+    │       ├── supabase.js        # Supabase client singleton — import from here only
+    │       └── AuthContext.jsx    # Auth state provider + useAuth hook
     └── CLAUDE.md                  # This file — always refer here first
 
 ## Route Map
-/ (src/pages/Home.jsx)            → Homepage (terminal intro + split screen)
-/guide (src/pages/Guide.jsx)      → Full page interactive User Guide
-/scan (src/pages/Scan.jsx)        → Scan dashboard + chat interface with backend
-/scan/new (src/pages/NewScan.jsx) → Full page configuration form for generating scans
+/ (src/pages/Home.jsx)                          → Homepage (terminal intro + split screen)
+/guide (src/pages/Guide.jsx)                    → Full page interactive User Guide
+/scan (src/pages/Scan.jsx)                      → Scan dashboard + chat interface with backend
+/scan/new (src/pages/NewScan.jsx)               → Full page configuration form for generating scans
+/scan/report (src/pages/ScanReport.jsx)                  → Scan report viewer — renders generated report JSON
 
 ## Recent Changes
 - Scan.jsx: "New Scan" button added to Recon Console header — only appears when a scan fails with a network error (`scanError` state)

@@ -6,24 +6,23 @@ The user has requested an **active aggressive scan** of: `{target}`
 
 The user has confirmed they have legal authorization to scan this target.
 
-An active aggressive scan is thorough and noisy. It scans all 65,535 ports and runs additional tools like directory brute-forcing and exploit verification.
+An active aggressive scan is thorough and noisy. It scans all 65,535 ports, runs directory brute-forcing, and includes vulnerability scripts.
 
 ## Tool execution order
 
-1. Run `nmap_full` first — this scans ALL 65,535 ports. This takes longer than a basic scan but finds services on non-standard ports. Everything else depends on this output.
+1. Run `nmap` first with `aggressive=True` — this scans ALL 65,535 ports and runs `--script vuln` which includes checks for critical vulnerabilities like EternalBlue (MS17-010). This takes longer but finds services on non-standard ports. Everything else depends on this output.
 
 2. Based on NMAP results, run the relevant tools for each open port:
-   - Port 80 or 443 open → run `nikto`, `whatweb`, and `ffuf`
-   - Port 3306 or 5432 open → run `hydra_db`
-   - Port 21 open → run `hydra_ftp`
-   - Port 22 open → run `ssh_check`
-   - Port 23 open → flag as critical finding immediately (Telnet is always a critical vulnerability)
-   - Port 445 open → run `eternalblue`
+   - Port 80 or 443 open → run `nikto`, `whatweb_active`, and `ffuf`
+   - Port 3306 or 5432 open → run `hydra` with `service="mysql"` or `service="postgres"`
+   - Port 21 open → run `hydra` with `service="ftp"`
+   - Port 22 open → note the SSH version from NMAP output for NVD lookup
+   - Port 23 open → flag as critical finding immediately (Telnet is always a critical vulnerability — no tool needed)
    - Any other port → note the service and version for NVD lookup
 
 3. Once all port-specific tools have finished, run `nvd_lookup` with all discovered service versions.
 
-4. Then run `searchsploit` with the CVEs found by NVD to check for public exploit scripts.
+4. Then run `searchsploit` for each significant CVE or service found to check for public exploit scripts.
 
 Do NOT run `nvd_lookup` or `searchsploit` after each individual tool. Wait until all port tools have finished.
 
