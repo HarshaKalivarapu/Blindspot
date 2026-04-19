@@ -230,108 +230,61 @@ Here are all security findings from the scan in a compact structured format:
 
 ```json
 {
-  "target": "serviq-volunteer.org",
-  "scan_date": "2026-04-18T23:10:02Z",
+  "target": "scanme.nmap.org",
+  "scan_date": null,
   "scan_type": "passive",
   "scan_mode": "simple",
-  "duration_seconds": 103.3,
-  "tools_run": ["shodan", "dns_whois", "ssl_tls", "http_headers", "nvd_lookup"],
+  "duration_seconds": 94.7,
+  "tools_run": ["whatweb", "dns_whois", "http_headers", "nvd_lookup"],
   "tool_errors": [
-    "whatweb: timed out after 30 seconds",
-    "dns_whois: crt.sh certificate transparency lookup failed — 502 Bad Gateway"
+    "shodan: SHODAN_API_KEY is not set in environment",
+    "ssl_tls: Could not retrieve SSL certificate — Network is unreachable (port 443)",
+    "dns_whois: crt.sh request timed out"
   ],
-  "open_ports": [80, 443, 2052, 2053, 2082, 2083, 2086, 2087, 2095, 2096, 8080, 8443, 8880],
+  "open_ports": [80],
   "services": {
-    "80": {"name": "HTTP", "version": null},
-    "443": {"name": "HTTPS", "version": null},
-    "2052": {"name": "HTTP", "version": null},
-    "2053": {"name": "HTTPS (Cloudflare)", "version": null},
-    "2082": {"name": "HTTP", "version": null},
-    "2083": {"name": "HTTPS (Cloudflare)", "version": null},
-    "2086": {"name": "HTTP", "version": null},
-    "2087": {"name": "HTTPS (Cloudflare)", "version": null},
-    "2095": {"name": "HTTP", "version": null},
-    "2096": {"name": "HTTPS (Cloudflare)", "version": null},
-    "8080": {"name": "HTTP", "version": null},
-    "8443": {"name": "HTTPS (Cloudflare)", "version": null},
-    "8880": {"name": "HTTP", "version": null}
+    "80": {"name": "http", "version": "Apache/2.4.7 (Ubuntu)"}
   },
-  "tech_stack": ["Cloudflare CDN", "Express.js", "Node.js"],
+  "tech_stack": ["Apache 2.4.7", "Ubuntu", "Google-Analytics Universal", "HTML5"],
   "cves": [
     {
-      "id": "CVE-2026-2833",
-      "cvss": 9.1,
-      "affected_software": "Cloudflare CDN (Pingora)",
-      "description": "HTTP request smuggling in Pingora's handling of HTTP/1.1 connection upgrades allows attackers to smuggle hidden requests through the proxy layer.",
+      "id": "CVE-2016-6814",
+      "cvss": 9.8,
+      "affected_software": "Apache 2.4.7",
+      "description": "Unsafe Java serialization via Groovy on classpath allows remote attackers to potentially execute arbitrary code.",
       "has_exploit": false,
       "exploit_sources": []
     },
     {
-      "id": "CVE-2026-2835",
-      "cvss": 9.1,
-      "affected_software": "Cloudflare CDN (Pingora)",
-      "description": "HTTP request smuggling in Pingora's parsing of HTTP/1.0 and Transfer-Encoding requests due to improper handling of close-delimited bodies and multiple encodings.",
+      "id": "CVE-2021-44224",
+      "cvss": 8.2,
+      "affected_software": "Apache 2.4.7",
+      "description": "A crafted URI sent to httpd configured as a forward proxy can cause a NULL pointer dereference crash or unintended request proxying.",
       "has_exploit": false,
       "exploit_sources": []
     },
     {
-      "id": "CVE-2026-2836",
-      "cvss": 8.1,
-      "affected_software": "Cloudflare CDN (Pingora)",
-      "description": "Cache poisoning in Pingora's default cache key construction, which uses only the URI path and ignores critical differentiating headers.",
+      "id": "CVE-2025-66200",
+      "cvss": 5.4,
+      "affected_software": "Apache 2.4.7",
+      "description": "mod_userdir and suexec bypass via AllowOverride FileInfo allows some CGI scripts to run under an unexpected userid.",
       "has_exploit": false,
       "exploit_sources": []
     },
     {
-      "id": "CVE-2017-16118",
-      "cvss": 7.5,
-      "affected_software": "Express.js (forwarded module)",
-      "description": "ReDoS vulnerability in the forwarded module used by Express.js when processing a specially crafted X-Forwarded-For header, blocking the Node.js event loop.",
-      "has_exploit": false,
-      "exploit_sources": []
-    },
-    {
-      "id": "CVE-2017-16119",
-      "cvss": 7.5,
-      "affected_software": "Express.js (fresh module)",
-      "description": "ReDoS vulnerability in the fresh module used by Express.js for HTTP response freshness testing when passed specially crafted input.",
-      "has_exploit": false,
-      "exploit_sources": []
-    },
-    {
-      "id": "CVE-2017-16136",
-      "cvss": 7.5,
-      "affected_software": "Express.js (method-override module)",
-      "description": "ReDoS vulnerability in the method-override module used by Express.js when processing specially crafted HTTP verb override input.",
-      "has_exploit": false,
-      "exploit_sources": []
-    },
-    {
-      "id": "CVE-2025-67731",
-      "cvss": 7.5,
-      "affected_software": "Express.js",
-      "description": "express.json() used without a request body size limit allows attackers to send extremely large payloads, causing memory exhaustion and denial of service.",
-      "has_exploit": false,
-      "exploit_sources": []
-    },
-    {
-      "id": "CVE-2018-10813",
-      "cvss": 7.3,
-      "affected_software": "Express.js",
-      "description": "Hardcoded cookie and session secrets in an Express.js application allow attackers to forge and re-sign session cookies for unauthorized access.",
+      "id": "CVE-2012-2378",
+      "cvss": 4.3,
+      "affected_software": "Apache 2.4.7",
+      "description": "Apache CXF does not properly enforce child policies of a WS-SecurityPolicy 1.1 SupportingToken on the client side, allowing policy bypass.",
       "has_exploit": false,
       "exploit_sources": []
     }
   ],
   "ssl": {
-    "valid": true,
-    "expiry_date": "2026-06-03",
-    "days_until_expiry": 45,
-    "issues": [
-      "Certificate expires in 45 days — renewal required",
-      "Issuer: Google Trust Services (WE1)",
-      "TLS 1.2 supported in addition to TLS 1.3 — consider restricting to TLS 1.3 only"
-    ]
+    "valid": null,
+    "expiry_date": null,
+    "days_until_expiry": null,
+    "issues": ["HTTPS connection failed — port 443 unreachable", "Site served over plain HTTP only"]
   },
   "http_headers": {
     "missing_security_headers": [
@@ -343,25 +296,25 @@ Here are all security findings from the scan in a compact structured format:
       "Permissions-Policy",
       "X-XSS-Protection"
     ],
-    "info_disclosure": [
-      "Server: cloudflare",
-      "X-Powered-By: Express"
-    ]
+    "info_disclosure": ["Server: Apache/2.4.7 (Ubuntu)"]
   },
   "dns_whois": {
-    "registrar": "NAMECHEAP INC",
-    "expiry_date": "2026-05-13",
-    "days_until_expiry": 25,
+    "registrar": "DYNADOT LLC",
+    "expiry_date": "2029-01-18",
+    "days_until_expiry": null,
     "nameservers": [
-      "dns1.registrar-servers.com",
-      "dns2.registrar-servers.com"
+      "ns1.linode.com",
+      "ns2.linode.com",
+      "ns3.linode.com",
+      "ns4.linode.com",
+      "ns5.linode.com"
     ],
     "subdomains_found": []
   },
   "shodan": {
-    "country": "United States",
-    "isp": "Render",
-    "ports_indexed": [80, 443, 2052, 2053, 2082, 2083, 2086, 2087, 2095, 2096, 8080, 8443, 8880],
+    "country": null,
+    "isp": null,
+    "ports_indexed": [],
     "previously_flagged_cves": []
   },
   "nikto_findings": [],
@@ -372,7 +325,7 @@ Here are all security findings from the scan in a compact structured format:
   "ffuf_findings": [],
   "searchsploit_results": [],
   "confirmed_exploits_count": 0,
-  "total_issues_count": 19
+  "total_issues_count": 13
 }
 ```
 
