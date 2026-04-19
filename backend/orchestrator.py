@@ -28,11 +28,14 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
+from supabase import create_client as create_supabase_client
 
 load_dotenv()
 
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-6")
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
 
 if not ANTHROPIC_API_KEY:
     print(
@@ -53,6 +56,11 @@ app.add_middleware(
 
 anthropic_client = Anthropic(api_key=ANTHROPIC_API_KEY) if ANTHROPIC_API_KEY else None
 async_anthropic_client = AsyncAnthropic(api_key=ANTHROPIC_API_KEY) if ANTHROPIC_API_KEY else None
+supabase_client = (
+    create_supabase_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    if SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY
+    else None
+)
 
 
 # ── Request schema ───────────────────────────────────────────────────────────
@@ -62,6 +70,7 @@ class ScanRequest(BaseModel):
     level: str                         # "passive" | "active"
     intensity: str = "simple"          # "simple" | "aggressive"
     authorization_confirmed: bool = False
+    user_id: str | None = None
 
 
 # ── Tool name sets ───────────────────────────────────────────────────────────
@@ -362,6 +371,7 @@ async def scan(req: ScanRequest):
                             ),
                         ]
 
+                        assembled = {}
                         done_count = 0
                         while done_count < 2:
                             mode, kind, data = await q.get()
@@ -370,9 +380,48 @@ async def scan(req: ScanRequest):
                             else:
                                 if data:
                                     yield emit(f"report_{mode}", data)
+                                    assembled[mode] = data
                                 done_count += 1
 
                         await asyncio.gather(*report_tasks)
+
+                        if supabase_client and req.user_id and "dev" in assembled and "nondev" in assembled:
+                            try:
+                                ext = json.loads(extraction_json)
+                                cves = ext.get("cves") or []
+
+                                def _cvss_bucket(cvss):
+                                    if cvss >= 9.0: return "critical"
+                                    if cvss >= 7.0: return "high"
+                                    if cvss >= 4.0: return "medium"
+                                    return "low"
+
+                                counts = {"critical": 0, "high": 0, "medium": 0, "low": 0}
+                                for c in cves:
+                                    counts[_cvss_bucket(c.get("cvss") or 0)] += 1
+
+                                supabase_client.table("scans").insert({
+                                    "user_id": req.user_id,
+                                    "target": ext.get("target"),
+                                    "scan_date": ext.get("scan_date"),
+                                    "scan_type": ext.get("scan_type"),
+                                    "scan_mode": ext.get("scan_mode"),
+                                    "duration_seconds": ext.get("duration_seconds"),
+                                    "tools_run": ext.get("tools_run") or [],
+                                    "total_issues_count": ext.get("total_issues_count") or 0,
+                                    "confirmed_exploits_count": ext.get("confirmed_exploits_count") or 0,
+                                    "cve_critical_count": counts["critical"],
+                                    "cve_high_count": counts["high"],
+                                    "cve_medium_count": counts["medium"],
+                                    "cve_low_count": counts["low"],
+                                    "report_dev": json.loads(assembled["dev"]),
+                                    "report_nondev": json.loads(assembled["nondev"]),
+                                    "extraction_json": ext,
+                                }).execute()
+                                print("[supabase] scan saved", file=sys.stderr)
+                            except Exception as e:
+                                print(f"[supabase] insert failed: {e}", file=sys.stderr)
+
                         break
 
                     # ── Execute all tool calls concurrently ───────────────

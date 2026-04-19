@@ -6,7 +6,6 @@ import ShaderBackground from '../components/homepage/ShaderBackground.jsx'
 import AuthModal from '../components/homepage/AuthModal.jsx'
 import ScanVisualization from '../components/ScanVisualization.jsx'
 import ScanVisualizationActive from '../components/ScanVisualizationActive.jsx'
-import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../lib/AuthContext.jsx'
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ?? 'http://localhost:5000'
@@ -30,7 +29,6 @@ function Scan() {
   const [reportNonDev, setReportNonDev] = useState(null)
   const [generatingReport, setGeneratingReport] = useState(false)
   const scrollRef = useRef(null)
-  const scanInserted = useRef(false)
 
   useEffect(() => {
     if (view === 'chat') {
@@ -69,13 +67,6 @@ function Scan() {
     navigate('/')
   }
 
-  useEffect(() => {
-    if (view === 'chat' && user && !scanInserted.current) {
-      scanInserted.current = true
-      supabase.from('scans').insert({ user_id: user.id, report: null })
-    }
-  }, [view, user])
-
   const handleSend = async (e) => {
     e.preventDefault()
     const trimmed = input.trim()
@@ -101,6 +92,7 @@ function Scan() {
           level: config.level,
           intensity: config.intensity ?? 'simple',
           authorization_confirmed: isAuthorized,
+          user_id: user?.id ?? null,
         }),
       })
 
