@@ -61,6 +61,8 @@ function Scan() {
     navigate('/scan/new')
   }
 
+  const handleSignOut = () => {
+    sessionStorage.removeItem('authed')
   const handleSignOut = async () => {
     await signOut()
     navigate('/')

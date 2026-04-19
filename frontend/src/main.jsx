@@ -1,5 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { GoogleOAuthProvider } from '@react-oauth/google'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './lib/AuthContext.jsx'
 import './index.css'
@@ -11,6 +13,10 @@ import ScanReport from './pages/ScanReport.jsx'
 import VisualizationDemo from './pages/VisualizationDemo.jsx'
 import VisualizationDemoActive from './pages/VisualizationDemoActive.jsx'
 
+function ProtectedRoute({ children }) {
+  return sessionStorage.getItem('authed') === 'true' ? children : <Navigate to="/" replace />
+}
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <AuthProvider>
@@ -18,6 +24,8 @@ createRoot(document.getElementById('root')).render(
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/guide" element={<Guide />} />
+          <Route path="/scan/new" element={<ProtectedRoute><NewScan /></ProtectedRoute>} />
+          <Route path="/scan" element={<ProtectedRoute><Scan /></ProtectedRoute>} />
           <Route path="/scan/new" element={<NewScan />} />
           <Route path="/scan" element={<Scan />} />
           <Route path="/scan/report" element={<ScanReport />} />
