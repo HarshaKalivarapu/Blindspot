@@ -28,6 +28,8 @@ export default function ScanReport() {
   const [reportDev, setReportDev] = useState(null)
   const [reportNonDev, setReportNonDev] = useState(null)
   const [generatingReport, setGeneratingReport] = useState(false)
+  const [devChunkLen, setDevChunkLen] = useState(0)
+  const [nondevChunkLen, setNondevChunkLen] = useState(0)
   const [historyMeta, setHistoryMeta] = useState(null)
   const [historyLoading, setHistoryLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('non-dev')
@@ -90,6 +92,8 @@ export default function ScanReport() {
     setReportDev(null)
     setReportNonDev(null)
     setGeneratingReport(false)
+    setDevChunkLen(0)
+    setNondevChunkLen(0)
 
     try {
       const res = await fetch(`${BACKEND_URL}/scan`, {
@@ -131,6 +135,10 @@ export default function ScanReport() {
               ) {
                 setGeneratingReport(true)
               }
+            } else if (event.type === 'report_dev_chunk') {
+              setDevChunkLen(prev => prev + event.message.length)
+            } else if (event.type === 'report_nondev_chunk') {
+              setNondevChunkLen(prev => prev + event.message.length)
             } else if (event.type === 'report_dev') {
               setReportDev(event.message)
             } else if (event.type === 'report_nondev') {
@@ -272,6 +280,8 @@ export default function ScanReport() {
                 generatingReport={generatingReport}
                 reportDev={reportDev}
                 reportNonDev={reportNonDev}
+                devChunkLen={devChunkLen}
+                nondevChunkLen={nondevChunkLen}
                 topOffset={0}
                 onComplete={() => setSending(false)}
                 onTabChange={setActiveTab} />
@@ -281,6 +291,8 @@ export default function ScanReport() {
                 generatingReport={generatingReport}
                 reportDev={reportDev}
                 reportNonDev={reportNonDev}
+                devChunkLen={devChunkLen}
+                nondevChunkLen={nondevChunkLen}
                 topOffset={0}
                 onComplete={() => setSending(false)}
                 onTabChange={setActiveTab} />

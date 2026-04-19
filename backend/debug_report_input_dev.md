@@ -318,28 +318,65 @@ Here are all security findings from the scan in a compact structured format:
 
 ```json
 {
-  "target": "samaypatel.netlify.app",
-  "scan_date": "2026-04-19T08:36:15Z",
+  "target": "scanme.nmap.org",
+  "scan_date": null,
   "scan_type": "passive",
   "scan_mode": "simple",
-  "duration_seconds": 64.6,
-  "tools_run": ["shodan", "whatweb", "dns_whois", "ssl_tls", "http_headers", "nvd_lookup"],
-  "tool_errors": ["dns_whois: crt.sh lookup failed — 502 Bad Gateway"],
-  "open_ports": [80, 443],
+  "duration_seconds": 66.2,
+  "tools_run": ["whatweb", "dns_whois", "http_headers", "nvd_lookup"],
+  "tool_errors": [
+    "shodan: Access denied (403 Forbidden)",
+    "ssl_tls: Network is unreachable on port 443",
+    "dns_whois: crt.sh request timed out"
+  ],
+  "open_ports": [80],
   "services": {
-    "80": {"name": "http", "version": null},
-    "443": {"name": "https", "version": null}
+    "80": {"name": "http", "version": "Apache/2.4.7 (Ubuntu)"}
   },
-  "tech_stack": ["Netlify", "Bootstrap", "HTML5"],
-  "cves": [],
+  "tech_stack": ["Apache 2.4.7", "Ubuntu", "Google-Analytics Universal", "HTML5"],
+  "cves": [
+    {
+      "id": "CVE-2016-6814",
+      "cvss": 9.8,
+      "affected_software": "Apache 2.4.7",
+      "description": "Unsupported Codehaus/Apache Groovy versions using standard Java serialization mechanisms allow remote attackers to execute arbitrary code.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2021-44224",
+      "cvss": 8.2,
+      "affected_software": "Apache 2.4.7",
+      "description": "A crafted URI sent to httpd configured as a forward proxy can cause a NULL pointer dereference crash or allow requests to be directed to unintended Unix domain sockets.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2025-66200",
+      "cvss": 5.4,
+      "affected_software": "Apache 2.4.7",
+      "description": "mod_userdir and suexec bypass via AllowOverride FileInfo allows users with htaccess access to run CGI scripts under an unexpected user ID.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2012-2378",
+      "cvss": 4.3,
+      "affected_software": "Apache 2.4.7",
+      "description": "Apache CXF does not properly enforce child policies of a WS-SecurityPolicy 1.1 SupportingToken policy on the client side, allowing remote attackers to bypass AlgorithmSuite and other security policies.",
+      "has_exploit": false,
+      "exploit_sources": []
+    }
+  ],
   "ssl": {
-    "valid": true,
-    "expiry_date": "2027-03-19",
-    "days_until_expiry": 334,
-    "issues": []
+    "valid": null,
+    "expiry_date": null,
+    "days_until_expiry": null,
+    "issues": ["Port 443 unreachable — HTTPS not configured or not responding"]
   },
   "http_headers": {
     "missing_security_headers": [
+      "Strict-Transport-Security",
       "Content-Security-Policy",
       "X-Frame-Options",
       "X-Content-Type-Options",
@@ -347,19 +384,25 @@ Here are all security findings from the scan in a compact structured format:
       "Permissions-Policy",
       "X-XSS-Protection"
     ],
-    "info_disclosure": ["Server: Netlify"]
+    "info_disclosure": ["Server: Apache/2.4.7 (Ubuntu)"]
   },
   "dns_whois": {
-    "registrar": null,
-    "expiry_date": null,
+    "registrar": "DYNADOT LLC",
+    "expiry_date": "2029-01-18",
     "days_until_expiry": null,
-    "nameservers": [],
+    "nameservers": [
+      "ns1.linode.com",
+      "ns2.linode.com",
+      "ns3.linode.com",
+      "ns4.linode.com",
+      "ns5.linode.com"
+    ],
     "subdomains_found": []
   },
   "shodan": {
-    "country": "United States",
-    "isp": "Amazon Data Services NoVa",
-    "ports_indexed": [80, 443],
+    "country": null,
+    "isp": null,
+    "ports_indexed": [],
     "previously_flagged_cves": []
   },
   "nikto_findings": [],
@@ -370,7 +413,7 @@ Here are all security findings from the scan in a compact structured format:
   "ffuf_findings": [],
   "searchsploit_results": [],
   "confirmed_exploits_count": 0,
-  "total_issues_count": 7
+  "total_issues_count": 13
 }
 ```
 
