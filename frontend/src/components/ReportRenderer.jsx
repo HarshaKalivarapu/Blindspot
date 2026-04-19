@@ -70,19 +70,6 @@ function cvssColor(score) {
   return '#22c55e'
 }
 
-// ── Generic list helper — numbered only when >2 items ─────────────────────────
-function ItemList({ items, itemStyle }) {
-  if (!items?.length) return null
-  const Tag = items.length > 2 ? 'ol' : 'ul'
-  return (
-    <Tag style={{ margin: 0, paddingLeft: 20 }}>
-      {items.map((item, i) => (
-        <li key={i} style={itemStyle}>{item}</li>
-      ))}
-    </Tag>
-  )
-}
-
 // ── Non-developer block renderers ─────────────────────────────────────────────
 
 function ScoreStatementBlock({ block }) {
@@ -163,10 +150,13 @@ function FindingBlock({ block }) {
       {block.how_to_fix?.length > 0 && (
         <div>
           <div style={S.label}>How to fix it</div>
-          <ItemList
-            items={block.how_to_fix}
-            itemStyle={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', lineHeight: 1.6, marginBottom: 4 }}
-          />
+          <ol style={{ margin: 0, paddingLeft: 20 }}>
+            {block.how_to_fix.map((step, i) => (
+              <li key={i} style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', lineHeight: 1.6, marginBottom: 4 }}>
+                {step}
+              </li>
+            ))}
+          </ol>
         </div>
       )}
     </div>
@@ -309,10 +299,13 @@ function CvesBlock({ block }) {
 
 function RecommendationsBlock({ block }) {
   return (
-    <ItemList
-      items={block.items}
-      itemStyle={{ color: 'rgba(255,255,255,0.8)', lineHeight: 1.7, marginBottom: 6, fontSize: 14 }}
-    />
+    <ol style={{ paddingLeft: 20, margin: 0 }}>
+      {block.items?.map((item, i) => (
+        <li key={i} style={{ color: 'rgba(255,255,255,0.8)', lineHeight: 1.7, marginBottom: 6, fontSize: 14 }}>
+          {item}
+        </li>
+      ))}
+    </ol>
   )
 }
 
