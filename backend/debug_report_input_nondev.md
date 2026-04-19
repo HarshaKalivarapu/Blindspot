@@ -230,130 +230,61 @@ Here are all security findings from the scan in a compact structured format:
 
 ```json
 {
-  "target": "samaypatel.netlify.app",
-  "scan_date": "2026-04-19T08:36:15Z",
+  "target": "scanme.nmap.org",
+  "scan_date": null,
   "scan_type": "passive",
   "scan_mode": "simple",
-  "duration_seconds": 76.3,
-  "tools_run": ["shodan", "whatweb", "dns_whois", "ssl_tls", "http_headers", "nvd_lookup"],
-  "tool_errors": ["dns_whois: crt.sh request timed out"],
-  "open_ports": [80, 443],
+  "duration_seconds": 94.7,
+  "tools_run": ["whatweb", "dns_whois", "http_headers", "nvd_lookup"],
+  "tool_errors": [
+    "shodan: SHODAN_API_KEY is not set in environment",
+    "ssl_tls: Could not retrieve SSL certificate — Network is unreachable (port 443)",
+    "dns_whois: crt.sh request timed out"
+  ],
+  "open_ports": [80],
   "services": {
-    "80": {"name": "http", "version": null},
-    "443": {"name": "https", "version": null}
+    "80": {"name": "http", "version": "Apache/2.4.7 (Ubuntu)"}
   },
-  "tech_stack": ["Netlify", "Bootstrap", "HTML5"],
+  "tech_stack": ["Apache 2.4.7", "Ubuntu", "Google-Analytics Universal", "HTML5"],
   "cves": [
     {
-      "id": "CVE-2020-36363",
+      "id": "CVE-2016-6814",
       "cvss": 9.8,
-      "affected_software": "TLSv1.2",
-      "description": "Amazon AWS CloudFront TLSv1.2_2019 allows weak cipher suites TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256 and TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384.",
+      "affected_software": "Apache 2.4.7",
+      "description": "Unsafe Java serialization via Groovy on classpath allows remote attackers to potentially execute arbitrary code.",
       "has_exploit": false,
       "exploit_sources": []
     },
     {
-      "id": "CVE-2019-11873",
-      "cvss": 9.8,
-      "affected_software": "TLSv1.3",
-      "description": "wolfSSL 4.0.0 has a buffer overflow in DoPreSharedKeys in tls13.c when a current identity size exceeds the client identity size.",
+      "id": "CVE-2021-44224",
+      "cvss": 8.2,
+      "affected_software": "Apache 2.4.7",
+      "description": "A crafted URI sent to httpd configured as a forward proxy can cause a NULL pointer dereference crash or unintended request proxying.",
       "has_exploit": false,
       "exploit_sources": []
     },
     {
-      "id": "CVE-2010-3019",
-      "cvss": 9.3,
-      "affected_software": "HTML5",
-      "description": "Heap-based buffer overflow in Opera before 10.61 via HTML5 canvas painting operations allowing arbitrary code execution.",
+      "id": "CVE-2025-66200",
+      "cvss": 5.4,
+      "affected_software": "Apache 2.4.7",
+      "description": "mod_userdir and suexec bypass via AllowOverride FileInfo allows some CGI scripts to run under an unexpected userid.",
       "has_exploit": false,
       "exploit_sources": []
     },
     {
-      "id": "CVE-2020-26197",
-      "cvss": 7.5,
-      "affected_software": "TLSv1.2",
-      "description": "Dell PowerScale OneFS 8.1.0-9.1.0 LDAP provider fails to connect over TLSv1.2, potentially allowing traffic eavesdropping.",
-      "has_exploit": false,
-      "exploit_sources": []
-    },
-    {
-      "id": "CVE-2026-39304",
-      "cvss": 7.5,
-      "affected_software": "TLSv1.2",
-      "description": "Apache ActiveMQ NIO SSL transports do not correctly handle TLSv1.3 handshake KeyUpdates, enabling denial of service via out-of-memory.",
-      "has_exploit": false,
-      "exploit_sources": []
-    },
-    {
-      "id": "CVE-2019-0215",
-      "cvss": 7.5,
-      "affected_software": "TLSv1.3",
-      "description": "Apache HTTP Server 2.4.37-2.4.38 mod_ssl bug with TLSv1.3 allows clients to bypass per-location client certificate access controls.",
-      "has_exploit": false,
-      "exploit_sources": []
-    },
-    {
-      "id": "CVE-2019-6659",
-      "cvss": 7.5,
-      "affected_software": "TLSv1.3",
-      "description": "BIG-IP 14.0.0-14.1.0.1 virtual servers with TLSv1.3 enabled may experience denial of service via undisclosed incoming messages.",
-      "has_exploit": false,
-      "exploit_sources": []
-    },
-    {
-      "id": "CVE-2024-5971",
-      "cvss": 7.5,
-      "affected_software": "TLSv1.3",
-      "description": "Undertow chunked response hangs after body flush due to missing 0\\r\\n termination, causing denial of service.",
-      "has_exploit": false,
-      "exploit_sources": []
-    },
-    {
-      "id": "CVE-2021-3449",
-      "cvss": 5.9,
-      "affected_software": "TLSv1.2",
-      "description": "OpenSSL TLS server may crash if sent a maliciously crafted TLSv1.2 renegotiation ClientHello omitting the signature_algorithms extension.",
-      "has_exploit": false,
-      "exploit_sources": []
-    },
-    {
-      "id": "CVE-2011-0166",
-      "cvss": 5.8,
-      "affected_software": "HTML5",
-      "description": "WebKit in Apple Safari before 5.0.4 HTML5 drag-and-drop allows user-assisted bypass of the Same Origin Policy.",
-      "has_exploit": false,
-      "exploit_sources": []
-    },
-    {
-      "id": "CVE-2010-1664",
-      "cvss": 5.0,
-      "affected_software": "HTML5",
-      "description": "Google Chrome before 4.1.249.1064 improperly handles HTML5 media, causing memory corruption and potential denial of service.",
-      "has_exploit": false,
-      "exploit_sources": []
-    },
-    {
-      "id": "CVE-2010-4484",
-      "cvss": 5.0,
-      "affected_software": "HTML5",
-      "description": "Google Chrome before 8.0.552.215 improperly handles HTML5 databases, allowing attackers to crash the application.",
-      "has_exploit": false,
-      "exploit_sources": []
-    },
-    {
-      "id": "CVE-2012-0445",
-      "cvss": 5.0,
-      "affected_software": "HTML5",
-      "description": "Firefox 4.x-9.0 and SeaMonkey before 2.7 allow bypass of the HTML5 frame-navigation policy to replace arbitrary sub-frames.",
+      "id": "CVE-2012-2378",
+      "cvss": 4.3,
+      "affected_software": "Apache 2.4.7",
+      "description": "Apache CXF does not properly enforce child policies of a WS-SecurityPolicy 1.1 SupportingToken on the client side, allowing policy bypass.",
       "has_exploit": false,
       "exploit_sources": []
     }
   ],
   "ssl": {
-    "valid": true,
-    "expiry_date": "2027-03-19",
-    "days_until_expiry": 334,
-    "issues": []
+    "valid": null,
+    "expiry_date": null,
+    "days_until_expiry": null,
+    "issues": ["HTTPS connection failed — port 443 unreachable", "Site served over plain HTTP only"]
   },
   "http_headers": {
     "missing_security_headers": [
@@ -364,19 +295,25 @@ Here are all security findings from the scan in a compact structured format:
       "Permissions-Policy",
       "X-XSS-Protection"
     ],
-    "info_disclosure": ["Server: Netlify"]
+    "info_disclosure": ["Server: Apache/2.4.7 (Ubuntu)"]
   },
   "dns_whois": {
-    "registrar": null,
-    "expiry_date": null,
+    "registrar": "DYNADOT LLC",
+    "expiry_date": "2029-01-18",
     "days_until_expiry": null,
-    "nameservers": [],
+    "nameservers": [
+      "ns1.linode.com",
+      "ns2.linode.com",
+      "ns3.linode.com",
+      "ns4.linode.com",
+      "ns5.linode.com"
+    ],
     "subdomains_found": []
   },
   "shodan": {
-    "country": "United States",
-    "isp": "Amazon Data Services NoVa",
-    "ports_indexed": [80, 443],
+    "country": null,
+    "isp": null,
+    "ports_indexed": [],
     "previously_flagged_cves": []
   },
   "nikto_findings": [],
@@ -387,7 +324,7 @@ Here are all security findings from the scan in a compact structured format:
   "ffuf_findings": [],
   "searchsploit_results": [],
   "confirmed_exploits_count": 0,
-  "total_issues_count": 7
+  "total_issues_count": 13
 }
 ```
 

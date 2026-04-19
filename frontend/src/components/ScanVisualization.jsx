@@ -174,10 +174,32 @@ function Block({ label, done, wide, estimate }) {
   )
 }
 
+// ── Report generation progress bars ──────────────────────────────────────────
+function ReportProgress({ label, current, estimated }) {
+  const pct = Math.min(95, (current / estimated) * 100)
+  return (
+    <div style={{ width: 320, display: 'flex', flexDirection: 'column', gap: 7 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'rgba(255,255,255,0.5)', fontFamily: 'system-ui, sans-serif' }}>
+        <span>{label}</span>
+        <span style={{ fontFamily: 'monospace', fontSize: 11 }}>{current > 0 ? `${current.toLocaleString()} chars` : 'waiting...'}</span>
+      </div>
+      <div style={{ height: 5, background: 'rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
+        <motion.div
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+          style={{ height: '100%', background: 'rgba(255,255,255,0.45)', borderRadius: 3 }}
+        />
+      </div>
+    </div>
+  )
+}
+
 // ── Main visualization component ──────────────────────────────────────────────
-function ReportView({ reportNonDev, reportDev, onTabChange }) {
+function ReportView({ reportNonDev, reportDev, devChunkLen, nondevChunkLen }) {
   const [tab, setTab] = useState('non-dev')
   const content = tab === 'dev' ? reportDev : reportNonDev
+  const chunkLen = tab === 'dev' ? devChunkLen : nondevChunkLen
+  const estimated = tab === 'dev' ? 10000 : 8000
 
   function handleTab(key) {
     setTab(key)
@@ -199,14 +221,31 @@ function ReportView({ reportNonDev, reportDev, onTabChange }) {
           </button>
         ))}
       </div>
-      <ReportRenderer jsonString={content} />
+      {content ? (
+        <ReportRenderer jsonString={content} />
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '80px 0', gap: 24 }}>
+          <motion.div
+            animate={{ opacity: [0.4, 1, 0.4] }}
+            transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+            style={{ fontSize: 16, color: 'rgba(255,255,255,0.6)', fontFamily: 'system-ui, sans-serif', letterSpacing: '0.02em' }}
+          >
+            Generating report...
+          </motion.div>
+          <ReportProgress
+            label={tab === 'dev' ? 'Developer Report' : 'Owner Report'}
+            current={chunkLen}
+            estimated={estimated}
+          />
+        </div>
+      )}
     </div>
   )
 }
 
 // externalDone: { [toolId]: boolean } — tools confirmed done by real SSE events
 // report: the actual markdown report text from the backend
-export default function ScanVisualization({ target, onComplete, onTabChange, externalDone = {}, generatingReport = false, reportDev = null, reportNonDev = null, topOffset = 0 }) {
+export default function ScanVisualization({ target, onComplete, externalDone = {}, generatingReport = false, reportDev = null, reportNonDev = null, devChunkLen = 0, nondevChunkLen = 0, topOffset = 0 }) {
   const report = reportNonDev || reportDev  // trigger on whichever arrives first
   const [phase, setPhase] = useState('intro')
   const [toolProgress, setToolProgress] = useState(
@@ -280,13 +319,13 @@ export default function ScanVisualization({ target, onComplete, onTabChange, ext
     return () => clearInterval(interval)
   }, [phase])
 
-  // nvd: branches fill in 500ms, trunk fills over 3-6s.
+  // nvd: branches fill in 500ms, trunk fills over 18-26s (matches report generation time).
   // Snaps to done immediately if nvd_lookup is confirmed complete externally.
   useEffect(() => {
     if (phase !== 'nvd') return
 
     const BRANCH_MS = 500
-    const trunkDuration = 3000 + Math.random() * 3000
+    const trunkDuration = 18000 + Math.random() * 8000
     const start = Date.now()
 
     const interval = setInterval(() => {
@@ -313,7 +352,7 @@ export default function ScanVisualization({ target, onComplete, onTabChange, ext
     return () => clearInterval(interval)
   }, [phase])
 
-  // fading → show report
+  // fading → transition to report screen (animation done; report data may still be loading)
   useEffect(() => {
     if (phase !== 'fading') return
     const t = setTimeout(() => {
@@ -339,7 +378,7 @@ export default function ScanVisualization({ target, onComplete, onTabChange, ext
         {!showReport && (
           <motion.div
             key="viz"
-            style={{ width: '100%', height: '100%' }}
+            style={{ width: '100%', height: '100%', position: 'relative' }}
             exit={{ opacity: 0, transition: { duration: 0.8 } }}
           >
             <svg
@@ -420,20 +459,6 @@ export default function ScanVisualization({ target, onComplete, onTabChange, ext
                 </motion.g>
               )}
 
-              {/* ── Writing report indicator ── */}
-              {generatingReport && !report && (
-                <motion.text
-                  x={W / 2} y={H - 32}
-                  textAnchor="middle"
-                  fill="rgba(255,255,255,0.5)"
-                  fontSize={13}
-                  fontFamily="system-ui, sans-serif"
-                  animate={{ opacity: [0.3, 1, 0.3] }}
-                  transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
-                >
-                  Writing your report...
-                </motion.text>
-              )}
             </svg>
           </motion.div>
         )}
@@ -455,9 +480,7 @@ export default function ScanVisualization({ target, onComplete, onTabChange, ext
               lineHeight: 1.75,
             }}
           >
-            <div style={{ width: '100%', maxWidth: 1000, margin: '0 auto', padding: '0 32px' }}>
-              <ReportView reportNonDev={reportNonDev} reportDev={reportDev} onTabChange={onTabChange} />
-            </div>
+            <ReportView reportNonDev={reportNonDev} reportDev={reportDev} devChunkLen={devChunkLen} nondevChunkLen={nondevChunkLen} />
           </motion.div>
         )}
       </AnimatePresence>
