@@ -319,7 +319,7 @@ export default function ScanVisualizationActive({ target, nmapType = 'basic', on
   const showSsBranch    = phase === 'searchsploit'
 
   return (
-    <div style={{ position: 'fixed', top: topOffset, left: 0, right: 0, bottom: 0, background: '#070a0d' }}>
+    <div style={{ position: 'fixed', top: topOffset, left: 0, right: 0, bottom: 0, background: 'transparent' }}>
       <AnimatePresence>
         {!showReport && (
           <motion.div key="viz" style={{ width: '100%', height: '100%' }}
@@ -429,7 +429,7 @@ export default function ScanVisualizationActive({ target, nmapType = 'basic', on
             initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             style={{ position: 'absolute', inset: 0, overflowY: 'auto',
-              padding: '48px 12%', color: 'white',
+              padding: '104px 12% 64px', color: 'white',
               fontFamily: 'system-ui, sans-serif', fontSize: 14, lineHeight: 1.75 }}>
             <ReportViewActive reportNonDev={reportNonDev} reportDev={reportDev} />
           </motion.div>

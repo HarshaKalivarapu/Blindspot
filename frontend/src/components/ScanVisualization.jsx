@@ -329,7 +329,7 @@ export default function ScanVisualization({ target, onComplete, externalDone = {
   const trunkY2 = NVD_CY - BH / 2 - 4
 
   return (
-    <div style={{ position: 'fixed', top: topOffset, left: 0, right: 0, bottom: 0, background: '#070a0d' }}>
+    <div style={{ position: 'fixed', top: topOffset, left: 0, right: 0, bottom: 0, background: 'transparent' }}>
       <AnimatePresence>
         {!showReport && (
           <motion.div
@@ -443,7 +443,7 @@ export default function ScanVisualization({ target, onComplete, externalDone = {
               position: 'absolute',
               inset: 0,
               overflowY: 'auto',
-              padding: '48px 12%',
+              padding: '104px 12% 64px',
               color: 'white',
               fontFamily: 'system-ui, sans-serif',
               fontSize: 14,
