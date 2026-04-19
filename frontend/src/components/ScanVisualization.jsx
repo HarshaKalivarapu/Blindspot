@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import ReactMarkdown from 'react-markdown'
+import ReportRenderer from './ReportRenderer'
 
 // ── SVG canvas dimensions ────────────────────────────────────────────────────
 const W = 1000
@@ -175,27 +175,12 @@ function Block({ label, done, wide, estimate }) {
 }
 
 // ── Main visualization component ──────────────────────────────────────────────
-// ── Markdown report renderer ──────────────────────────────────────────────────
-const mdComponents = {
-  h1: ({children}) => <h1 style={{fontSize:26,fontWeight:700,marginBottom:12,letterSpacing:'-0.02em',color:'#fff'}}>{children}</h1>,
-  h2: ({children}) => <h2 style={{fontSize:20,fontWeight:600,marginTop:36,marginBottom:10,color:'rgba(255,255,255,0.95)',borderBottom:'1px solid rgba(255,255,255,0.08)',paddingBottom:8}}>{children}</h2>,
-  h3: ({children}) => <h3 style={{fontSize:16,fontWeight:600,marginTop:20,marginBottom:6,color:'rgba(255,255,255,0.9)'}}>{children}</h3>,
-  p: ({children}) => <p style={{marginBottom:12,color:'rgba(255,255,255,0.8)',lineHeight:1.75}}>{children}</p>,
-  ul: ({children}) => <ul style={{paddingLeft:20,marginBottom:12}}>{children}</ul>,
-  ol: ({children}) => <ol style={{paddingLeft:20,marginBottom:12}}>{children}</ol>,
-  li: ({children}) => <li style={{marginBottom:4,color:'rgba(255,255,255,0.8)',lineHeight:1.7}}>{children}</li>,
-  strong: ({children}) => <strong style={{color:'#fff',fontWeight:600}}>{children}</strong>,
-  code: ({children}) => <code style={{background:'rgba(255,255,255,0.08)',padding:'2px 6px',borderRadius:4,fontSize:12,fontFamily:'monospace'}}>{children}</code>,
-  hr: () => <hr style={{border:'none',borderTop:'1px solid rgba(255,255,255,0.1)',margin:'24px 0'}} />,
-  blockquote: ({children}) => <blockquote style={{borderLeft:'3px solid rgba(255,255,255,0.2)',paddingLeft:16,margin:'16px 0',color:'rgba(255,255,255,0.6)'}}>{children}</blockquote>,
-}
-
-function ReportView({ content }) {
+function ReportView({ reportNonDev, reportDev }) {
   const [tab, setTab] = useState('non-dev')
+  const content = tab === 'dev' ? reportDev : reportNonDev
 
   return (
     <div>
-      {/* Toggle — same style as the User Guide */}
       <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', borderRadius: 12, padding: 6, marginBottom: 40, border: '1px solid rgba(255,255,255,0.05)', maxWidth: 360, margin: '0 auto 40px' }}>
         {[['non-dev', 'Non-Developer'], ['dev', 'Developer']].map(([key, label]) => (
           <button key={key} onClick={() => setTab(key)} style={{
@@ -209,19 +194,15 @@ function ReportView({ content }) {
           </button>
         ))}
       </div>
-
-      {/* Report content — both tabs show the same markdown for now */}
-      {content
-        ? <ReactMarkdown components={mdComponents}>{content}</ReactMarkdown>
-        : <p style={{ color: 'rgba(255,255,255,0.4)' }}>Scan complete — waiting for report...</p>
-      }
+      <ReportRenderer jsonString={content} />
     </div>
   )
 }
 
 // externalDone: { [toolId]: boolean } — tools confirmed done by real SSE events
 // report: the actual markdown report text from the backend
-export default function ScanVisualization({ target, onComplete, externalDone = {}, report = null, topOffset = 0 }) {
+export default function ScanVisualization({ target, onComplete, externalDone = {}, generatingReport = false, reportDev = null, reportNonDev = null, topOffset = 0 }) {
+  const report = reportNonDev || reportDev  // trigger on whichever arrives first
   const [phase, setPhase] = useState('intro')
   const [toolProgress, setToolProgress] = useState(
     Object.fromEntries(TOOLS.map(t => [t.id, 0]))
@@ -237,6 +218,14 @@ export default function ScanVisualization({ target, onComplete, externalDone = {
   // Keep a ref so intervals always read the latest externalDone without stale closures
   const externalDoneRef = useRef(externalDone)
   useEffect(() => { externalDoneRef.current = externalDone }, [externalDone])
+
+  // When report generation starts, snap all tools done and advance to nvd phase
+  useEffect(() => {
+    if (!generatingReport || report) return
+    setToolProgress(Object.fromEntries(TOOLS.map(t => [t.id, 100])))
+    setToolDone(Object.fromEntries(TOOLS.map(t => [t.id, true])))
+    if (phase === 'tools' || phase === 'intro') setPhase('nvd')
+  }, [generatingReport]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // When the real report arrives, fast-forward to showing it
   useEffect(() => {
@@ -425,6 +414,21 @@ export default function ScanVisualization({ target, onComplete, externalDone = {
                   <Block label="NVD CVE Lookup" done={nvdDone} />
                 </motion.g>
               )}
+
+              {/* ── Writing report indicator ── */}
+              {generatingReport && !report && (
+                <motion.text
+                  x={W / 2} y={H - 32}
+                  textAnchor="middle"
+                  fill="rgba(255,255,255,0.5)"
+                  fontSize={13}
+                  fontFamily="system-ui, sans-serif"
+                  animate={{ opacity: [0.3, 1, 0.3] }}
+                  transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+                >
+                  Writing your report...
+                </motion.text>
+              )}
             </svg>
           </motion.div>
         )}
@@ -446,7 +450,7 @@ export default function ScanVisualization({ target, onComplete, externalDone = {
               lineHeight: 1.75,
             }}
           >
-            <ReportView content={report} />
+            <ReportView reportNonDev={reportNonDev} reportDev={reportDev} />
           </motion.div>
         )}
       </AnimatePresence>

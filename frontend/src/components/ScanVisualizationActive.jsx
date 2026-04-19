@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import ReactMarkdown from 'react-markdown'
+import ReportRenderer from './ReportRenderer'
 
 const W = 1000
 const H = 560
@@ -141,8 +141,9 @@ function Block({ label, done, wide, estimate }) {
 // intro → nmap → tools → nvd → searchsploit → fading → report
 // Only two layers visible at a time. Each block fades out when no longer needed.
 
-function ReportViewActive({ content }) {
+function ReportViewActive({ reportNonDev, reportDev }) {
   const [tab, setTab] = useState('non-dev')
+  const content = tab === 'dev' ? reportDev : reportNonDev
   return (
     <div>
       <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', borderRadius: 12, padding: 6, marginBottom: 40, border: '1px solid rgba(255,255,255,0.05)', maxWidth: 360, margin: '0 auto 40px' }}>
@@ -158,10 +159,7 @@ function ReportViewActive({ content }) {
           </button>
         ))}
       </div>
-      {content
-        ? <ReactMarkdown components={mdComponents}>{content}</ReactMarkdown>
-        : <p style={{ color: 'rgba(255,255,255,0.4)' }}>Scan complete — waiting for report...</p>
-      }
+      <ReportRenderer jsonString={content} />
     </div>
   )
 }
@@ -180,7 +178,8 @@ const mdComponents = {
   blockquote: ({children}) => <blockquote style={{borderLeft:'3px solid rgba(255,255,255,0.2)',paddingLeft:16,margin:'16px 0',color:'rgba(255,255,255,0.6)'}}>{children}</blockquote>,
 }
 
-export default function ScanVisualizationActive({ target, nmapType = 'basic', onComplete, externalDone = {}, report = null, topOffset = 0 }) {
+export default function ScanVisualizationActive({ target, nmapType = 'basic', onComplete, externalDone = {}, generatingReport = false, reportDev = null, reportNonDev = null, topOffset = 0 }) {
+  const report = reportNonDev || reportDev
   const tools = nmapType === 'aggressive' ? AGGRESSIVE_TOOLS : SIMPLE_TOOLS
   const toolXs = toolXPositions(tools.length)
   const nmapLabel = nmapType === 'aggressive' ? 'NMAP Full Port Scan' : 'NMAP Basic Scan'
@@ -199,6 +198,16 @@ export default function ScanVisualizationActive({ target, nmapType = 'basic', on
 
   const externalDoneRef = useRef(externalDone)
   useEffect(() => { externalDoneRef.current = externalDone }, [externalDone])
+
+  // When report generation starts, snap all tools done and advance past tools phase
+  useEffect(() => {
+    if (!generatingReport || report) return
+    setNmapDone(true)
+    setNmapProgress(100)
+    setToolProgress(Object.fromEntries(tools.map(t => [t.id, 100])))
+    setToolDone(Object.fromEntries(tools.map(t => [t.id, true])))
+    if (phase === 'nmap' || phase === 'tools' || phase === 'intro') setPhase('nvd')
+  }, [generatingReport]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // When real report arrives, fast-forward to showing it
   useEffect(() => {
@@ -396,6 +405,21 @@ export default function ScanVisualizationActive({ target, nmapType = 'basic', on
                 </motion.g>
               )}
 
+              {/* ── Writing report indicator ── */}
+              {generatingReport && !report && (
+                <motion.text
+                  x={W / 2} y={H - 32}
+                  textAnchor="middle"
+                  fill="rgba(255,255,255,0.5)"
+                  fontSize={13}
+                  fontFamily="system-ui, sans-serif"
+                  animate={{ opacity: [0.3, 1, 0.3] }}
+                  transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+                >
+                  Writing your report...
+                </motion.text>
+              )}
+
             </svg>
           </motion.div>
         )}
@@ -407,7 +431,7 @@ export default function ScanVisualizationActive({ target, nmapType = 'basic', on
             style={{ position: 'absolute', inset: 0, overflowY: 'auto',
               padding: '48px 12%', color: 'white',
               fontFamily: 'system-ui, sans-serif', fontSize: 14, lineHeight: 1.75 }}>
-            <ReportViewActive content={report} />
+            <ReportViewActive reportNonDev={reportNonDev} reportDev={reportDev} />
           </motion.div>
         )}
       </AnimatePresence>

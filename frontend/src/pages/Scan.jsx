@@ -11,6 +11,7 @@ import { useAuth } from '../lib/AuthContext.jsx'
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ?? 'http://localhost:5000'
 
+
 function Scan() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -25,7 +26,9 @@ function Scan() {
   const [scanError, setScanError] = useState(false)
   const [messages, setMessages] = useState([])
   const [externalDone, setExternalDone] = useState({})
-  const [report, setReport] = useState(null)
+  const [reportDev, setReportDev] = useState(null)
+  const [reportNonDev, setReportNonDev] = useState(null)
+  const [generatingReport, setGeneratingReport] = useState(false)
   const scrollRef = useRef(null)
   const scanInserted = useRef(false)
 
@@ -84,7 +87,9 @@ function Scan() {
     setSending(true)
     setScanError(false)
     setExternalDone({})
-    setReport(null)
+    setReportDev(null)
+    setReportNonDev(null)
+    setGeneratingReport(false)
     setMessages([])
 
     try {
@@ -116,13 +121,21 @@ function Scan() {
           try {
             const event = JSON.parse(line.slice(6))
             if (event.type === 'status') {
-              // Detect tool completion: "shodan complete." → externalDone['shodan'] = true
               if (event.message.endsWith(' complete.')) {
                 const toolName = event.message.slice(0, -' complete.'.length)
                 setExternalDone(prev => ({ ...prev, [toolName]: true }))
+              } else if (
+                event.message === 'Analyzing findings...' ||
+                event.message === 'Generating reports...'
+              ) {
+                setGeneratingReport(true)
               }
-            } else if (event.type === 'report') {
-              setReport(event.message)
+            } else if (event.type === 'report_dev_chunk' || event.type === 'report_nondev_chunk') {
+              // chunks just confirm report generation is in progress — no state needed
+            } else if (event.type === 'report_dev') {
+              setReportDev(event.message)
+            } else if (event.type === 'report_nondev') {
+              setReportNonDev(event.message)
             }
           } catch {
             // skip malformed lines
@@ -269,13 +282,17 @@ function Scan() {
               target={scanConfig.target}
               nmapType={scanConfig.intensity ?? 'simple'}
               externalDone={externalDone}
-              report={report}
+              generatingReport={generatingReport}
+              reportDev={reportDev}
+              reportNonDev={reportNonDev}
               topOffset={64}
               onComplete={() => setSending(false)} />
           : <ScanVisualization
               target={scanConfig?.target ?? ''}
               externalDone={externalDone}
-              report={report}
+              generatingReport={generatingReport}
+              reportDev={reportDev}
+              reportNonDev={reportNonDev}
               topOffset={64}
               onComplete={() => setSending(false)} />
         }
