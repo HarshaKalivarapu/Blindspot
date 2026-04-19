@@ -175,15 +175,20 @@ function Block({ label, done, wide, estimate }) {
 }
 
 // ── Main visualization component ──────────────────────────────────────────────
-function ReportView({ reportNonDev, reportDev }) {
+function ReportView({ reportNonDev, reportDev, onTabChange }) {
   const [tab, setTab] = useState('non-dev')
   const content = tab === 'dev' ? reportDev : reportNonDev
+
+  function handleTab(key) {
+    setTab(key)
+    onTabChange?.(key)
+  }
 
   return (
     <div>
       <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', borderRadius: 12, padding: 6, marginBottom: 40, border: '1px solid rgba(255,255,255,0.05)', maxWidth: 360, margin: '0 auto 40px' }}>
         {[['non-dev', 'Non-Developer'], ['dev', 'Developer']].map(([key, label]) => (
-          <button key={key} onClick={() => setTab(key)} style={{
+          <button key={key} onClick={() => handleTab(key)} style={{
             flex: 1, padding: '12px 0', borderRadius: 8, border: 'none',
             background: tab === key ? 'rgba(255,255,255,0.1)' : 'transparent',
             color: tab === key ? '#ffffff' : 'rgba(255,255,255,0.4)',
@@ -201,7 +206,7 @@ function ReportView({ reportNonDev, reportDev }) {
 
 // externalDone: { [toolId]: boolean } — tools confirmed done by real SSE events
 // report: the actual markdown report text from the backend
-export default function ScanVisualization({ target, onComplete, externalDone = {}, generatingReport = false, reportDev = null, reportNonDev = null, topOffset = 0 }) {
+export default function ScanVisualization({ target, onComplete, onTabChange, externalDone = {}, generatingReport = false, reportDev = null, reportNonDev = null, topOffset = 0 }) {
   const report = reportNonDev || reportDev  // trigger on whichever arrives first
   const [phase, setPhase] = useState('intro')
   const [toolProgress, setToolProgress] = useState(
@@ -450,7 +455,7 @@ export default function ScanVisualization({ target, onComplete, externalDone = {
               lineHeight: 1.75,
             }}
           >
-            <ReportView reportNonDev={reportNonDev} reportDev={reportDev} />
+            <ReportView reportNonDev={reportNonDev} reportDev={reportDev} onTabChange={onTabChange} />
           </motion.div>
         )}
       </AnimatePresence>
