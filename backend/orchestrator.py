@@ -269,16 +269,27 @@ async def _stream_report(mode: str, extraction_json: str, schema: str, queue: as
     # ─────────────────────────────────────────────────────────────────────────
 
     full_text = ""
+    continuation_messages = [{"role": "user", "content": user_msg}]
     try:
-        async with async_anthropic_client.messages.stream(
-            model=MODEL,
-            max_tokens=8192,
-            system=schema,
-            messages=[{"role": "user", "content": user_msg}],
-        ) as stream:
-            async for chunk in stream.text_stream:
-                full_text += chunk
-                await queue.put((mode, "chunk", chunk))
+        while True:
+            async with async_anthropic_client.messages.stream(
+                model=MODEL,
+                max_tokens=8192,
+                system=schema,
+                messages=continuation_messages,
+            ) as stream:
+                async for chunk in stream.text_stream:
+                    full_text += chunk
+                    await queue.put((mode, "chunk", chunk))
+                final = await stream.get_final_message()
+
+            if final.stop_reason != "max_tokens":
+                break
+
+            print(f"[{mode}/report] truncated at {len(full_text)} chars, continuing...", file=sys.stderr)
+            continuation_messages.append({"role": "assistant", "content": [{"type": "text", "text": full_text}]})
+            continuation_messages.append({"role": "user", "content": "Continue from exactly where you left off. Output ONLY the continuation — no repetition, no preamble."})
+
         cleaned = _clean_json_text(full_text)
         json.loads(cleaned)  # validate — raises if malformed
         await queue.put((mode, "done", cleaned))

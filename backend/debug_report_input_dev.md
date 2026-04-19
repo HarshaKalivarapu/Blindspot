@@ -322,13 +322,9 @@ Here are all security findings from the scan in a compact structured format:
   "scan_date": "2026-04-18T23:10:02Z",
   "scan_type": "passive",
   "scan_mode": "simple",
-  "duration_seconds": 114.1,
-  "tools_run": ["shodan", "dns_whois", "ssl_tls", "nvd_lookup"],
-  "tool_errors": [
-    "whatweb: timed out after 30 seconds",
-    "http_headers: request to https://serviq-volunteer.org timed out",
-    "dns_whois: crt.sh request timed out"
-  ],
+  "duration_seconds": 60.1,
+  "tools_run": ["shodan", "whatweb", "dns_whois", "ssl_tls", "http_headers", "nvd_lookup"],
+  "tool_errors": ["dns_whois: crt.sh lookup failed — 502 Bad Gateway"],
   "open_ports": [80, 443, 2052, 2053, 2082, 2083, 2086, 2087, 2095, 2096, 8080, 8443, 8880],
   "services": {
     "80": {"name": "HTTP", "version": null},
@@ -345,33 +341,8 @@ Here are all security findings from the scan in a compact structured format:
     "8443": {"name": "HTTPS (Cloudflare)", "version": null},
     "8880": {"name": "HTTP", "version": null}
   },
-  "tech_stack": ["Cloudflare CDN"],
-  "cves": [
-    {
-      "id": "CVE-2026-2833",
-      "cvss": 9.1,
-      "affected_software": "Cloudflare CDN (Pingora)",
-      "description": "HTTP request smuggling via improper handling of HTTP/1.1 Upgrade headers in Cloudflare's Pingora proxy framework.",
-      "has_exploit": false,
-      "exploit_sources": []
-    },
-    {
-      "id": "CVE-2026-2835",
-      "cvss": 9.1,
-      "affected_software": "Cloudflare CDN (Pingora)",
-      "description": "HTTP request smuggling via improper handling of HTTP/1.0 bodies and Transfer-Encoding headers in Cloudflare's Pingora proxy framework.",
-      "has_exploit": false,
-      "exploit_sources": []
-    },
-    {
-      "id": "CVE-2026-2836",
-      "cvss": 8.1,
-      "affected_software": "Cloudflare CDN (Pingora)",
-      "description": "Cache poisoning vulnerability in Pingora due to default cache keys being constructed using only the URI path, excluding critical differentiating request headers.",
-      "has_exploit": false,
-      "exploit_sources": []
-    }
-  ],
+  "tech_stack": ["Cloudflare", "Express", "Bootstrap", "HTML5"],
+  "cves": [],
   "ssl": {
     "valid": true,
     "expiry_date": "2026-06-03",
@@ -379,13 +350,24 @@ Here are all security findings from the scan in a compact structured format:
     "issues": ["Certificate expires in 45 days"]
   },
   "http_headers": {
-    "missing_security_headers": [],
-    "info_disclosure": []
+    "missing_security_headers": [
+      "Strict-Transport-Security",
+      "Content-Security-Policy",
+      "X-Frame-Options",
+      "X-Content-Type-Options",
+      "Referrer-Policy",
+      "Permissions-Policy",
+      "X-XSS-Protection"
+    ],
+    "info_disclosure": [
+      "Server: cloudflare",
+      "X-Powered-By: Express"
+    ]
   },
   "dns_whois": {
     "registrar": "NAMECHEAP INC",
     "expiry_date": "2026-05-13",
-    "days_until_expiry": null,
+    "days_until_expiry": 25,
     "nameservers": ["dns1.registrar-servers.com", "dns2.registrar-servers.com"],
     "subdomains_found": []
   },
@@ -403,7 +385,7 @@ Here are all security findings from the scan in a compact structured format:
   "ffuf_findings": [],
   "searchsploit_results": [],
   "confirmed_exploits_count": 0,
-  "total_issues_count": 7
+  "total_issues_count": 11
 }
 ```
 
