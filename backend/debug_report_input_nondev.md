@@ -230,86 +230,104 @@ Here are all security findings from the scan in a compact structured format:
 
 ```json
 {
-  "target": "scanme.nmap.org",
+  "target": "hi.org",
   "scan_date": null,
   "scan_type": "passive",
   "scan_mode": "simple",
-  "duration_seconds": 57.8,
-  "tools_run": ["whatweb", "dns_whois", "http_headers", "nvd_lookup"],
+  "duration_seconds": 90.5,
+  "tools_run": ["dns_whois", "ssl_tls", "http_headers", "nvd_lookup"],
   "tool_errors": [
     "shodan: SHODAN_API_KEY is not set in environment",
-    "ssl_tls: Could not retrieve SSL certificate — Network is unreachable (port 443)",
-    "dns_whois: crt.sh lookup failed — 404 Not Found"
+    "whatweb: WhatWeb is not installed",
+    "dns_whois: crt.sh request timed out"
   ],
-  "open_ports": [80],
+  "open_ports": [443],
   "services": {
-    "80": {"name": "http", "version": "Apache/2.4.7 (Ubuntu)"}
+    "443": {"name": "https", "version": null}
   },
-  "tech_stack": ["Apache 2.4.7", "Ubuntu", "Google-Analytics Universal", "HTML5"],
+  "tech_stack": ["Cloudflare", "RapidSSL TLS ECC CA G1", "TLSv1.2", "ECDHE-ECDSA-AES256-GCM-SHA384"],
   "cves": [
     {
-      "id": "CVE-2016-6814",
+      "id": "CVE-2019-10842",
       "cvss": 9.8,
-      "affected_software": "Apache 2.4.7",
-      "description": "Unsupported Codehaus/Apache Groovy versions on classpath allow exploitation of standard Java serialization mechanisms to execute arbitrary code.",
+      "affected_software": "Cloudflare",
+      "description": "Arbitrary code execution via backdoor code in bootstrap-sass 3.2.0.3, exploitable through a crafted ___cfduid cookie value using base64 encoded input passed to eval().",
       "has_exploit": false,
       "exploit_sources": []
     },
     {
-      "id": "CVE-2021-44224",
-      "cvss": 8.2,
-      "affected_software": "Apache 2.4.7",
-      "description": "A crafted URI sent to httpd configured as a forward proxy can cause a NULL pointer dereference crash or allow requests to be directed to unintended Unix Domain Sockets.",
+      "id": "CVE-2024-0323",
+      "cvss": 9.8,
+      "affected_software": "TLSv1.0",
+      "description": "An FTP server supporting deprecated encryption mechanisms including TLSv1.0 allows network-based attackers to perform man-in-the-middle attacks or decrypt communications.",
       "has_exploit": false,
       "exploit_sources": []
     },
     {
-      "id": "CVE-2025-66200",
-      "cvss": 5.4,
-      "affected_software": "Apache 2.4.7",
-      "description": "mod_userdir and suexec bypass via AllowOverride FileInfo allows users with htaccess access to run CGI scripts under an unexpected userid.",
+      "id": "CVE-2022-4428",
+      "cvss": 8.9,
+      "affected_software": "Cloudflare",
+      "description": "Improper validation of the support_uri parameter in the WARP client local settings file allows privilege escalation and arbitrary executable launch.",
       "has_exploit": false,
       "exploit_sources": []
     },
     {
-      "id": "CVE-2012-2378",
-      "cvss": 4.3,
-      "affected_software": "Apache 2.4.7",
-      "description": "Apache CXF does not properly enforce child policies of a WS-SecurityPolicy 1.1 SupportingToken policy on the client side, allowing attackers to bypass AlgorithmSuite and other security policies.",
+      "id": "CVE-2017-7235",
+      "cvss": 8.8,
+      "affected_software": "Cloudflare",
+      "description": "A malicious website owner can craft a page that executes arbitrary Python code against any cfscrape 1.6.6–1.7.1 user who scrapes that website.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2020-15236",
+      "cvss": 8.6,
+      "affected_software": "Cloudflare",
+      "description": "Directory traversal in Wiki.js before 2.5.151 allows a malicious user to read arbitrary files when a storage module with local asset cache fetching is enabled.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2021-3761",
+      "cvss": 7.5,
+      "affected_software": "Cloudflare",
+      "description": "Any CA issuer in the RPKI can trick OctoRPKI prior to 1.3.0 into emitting an invalid VRP MaxLength value, causing RTR sessions to terminate and disabling RPKI Origin Validation.",
       "has_exploit": false,
       "exploit_sources": []
     }
   ],
   "ssl": {
-    "valid": null,
-    "expiry_date": null,
-    "days_until_expiry": null,
-    "issues": ["Port 443 unreachable — HTTPS does not appear to be configured"]
+    "valid": true,
+    "expiry_date": "2026-12-28",
+    "days_until_expiry": 253,
+    "issues": [
+      "TLS 1.0 supported — deprecated, must be disabled",
+      "TLS 1.1 supported — deprecated, must be disabled",
+      "TLS 1.3 not supported — recommended"
+    ]
   },
   "http_headers": {
     "missing_security_headers": [
       "Strict-Transport-Security",
-      "Content-Security-Policy",
-      "X-Frame-Options",
-      "X-Content-Type-Options",
       "Referrer-Policy",
-      "Permissions-Policy",
-      "X-XSS-Protection"
+      "Permissions-Policy"
     ],
-    "info_disclosure": ["Server: Apache/2.4.7 (Ubuntu)"]
+    "info_disclosure": [
+      "Server: cloudflare"
+    ]
   },
   "dns_whois": {
-    "registrar": "DYNADOT LLC",
-    "expiry_date": "2029-01-18",
+    "registrar": "Namebay SAM",
+    "expiry_date": "2026-10-12",
     "days_until_expiry": null,
     "nameservers": [
-      "ns1.linode.com",
-      "ns2.linode.com",
-      "ns3.linode.com",
-      "ns4.linode.com",
-      "ns5.linode.com"
+      "ns01.svc.agc-tech.net",
+      "ns02.svc.agc-tech.net",
+      "ns03.svc.agc-tech.net"
     ],
-    "subdomains_found": []
+    "subdomains_found": [
+      "www.hi.org"
+    ]
   },
   "shodan": {
     "country": null,
@@ -325,7 +343,7 @@ Here are all security findings from the scan in a compact structured format:
   "ffuf_findings": [],
   "searchsploit_results": [],
   "confirmed_exploits_count": 0,
-  "total_issues_count": 13
+  "total_issues_count": 12
 }
 ```
 

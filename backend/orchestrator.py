@@ -15,8 +15,10 @@ Environment:
 """
 
 import asyncio
+import ipaddress
 import json
 import os
+import socket
 import sys
 import time
 
@@ -98,7 +100,7 @@ def _load_prompt(level: str, intensity: str, target: str) -> str:
 
 
 MCP_SERVER_PARAMS = StdioServerParameters(
-    command="python",
+    command=sys.executable,
     args=["server.py"],
     cwd=os.path.dirname(os.path.abspath(__file__)),
 )
@@ -297,6 +299,19 @@ async def scan(req: ScanRequest):
             return {"data": json.dumps({"type": type, "message": message})}
 
         scan_start_time = time.time()
+
+        # ── Target reachability check ─────────────────────────────────────────
+        target = req.target.strip()
+        try:
+            ipaddress.ip_address(target)  # valid IP — no DNS needed
+        except ValueError:
+            try:
+                await asyncio.to_thread(socket.getaddrinfo, target, None)
+            except socket.gaierror:
+                yield emit("error", f"Could not resolve '{target}'. Check that the domain or IP address is correct and try again.")
+                return
+
+        yield emit("target_valid", "ok")
         yield emit("status", "Connecting to tool engine...")
 
         async with stdio_client(MCP_SERVER_PARAMS) as (read, write):

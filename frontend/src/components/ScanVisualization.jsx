@@ -201,7 +201,7 @@ function ReportView({ reportNonDev, reportDev }) {
 
 // externalDone: { [toolId]: boolean } — tools confirmed done by real SSE events
 // report: the actual markdown report text from the backend
-export default function ScanVisualization({ target, onComplete, externalDone = {}, generatingReport = false, reportDev = null, reportNonDev = null, topOffset = 0 }) {
+export default function ScanVisualization({ target, onComplete, onReportPhase, externalDone = {}, generatingReport = false, reportDev = null, reportNonDev = null, topOffset = 0 }) {
   const report = reportNonDev || reportDev  // trigger on whichever arrives first
   const [phase, setPhase] = useState('intro')
   const [toolProgress, setToolProgress] = useState(
@@ -313,6 +313,7 @@ export default function ScanVisualization({ target, onComplete, externalDone = {
     if (phase !== 'fading') return
     const t = setTimeout(() => {
       setShowReport(true)
+      onReportPhase?.()
       onComplete?.()
     }, 700)
     return () => clearTimeout(t)

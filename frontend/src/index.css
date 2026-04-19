@@ -1,5 +1,20 @@
 @import "tailwindcss";
 
+@keyframes barLoader {
+  0%, 100% {
+    transform: scaleY(0.1);
+    opacity: 0.2;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+@theme {
+  --animate-barLoader: barLoader 1.2s ease-in-out infinite;
+}
+
 html,
 body,
 #root {

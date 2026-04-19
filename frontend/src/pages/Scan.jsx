@@ -6,6 +6,8 @@ import ShaderBackground from '../components/homepage/ShaderBackground.jsx'
 import AuthModal from '../components/homepage/AuthModal.jsx'
 import ScanVisualization from '../components/ScanVisualization.jsx'
 import ScanVisualizationActive from '../components/ScanVisualizationActive.jsx'
+import BarLoader from '../components/BarLoader.jsx'
+import ReportSkeleton from '../components/ReportSkeleton.jsx'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../lib/AuthContext.jsx'
 
@@ -29,8 +31,13 @@ function Scan() {
   const [reportDev, setReportDev] = useState(null)
   const [reportNonDev, setReportNonDev] = useState(null)
   const [generatingReport, setGeneratingReport] = useState(false)
+  const [showViz, setShowViz] = useState(false)
+  const [targetError, setTargetError] = useState(null)
+  const [targetValidated, setTargetValidated] = useState(false)
+  const [vizReportPhase, setVizReportPhase] = useState(false)
   const scrollRef = useRef(null)
   const scanInserted = useRef(false)
+  const vizTimerRef = useRef(null)
 
   useEffect(() => {
     if (view === 'chat') {
@@ -47,10 +54,19 @@ function Scan() {
       if (config.level === 'active' && !authorized) {
         setShowWarning(true)
       } else {
+        setShowViz(false)
         setView('chat')
       }
     }
   }, [location.state, authorized, navigate])
+
+  // Show visualization after 5s delay when entering chat
+  useEffect(() => {
+    if (view !== 'chat') return
+    clearTimeout(vizTimerRef.current)
+    vizTimerRef.current = setTimeout(() => setShowViz(true), 5000)
+    return () => clearTimeout(vizTimerRef.current)
+  }, [view])
 
   // Auto-start scan when we enter chat view with a config
   useEffect(() => {
@@ -90,6 +106,9 @@ function Scan() {
     setReportDev(null)
     setReportNonDev(null)
     setGeneratingReport(false)
+    setTargetError(null)
+    setTargetValidated(false)
+    setVizReportPhase(false)
     setMessages([])
 
     try {
@@ -120,6 +139,13 @@ function Scan() {
           if (!line.startsWith('data: ')) continue
           try {
             const event = JSON.parse(line.slice(6))
+            if (event.type === 'error') {
+                setTargetError(event.message)
+                return
+              }
+            if (event.type === 'target_valid') {
+                setTargetValidated(true)
+              }
             if (event.type === 'status') {
               if (event.message.endsWith(' complete.')) {
                 const toolName = event.message.slice(0, -' complete.'.length)
@@ -131,7 +157,7 @@ function Scan() {
                 setGeneratingReport(true)
               }
             } else if (event.type === 'report_dev_chunk' || event.type === 'report_nondev_chunk') {
-              // chunks just confirm report generation is in progress — no state needed
+              setGeneratingReport(true)
             } else if (event.type === 'report_dev') {
               setReportDev(event.message)
             } else if (event.type === 'report_nondev') {
@@ -265,38 +291,138 @@ function Scan() {
                 + New Scan
               </motion.button>
             )}
-            <span
-              className={`rounded-full px-3 py-1 text-xs font-medium ${authorized ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                }`}
-              style={{ fontFamily: 'monospace' }}
+            <motion.span
+              animate={authorized || targetValidated ? {
+                backgroundColor: 'rgba(34,197,94,0.1)',
+                borderColor: 'rgba(34,197,94,0.2)',
+                color: '#4ade80',
+              } : {
+                backgroundColor: 'rgba(245,158,11,0.1)',
+                borderColor: 'rgba(245,158,11,0.2)',
+                color: '#fbbf24',
+              }}
+              transition={{ duration: 0.5 }}
+              style={{
+                borderRadius: 9999, padding: '4px 12px',
+                fontSize: 12, fontWeight: 500,
+                fontFamily: 'monospace',
+                border: '1px solid',
+                display: 'inline-block',
+              }}
             >
-              {authorized ? 'AUTHORIZED' : 'LOCKED'}
-            </span>
+              {authorized || targetValidated ? 'AUTHORIZED' : 'LOCKED'}
+            </motion.span>
           </div>
         </div>
       </header>
 
-      <div style={{ position: 'absolute', inset: '64px 0 0 0' }}>
-        {scanConfig?.level === 'active'
-          ? <ScanVisualizationActive
-              target={scanConfig.target}
-              nmapType={scanConfig.intensity ?? 'simple'}
-              externalDone={externalDone}
-              generatingReport={generatingReport}
-              reportDev={reportDev}
-              reportNonDev={reportNonDev}
-              topOffset={64}
-              onComplete={() => setSending(false)} />
-          : <ScanVisualization
-              target={scanConfig?.target ?? ''}
-              externalDone={externalDone}
-              generatingReport={generatingReport}
-              reportDev={reportDev}
-              reportNonDev={reportNonDev}
-              topOffset={64}
-              onComplete={() => setSending(false)} />
-        }
-      </div>
+      <AnimatePresence mode="wait">
+        {!targetError && targetValidated && !showViz && (
+          <motion.div
+            key="bar-loader"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+            style={{
+              position: 'absolute', inset: '64px 0 0 0',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <BarLoader
+              bars={8} barWidth={10} barHeight={70} speed={1.2}
+              color={authorized || targetValidated ? 'bg-[#4ade80]' : 'bg-[#fbbf24]'}
+            />
+          </motion.div>
+        )}
+
+        {targetError ? (
+          <motion.div
+            key="target-error"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+            style={{
+              position: 'absolute', inset: '64px 0 0 0',
+              display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center', gap: 20,
+            }}
+          >
+            <div style={{
+              fontSize: 40, lineHeight: 1,
+              filter: 'grayscale(0.2)',
+            }}>⚠</div>
+            <div style={{
+              fontFamily: 'system-ui, -apple-system, sans-serif',
+              fontSize: 18, fontWeight: 600, color: '#ffffff',
+              letterSpacing: '-0.01em',
+            }}>
+              Target not reachable
+            </div>
+            <p style={{
+              fontFamily: 'system-ui, -apple-system, sans-serif',
+              fontSize: 14, color: 'rgba(255,255,255,0.5)',
+              maxWidth: 420, textAlign: 'center', lineHeight: 1.6, margin: 0,
+            }}>
+              {targetError}
+            </p>
+            <motion.button
+              onClick={handleStartScan}
+              whileHover={{ backgroundColor: 'rgba(255,255,255,0.12)', borderColor: 'rgba(255,255,255,0.4)' }}
+              whileTap={{ scale: 0.97 }}
+              style={{
+                fontFamily: 'system-ui, -apple-system, sans-serif',
+                fontSize: 14, fontWeight: 500,
+                padding: '10px 24px',
+                border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: 8, cursor: 'pointer',
+                color: '#ffffff',
+                backgroundColor: 'rgba(255,255,255,0.06)',
+                outline: 'none', marginTop: 4,
+              }}
+            >
+              Try a different target
+            </motion.button>
+          </motion.div>
+        ) : showViz ? (
+          <motion.div
+            key="viz-wrapper"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6 }}
+            style={{ position: 'absolute', inset: '64px 0 0 0' }}
+          >
+            {scanConfig?.level === 'active'
+              ? <ScanVisualizationActive
+                  target={scanConfig.target}
+                  nmapType={scanConfig.intensity ?? 'simple'}
+                  externalDone={externalDone}
+                  generatingReport={generatingReport}
+                  reportDev={reportDev}
+                  reportNonDev={reportNonDev}
+                  topOffset={64}
+                  onReportPhase={() => setVizReportPhase(true)}
+                  onComplete={() => setSending(false)} />
+              : <ScanVisualization
+                  target={scanConfig?.target ?? ''}
+                  externalDone={externalDone}
+                  generatingReport={generatingReport}
+                  reportDev={reportDev}
+                  reportNonDev={reportNonDev}
+                  topOffset={64}
+                  onReportPhase={() => setVizReportPhase(true)}
+                  onComplete={() => setSending(false)} />
+            }
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {vizReportPhase && !reportDev && !reportNonDev && (
+          <ReportSkeleton key="report-skeleton" topOffset={64} />
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 
@@ -307,7 +433,7 @@ function Scan() {
       {/* Global App Navbar */}
       <nav
         style={{
-          position: 'absolute',
+          position: 'fixed',
           top: 0,
           left: 0,
           right: 0,
@@ -429,6 +555,7 @@ function Scan() {
           onConfirm={() => {
             setAuthorized(true)
             setShowWarning(false)
+            setShowViz(false)
             setView('chat')
           }}
           onCancel={() => {

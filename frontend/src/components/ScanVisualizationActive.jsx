@@ -178,7 +178,7 @@ const mdComponents = {
   blockquote: ({children}) => <blockquote style={{borderLeft:'3px solid rgba(255,255,255,0.2)',paddingLeft:16,margin:'16px 0',color:'rgba(255,255,255,0.6)'}}>{children}</blockquote>,
 }
 
-export default function ScanVisualizationActive({ target, nmapType = 'basic', onComplete, externalDone = {}, generatingReport = false, reportDev = null, reportNonDev = null, topOffset = 0 }) {
+export default function ScanVisualizationActive({ target, nmapType = 'basic', onComplete, onReportPhase, externalDone = {}, generatingReport = false, reportDev = null, reportNonDev = null, topOffset = 0 }) {
   const report = reportNonDev || reportDev
   const tools = nmapType === 'aggressive' ? AGGRESSIVE_TOOLS : SIMPLE_TOOLS
   const toolXs = toolXPositions(tools.length)
@@ -290,7 +290,7 @@ export default function ScanVisualizationActive({ target, nmapType = 'basic', on
 
   useEffect(() => {
     if (phase !== 'fading') return
-    const t = setTimeout(() => { setShowReport(true); onComplete?.() }, 700)
+    const t = setTimeout(() => { setShowReport(true); onReportPhase?.(); onComplete?.() }, 700)
     return () => clearTimeout(t)
   }, [phase, onComplete])
 
