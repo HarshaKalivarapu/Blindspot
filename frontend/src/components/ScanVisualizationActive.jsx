@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import ReactMarkdown from 'react-markdown'
 
 const W = 1000
 const H = 560
@@ -12,20 +13,17 @@ const TOP_Y = 85
 const BOT_Y = 400
 const CONV_Y = TOP_Y + (BOT_Y - TOP_Y) * 0.48
 
-// Tools shown per scan type — visually different fan-outs
+// Tool IDs match the real MCP tool names so SSE events map directly
 const SIMPLE_TOOLS = [
-  { id: 'nikto',      label: 'Nikto' },
-  { id: 'whatweb',    label: 'WhatWeb' },
-  { id: 'hydra_db',   label: 'Hydra DB' },
-  { id: 'ssh_check',  label: 'SSH Check' },
+  { id: 'nikto',        label: 'Nikto' },
+  { id: 'whatweb_active', label: 'WhatWeb' },
+  { id: 'hydra',        label: 'Hydra' },
 ]
 const AGGRESSIVE_TOOLS = [
-  { id: 'nikto',      label: 'Nikto' },
-  { id: 'whatweb',    label: 'WhatWeb' },
-  { id: 'hydra_db',   label: 'Hydra DB' },
-  { id: 'ssh_check',  label: 'SSH Check' },
-  { id: 'ffuf',       label: 'FFuF' },
-  { id: 'eternalblue',label: 'EternalBlue' },
+  { id: 'nikto',        label: 'Nikto' },
+  { id: 'whatweb_active', label: 'WhatWeb' },
+  { id: 'hydra',        label: 'Hydra' },
+  { id: 'ffuf',         label: 'FFuF' },
 ]
 
 function toolXPositions(n) {
@@ -113,7 +111,46 @@ function Block({ label, done, wide }) {
 // intro → nmap → tools → nvd → searchsploit → fading → report
 // Only two layers visible at a time. Each block fades out when no longer needed.
 
-export default function ScanVisualizationActive({ target, nmapType = 'basic', onComplete }) {
+function ReportViewActive({ content }) {
+  const [tab, setTab] = useState('non-dev')
+  return (
+    <div>
+      <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', borderRadius: 12, padding: 6, marginBottom: 40, border: '1px solid rgba(255,255,255,0.05)', maxWidth: 360 }}>
+        {[['non-dev', 'Non-Developer'], ['dev', 'Developer']].map(([key, label]) => (
+          <button key={key} onClick={() => setTab(key)} style={{
+            flex: 1, padding: '12px 0', borderRadius: 8, border: 'none',
+            background: tab === key ? 'rgba(255,255,255,0.1)' : 'transparent',
+            color: tab === key ? '#ffffff' : 'rgba(255,255,255,0.4)',
+            fontFamily: 'system-ui, -apple-system, sans-serif',
+            fontSize: 14, fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s',
+          }}>
+            {label}
+          </button>
+        ))}
+      </div>
+      {content
+        ? <ReactMarkdown components={mdComponents}>{content}</ReactMarkdown>
+        : <p style={{ color: 'rgba(255,255,255,0.4)' }}>Scan complete — waiting for report...</p>
+      }
+    </div>
+  )
+}
+
+const mdComponents = {
+  h1: ({children}) => <h1 style={{fontSize:26,fontWeight:700,marginBottom:12,letterSpacing:'-0.02em',color:'#fff'}}>{children}</h1>,
+  h2: ({children}) => <h2 style={{fontSize:20,fontWeight:600,marginTop:36,marginBottom:10,color:'rgba(255,255,255,0.95)',borderBottom:'1px solid rgba(255,255,255,0.08)',paddingBottom:8}}>{children}</h2>,
+  h3: ({children}) => <h3 style={{fontSize:16,fontWeight:600,marginTop:20,marginBottom:6,color:'rgba(255,255,255,0.9)'}}>{children}</h3>,
+  p: ({children}) => <p style={{marginBottom:12,color:'rgba(255,255,255,0.8)',lineHeight:1.75}}>{children}</p>,
+  ul: ({children}) => <ul style={{paddingLeft:20,marginBottom:12}}>{children}</ul>,
+  ol: ({children}) => <ol style={{paddingLeft:20,marginBottom:12}}>{children}</ol>,
+  li: ({children}) => <li style={{marginBottom:4,color:'rgba(255,255,255,0.8)',lineHeight:1.7}}>{children}</li>,
+  strong: ({children}) => <strong style={{color:'#fff',fontWeight:600}}>{children}</strong>,
+  code: ({children}) => <code style={{background:'rgba(255,255,255,0.08)',padding:'2px 6px',borderRadius:4,fontSize:12,fontFamily:'monospace'}}>{children}</code>,
+  hr: () => <hr style={{border:'none',borderTop:'1px solid rgba(255,255,255,0.1)',margin:'24px 0'}} />,
+  blockquote: ({children}) => <blockquote style={{borderLeft:'3px solid rgba(255,255,255,0.2)',paddingLeft:16,margin:'16px 0',color:'rgba(255,255,255,0.6)'}}>{children}</blockquote>,
+}
+
+export default function ScanVisualizationActive({ target, nmapType = 'basic', onComplete, externalDone = {}, report = null, topOffset = 0 }) {
   const tools = nmapType === 'aggressive' ? AGGRESSIVE_TOOLS : SIMPLE_TOOLS
   const toolXs = toolXPositions(tools.length)
   const nmapLabel = nmapType === 'aggressive' ? 'NMAP Full Port Scan' : 'NMAP Basic Scan'
@@ -130,6 +167,17 @@ export default function ScanVisualizationActive({ target, nmapType = 'basic', on
   const [searchsploitDone, setSearchsploitDone] = useState(false)
   const [showReport, setShowReport] = useState(false)
 
+  const externalDoneRef = useRef(externalDone)
+  useEffect(() => { externalDoneRef.current = externalDone }, [externalDone])
+
+  // When real report arrives, fast-forward to showing it
+  useEffect(() => {
+    if (!report) return
+    setSearchsploitDone(true)
+    setNvdDone(true)
+    setPhase('fading')
+  }, [report])
+
   useEffect(() => {
     if (phase !== 'intro') return
     const t = setTimeout(() => setPhase('nmap'), 1200)
@@ -141,7 +189,8 @@ export default function ScanVisualizationActive({ target, nmapType = 'basic', on
     const duration = nmapType === 'aggressive' ? 4000 + Math.random() * 2000 : 2500 + Math.random() * 1500
     const start = Date.now()
     const iv = setInterval(() => {
-      const p = Math.min(100, ((Date.now() - start) / duration) * 100)
+      const forceDone = externalDoneRef.current['nmap']
+      const p = forceDone ? 100 : Math.min(100, ((Date.now() - start) / duration) * 100)
       setNmapProgress(p)
       if (p >= 100) { clearInterval(iv); setNmapDone(true); setTimeout(() => setPhase('tools'), 700) }
     }, 50)
@@ -157,7 +206,8 @@ export default function ScanVisualizationActive({ target, nmapType = 'basic', on
       const newProg = {}, newDone = {}
       let allDone = true
       tools.forEach((t, i) => {
-        const p = Math.min(100, (elapsed / durations[i]) * 100)
+        const forceDone = externalDoneRef.current[t.id]
+        const p = forceDone ? 100 : Math.min(100, (elapsed / durations[i]) * 100)
         newProg[t.id] = p
         newDone[t.id] = p >= 100
         if (p < 100) allDone = false
@@ -176,8 +226,10 @@ export default function ScanVisualizationActive({ target, nmapType = 'basic', on
     const start = Date.now()
     const iv = setInterval(() => {
       const elapsed = Date.now() - start
-      setConvBranchProgress(Math.min(100, (elapsed / BRANCH_MS) * 100))
-      const tp = elapsed > BRANCH_MS ? Math.min(100, ((elapsed - BRANCH_MS) / trunkDur) * 100) : 0
+      const nvdConfirmed = externalDoneRef.current['nvd_lookup']
+      const bp = nvdConfirmed ? 100 : Math.min(100, (elapsed / BRANCH_MS) * 100)
+      const tp = nvdConfirmed ? 100 : elapsed > BRANCH_MS ? Math.min(100, ((elapsed - BRANCH_MS) / trunkDur) * 100) : 0
+      setConvBranchProgress(bp)
       setNvdProgress(tp)
       if (tp >= 100) { clearInterval(iv); setNvdDone(true); setTimeout(() => setPhase('searchsploit'), 700) }
     }, 50)
@@ -189,7 +241,8 @@ export default function ScanVisualizationActive({ target, nmapType = 'basic', on
     const duration = 2000 + Math.random() * 2000
     const start = Date.now()
     const iv = setInterval(() => {
-      const p = Math.min(100, ((Date.now() - start) / duration) * 100)
+      const forceDone = externalDoneRef.current['searchsploit']
+      const p = forceDone ? 100 : Math.min(100, ((Date.now() - start) / duration) * 100)
       setSearchsploitProgress(p)
       if (p >= 100) { clearInterval(iv); setSearchsploitDone(true); setTimeout(() => setPhase('fading'), 700) }
     }, 50)
@@ -227,7 +280,7 @@ export default function ScanVisualizationActive({ target, nmapType = 'basic', on
   const showSsBranch    = phase === 'searchsploit'
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: '#070a0d' }}>
+    <div style={{ position: 'fixed', top: topOffset, left: 0, right: 0, bottom: 0, background: '#070a0d' }}>
       <AnimatePresence>
         {!showReport && (
           <motion.div key="viz" style={{ width: '100%', height: '100%' }}
@@ -321,18 +374,10 @@ export default function ScanVisualizationActive({ target, nmapType = 'basic', on
           <motion.div key="report"
             initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            style={{ position: 'absolute', inset: '60px 80px 60px',
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              borderRadius: 16, padding: '36px 48px', overflowY: 'auto',
-              color: 'white', fontFamily: 'system-ui, sans-serif',
-              fontSize: 14, lineHeight: 1.75 }}>
-            <h2 style={{ marginTop: 0, fontSize: 22, fontWeight: 600, letterSpacing: '-0.02em' }}>
-              Security Report
-            </h2>
-            <p style={{ color: 'rgba(255,255,255,0.5)' }}>
-              Active scan complete — report will appear here when connected to the backend.
-            </p>
+            style={{ position: 'absolute', inset: 0, overflowY: 'auto',
+              padding: '48px 12%', color: 'white',
+              fontFamily: 'system-ui, sans-serif', fontSize: 14, lineHeight: 1.75 }}>
+            <ReportViewActive content={report} />
           </motion.div>
         )}
       </AnimatePresence>
