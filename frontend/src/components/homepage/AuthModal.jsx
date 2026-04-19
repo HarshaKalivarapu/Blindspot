@@ -85,23 +85,6 @@ export default function AuthModal({ isOpen, onClose }) {
                 {isSignUp ? 'Sign up to configure your security scans.' : 'Log in to your account to continue scanning.'}
               </p>
 
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24, width: '100%' }}>
-                <GoogleLogin
-                  onSuccess={(credentialResponse) => {
-                    console.log("Login Success: ", credentialResponse)
-                    sessionStorage.setItem('authed', 'true')
-                    onClose()
-                    navigate('/scan')
-                  }}
-                  onError={() => {
-                    console.log('Login Failed')
-                  }}
-                  theme="outline"
-                  size="large"
-                  width="340"
-                  text={isSignUp ? 'signup_with' : 'signin_with'}
-                />
-              </div>
               <button
                 type="button"
                 onClick={() => loginWithGoogle()}
