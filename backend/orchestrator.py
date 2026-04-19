@@ -430,6 +430,8 @@ async def scan(req: ScanRequest):
                                     "report_nondev": json.loads(assembled["nondev"]),
                                     "extraction_json": ext,
                                 }
+                                nondev_parsed = json.loads(assembled["nondev"])
+                                insert_row["score"] = nondev_parsed.get("meta", {}).get("score")
                                 if req.scan_id:
                                     insert_row["id"] = req.scan_id
                                 supabase_client.table("scans").insert(insert_row).execute()

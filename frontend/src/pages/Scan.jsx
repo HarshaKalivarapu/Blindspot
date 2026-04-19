@@ -21,7 +21,7 @@ function formatDate(iso) {
 }
 
 function ScanHistoryCard({ row, onClick }) {
-  const score = row.report_dev?.meta?.score ?? null
+  const score = row.score ?? null
   const color = scoreColor(score)
   return (
     <motion.div
@@ -56,11 +56,10 @@ function ScanHistoryCard({ row, onClick }) {
           </span>
         </div>
       </div>
-      <div style={{ display: 'flex', gap: 8 }}>
-        <span style={{ fontFamily: SANS, fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>🔴 {row.cve_critical_count ?? 0}</span>
-        <span style={{ fontFamily: SANS, fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>🟠 {row.cve_high_count ?? 0}</span>
-        <span style={{ fontFamily: SANS, fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>🟡 {row.cve_medium_count ?? 0}</span>
-        <span style={{ fontFamily: SANS, fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>⚪ {row.cve_low_count ?? 0}</span>
+      <div>
+        <span style={{ fontFamily: SANS, fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>
+          {row.total_issues_count ?? 0} vulnerabilities found
+        </span>
       </div>
     </motion.div>
   )
@@ -78,7 +77,7 @@ function Scan() {
     setScansLoading(true)
     supabase
       .from('scans')
-      .select('id, target, scan_date, scan_type, cve_critical_count, cve_high_count, cve_medium_count, cve_low_count, report_dev, report_nondev')
+      .select('id, target, scan_date, scan_type, total_issues_count, score')
       .eq('user_id', user.id)
       .order('scan_date', { ascending: false })
       .then(({ data }) => {

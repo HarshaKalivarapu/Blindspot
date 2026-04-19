@@ -43,8 +43,8 @@ export default function ScanReport() {
       .then(({ data }) => {
         if (data) {
           setHistoryMeta(data)
-          setReportDev(data.report_dev)
-          setReportNonDev(data.report_nondev)
+          setReportDev(JSON.stringify(data.report_dev))
+          setReportNonDev(JSON.stringify(data.report_nondev))
         } else {
           setPhase('not_found')
         }
