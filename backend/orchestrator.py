@@ -14,11 +14,13 @@ Environment:
     PORT               — default: 5000
 """
 
+import asyncio
 import json
 import os
 import sys
+import time
 
-from anthropic import Anthropic
+from anthropic import Anthropic, AsyncAnthropic
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -49,54 +51,39 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# The Anthropic client is what we use to talk to Claude (the AI brain).
-# It's created once at startup and reused for every scan request.
 anthropic_client = Anthropic(api_key=ANTHROPIC_API_KEY) if ANTHROPIC_API_KEY else None
+async_anthropic_client = AsyncAnthropic(api_key=ANTHROPIC_API_KEY) if ANTHROPIC_API_KEY else None
 
 
 # ── Request schema ───────────────────────────────────────────────────────────
 
-# ScanRequest defines the exact shape of JSON the frontend must send to POST /scan.
-# Pydantic validates this automatically — if a required field is missing or the
-# wrong type, FastAPI returns a 422 error before our code even runs.
 class ScanRequest(BaseModel):
-    target: str                        # domain or IP to scan
+    target: str
     level: str                         # "passive" | "active"
-    intensity: str = "simple"          # "simple" | "aggressive" (only relevant for active)
+    intensity: str = "simple"          # "simple" | "aggressive"
     authorization_confirmed: bool = False
 
 
 # ── Tool name sets ───────────────────────────────────────────────────────────
 
-# These sets control which tools Claude is allowed to see.
-# If a tool name isn't in the right set, Claude never receives its schema
-# and physically cannot call it — this is the hard authorization gate.
-
-# Tools that touch the target directly — require authorization_confirmed = True
 ACTIVE_TOOL_NAMES = {
-    "nmap",           # handles both basic and aggressive via its aggressive param
+    "nmap",
     "nikto",
     "ffuf",
-    "hydra",          # handles db and ftp via its service param
+    "hydra",
     "whatweb_active",
     "searchsploit",
-    # nvd_lookup is intentionally excluded — it's a passive-safe API query
-    # needed in both passive and active scans
 }
 
-# Tools that only run in aggressive mode (a subset of active tools)
-# nmap's aggressive mode is controlled by its own parameter, not by withholding the tool
 AGGRESSIVE_TOOL_NAMES = {
-    "ffuf",   # directory brute-force — very noisy, aggressive only
+    "ffuf",
 }
 
 
 # ── MCP helpers ──────────────────────────────────────────────────────────────
 
-# StdioServerParameters tells the MCP client how to launch server.py as a
-# subprocess. "stdio" means they communicate through stdin/stdout — server.py
-# reads requests from stdin and writes responses to stdout.
 PROMPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "prompts")
+
 
 def _load_prompt(level: str, intensity: str, target: str) -> str:
     if level == "passive":
@@ -105,7 +92,6 @@ def _load_prompt(level: str, intensity: str, target: str) -> str:
         filename = "active_aggressive.md"
     else:
         filename = "active_simple.md"
-
     path = os.path.join(PROMPTS_DIR, filename)
     with open(path) as f:
         return f.read().replace("{target}", target)
@@ -119,8 +105,6 @@ MCP_SERVER_PARAMS = StdioServerParameters(
 
 
 def _mcp_tool_to_anthropic(tool) -> dict:
-    # The Anthropic API expects tools in a specific JSON shape. MCP tools have
-    # a slightly different shape, so this converts between the two formats.
     return {
         "name": tool.name,
         "description": tool.description or "",
@@ -128,37 +112,170 @@ def _mcp_tool_to_anthropic(tool) -> dict:
     }
 
 
-async def _get_filtered_tools(
-    session: ClientSession,
-    level: str,
-    intensity: str,
-    authorized: bool,
-) -> list[dict]:
-    # Ask the MCP server for every tool it knows about.
-    # `session` is the live connection to server.py — calling list_tools()
-    # sends a request over stdio and gets back all @mcp.tool() registrations.
+async def _get_filtered_tools(session: ClientSession, level: str, intensity: str, authorized: bool) -> list[dict]:
     result = await session.list_tools()
-
     filtered = []
     for tool in result.tools:
         is_active = tool.name in ACTIVE_TOOL_NAMES
         is_aggressive = tool.name in AGGRESSIVE_TOOL_NAMES
-
-        # Rule 1: passive scan — strip all active tools regardless of auth
         if level == "passive" and is_active:
             continue
-
-        # Rule 2: active scan without authorization — strip all active tools
         if level == "active" and is_active and not authorized:
             continue
-
-        # Rule 3: active simple scan — strip aggressive-only tools
         if level == "active" and is_aggressive and intensity == "simple":
             continue
-
         filtered.append(_mcp_tool_to_anthropic(tool))
-
     return filtered
+
+
+# ── Report generation helpers ─────────────────────────────────────────────────
+
+def _clean_json_text(text: str) -> str:
+    """Strip markdown fences from a Claude JSON response."""
+    text = text.strip()
+    if text.startswith("```"):
+        first_newline = text.find("\n")
+        text = text[first_newline + 1:] if first_newline != -1 else text
+        text = text.rsplit("```", 1)[0].strip()
+    return text
+
+
+_EXTRACTION_SYSTEM = (
+    "You are a security data extractor. Given raw penetration test tool outputs in a "
+    "conversation, extract all findings into a compact structured JSON object. "
+    "Be precise — only report what the tools actually found. Never invent data."
+)
+
+_EXTRACTION_TEMPLATE = """\
+The conversation above contains raw output from a {scan_type} security scan of `{target}`.
+
+Extract all key findings into the JSON structure below. Use ONLY what the tools actually \
+reported — do not invent data. Omit fields that don't apply (null or empty array).
+
+{{
+  "target": "{target}",
+  "scan_date": "<ISO 8601 UTC datetime>",
+  "scan_type": "{scan_type}",
+  "scan_mode": {scan_mode_json},
+  "duration_seconds": {duration},
+  "tools_run": ["<names of tools that completed>"],
+  "tool_errors": ["<tool: error description>"],
+  "open_ports": [<port integers>],
+  "services": {{
+    "<port>": {{"name": "<service>", "version": "<full version string or null>"}}
+  }},
+  "tech_stack": ["<Name Version>"],
+  "cves": [
+    {{
+      "id": "<CVE-XXXX-XXXX>",
+      "cvss": <0.0-10.0>,
+      "affected_software": "<Name Version>",
+      "description": "<one concise sentence>",
+      "has_exploit": <true|false>,
+      "exploit_sources": ["ExploitDB", "Metasploit"]
+    }}
+  ],
+  "ssl": {{
+    "valid": <true|false|null>,
+    "expiry_date": "<YYYY-MM-DD or null>",
+    "days_until_expiry": <integer or null>,
+    "issues": ["<specific issue>"]
+  }},
+  "http_headers": {{
+    "missing_security_headers": ["<header name>"],
+    "info_disclosure": ["<Header: value>"]
+  }},
+  "dns_whois": {{
+    "registrar": "<string or null>",
+    "expiry_date": "<YYYY-MM-DD or null>",
+    "days_until_expiry": <integer or null>,
+    "nameservers": ["<ns>"],
+    "subdomains_found": ["<fqdn>"]
+  }},
+  "shodan": {{
+    "country": "<string or null>",
+    "isp": "<string or null>",
+    "ports_indexed": [<port integers>],
+    "previously_flagged_cves": ["<CVE-ID>"]
+  }},
+  "nikto_findings": ["<concise finding>"],
+  "hydra_results": {{
+    "service": "<service or null>",
+    "credentials_found": [{{"username": "<>", "password": "<>"}}]
+  }},
+  "ffuf_findings": ["<discovered path>"],
+  "searchsploit_results": [
+    {{"query": "<>", "exploits": [{{"title": "<>", "path": "<>"}}]}}
+  ],
+  "confirmed_exploits_count": <integer>,
+  "total_issues_count": <integer>
+}}
+
+Return ONLY the JSON object. No preamble, no markdown fences, no trailing text."""
+
+
+async def _extract_findings(
+    scan_messages: list,
+    target: str,
+    scan_type: str,
+    scan_mode: str,
+    duration_seconds: float,
+) -> str:
+    """Distill raw tool outputs into a compact findings JSON. Returns the JSON string."""
+    prompt = _EXTRACTION_TEMPLATE.format(
+        target=target,
+        scan_type=scan_type,
+        scan_mode_json=json.dumps(scan_mode),
+        duration=round(duration_seconds, 1),
+    )
+    messages = scan_messages + [{"role": "user", "content": prompt}]
+    response = await async_anthropic_client.messages.create(
+        model=MODEL,
+        max_tokens=2048,
+        system=_EXTRACTION_SYSTEM,
+        messages=messages,
+    )
+    text = "".join(b.text for b in response.content if b.type == "text")
+    return _clean_json_text(text)
+
+
+async def _stream_report(mode: str, extraction_json: str, schema: str, queue: asyncio.Queue):
+    """Stream a full report using compact extraction as context. Posts to queue as (mode, kind, data)."""
+    mode_label = "developer" if mode == "dev" else "non-developer"
+    user_msg = (
+        f"Here are all security findings from the scan in a compact structured format:\n\n"
+        f"```json\n{extraction_json}\n```\n\n"
+        f"Generate the complete {mode_label} vulnerability report following your schema exactly. "
+        f"Return ONLY the complete JSON report object. No preamble, no markdown fences, no trailing text."
+    )
+
+    # ── Debug: dump exact Claude input to file ────────────────────────────────
+    debug_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), f"debug_report_input_{mode}.md")
+    with open(debug_path, "w") as dbf:
+        dbf.write(f"# Report input debug — mode: {mode}\n\n")
+        dbf.write(f"## Model\n{MODEL}\n\n")
+        dbf.write(f"## System prompt (schema)\n\n```\n{schema}\n```\n\n")
+        dbf.write(f"## User message\n\n```\n{user_msg}\n```\n")
+    print(f"[{mode}/report] debug input written to {debug_path}", file=sys.stderr)
+    # ─────────────────────────────────────────────────────────────────────────
+
+    full_text = ""
+    try:
+        async with async_anthropic_client.messages.stream(
+            model=MODEL,
+            max_tokens=8192,
+            system=schema,
+            messages=[{"role": "user", "content": user_msg}],
+        ) as stream:
+            async for chunk in stream.text_stream:
+                full_text += chunk
+                await queue.put((mode, "chunk", chunk))
+        cleaned = _clean_json_text(full_text)
+        json.loads(cleaned)  # validate — raises if malformed
+        await queue.put((mode, "done", cleaned))
+    except Exception as e:
+        print(f"[{mode}/report] failed: {e}", file=sys.stderr)
+        await queue.put((mode, "done", None))
 
 
 # ── Endpoints ────────────────────────────────────────────────────────────────
@@ -172,22 +289,16 @@ async def health():
 async def scan(req: ScanRequest):
     if not anthropic_client:
         raise HTTPException(status_code=500, detail="Server missing ANTHROPIC_API_KEY")
-
     if req.level == "active" and not req.authorization_confirmed:
         raise HTTPException(status_code=403, detail="Authorization required for active scanning")
 
-    # event_stream is a Python async generator — it yields SSE events one by
-    # one as the scan progresses. EventSourceResponse wraps it and handles
-    # the SSE wire format so the frontend receives a live stream.
     async def event_stream():
         def emit(type: str, message: str):
             return {"data": json.dumps({"type": type, "message": message})}
 
+        scan_start_time = time.time()
         yield emit("status", "Connecting to tool engine...")
 
-        # stdio_client launches server.py as a subprocess and gives us two
-        # streams: `read` (server → us) and `write` (us → server).
-        # ClientSession wraps those streams with the MCP protocol.
         async with stdio_client(MCP_SERVER_PARAMS) as (read, write):
             async with ClientSession(read, write) as session:
                 await session.initialize()
@@ -200,17 +311,12 @@ async def scan(req: ScanRequest):
                 yield emit("status", f"Tools loaded: {', '.join(tool_names)}")
 
                 system_prompt = _load_prompt(req.level, req.intensity, req.target)
-
-                messages = [
-                    {"role": "user", "content": f"Begin {req.level} scan of {req.target}."}
-                ]
+                messages = [{"role": "user", "content": f"Begin {req.level} scan of {req.target}."}]
 
                 # ── Tool-use loop ─────────────────────────────────────────
-                # Each iteration: send conversation to Claude → Claude responds
-                # with either tool calls or a final answer → if tool calls,
-                # execute them via MCP and append results → repeat.
                 while True:
-                    response = anthropic_client.messages.create(
+                    response = await asyncio.to_thread(
+                        anthropic_client.messages.create,
                         model=MODEL,
                         max_tokens=4096,
                         system=system_prompt,
@@ -218,52 +324,83 @@ async def scan(req: ScanRequest):
                         messages=messages,
                     )
 
-                    # Stream any reasoning text Claude writes between tool calls
                     for block in response.content:
                         if block.type == "text" and block.text.strip():
                             yield emit("progress", block.text.strip())
 
-                    # stop_reason == "end_turn" means Claude has no more tool
-                    # calls — its final response is the vulnerability report
                     if response.stop_reason == "end_turn":
-                        final_text = " ".join(
-                            b.text for b in response.content if b.type == "text"
-                        )
-                        yield emit("report", final_text)
+                        # ── Step 1: Extract compact findings from raw outputs ──
+                        messages.append({"role": "assistant", "content": response.content})
+                        yield emit("status", "Analyzing findings...")
+                        try:
+                            extraction_json = await _extract_findings(
+                                messages,
+                                req.target,
+                                req.level,
+                                req.intensity,
+                                time.time() - scan_start_time,
+                            )
+                        except Exception as e:
+                            print(f"Extraction failed: {e}", file=sys.stderr)
+                            extraction_json = "{}"
+
+                        # ── Step 2: Stream both reports in parallel from compact data ──
+                        yield emit("status", "Generating reports...")
+
+                        with open(os.path.join(PROMPTS_DIR, "Developer-Report.md")) as f:
+                            dev_schema = f.read()
+                        with open(os.path.join(PROMPTS_DIR, "Non-Developer-Report.md")) as f:
+                            nondev_schema = f.read()
+
+                        q: asyncio.Queue = asyncio.Queue()
+                        report_tasks = [
+                            asyncio.create_task(
+                                _stream_report("dev", extraction_json, dev_schema, q)
+                            ),
+                            asyncio.create_task(
+                                _stream_report("nondev", extraction_json, nondev_schema, q)
+                            ),
+                        ]
+
+                        done_count = 0
+                        while done_count < 2:
+                            mode, kind, data = await q.get()
+                            if kind == "chunk":
+                                yield emit(f"report_{mode}_chunk", data)
+                            else:
+                                if data:
+                                    yield emit(f"report_{mode}", data)
+                                done_count += 1
+
+                        await asyncio.gather(*report_tasks)
                         break
 
-                    # stop_reason == "tool_use" means Claude wants to call tools.
-                    # Execute each one against the MCP server and collect results.
-                    tool_results = []
-                    for block in response.content:
-                        if block.type != "tool_use":
-                            continue
+                    # ── Execute all tool calls concurrently ───────────────
+                    tool_blocks = [b for b in response.content if b.type == "tool_use"]
 
+                    for block in tool_blocks:
                         yield emit("status", f"Running {block.name}...")
 
-                        # session.call_tool sends the tool call to server.py
-                        # and waits for the result. block.input is the dict of
-                        # arguments Claude decided to pass to the tool.
-                        mcp_result = await session.call_tool(block.name, arguments=block.input)
+                    async def _call(block):
+                        r = await session.call_tool(block.name, arguments=block.input)
+                        return block, r
+
+                    pairs = await asyncio.gather(*[_call(b) for b in tool_blocks])
+
+                    tool_results = []
+                    for block, mcp_result in pairs:
                         result_text = (
                             mcp_result.content[0].text
                             if mcp_result.content and hasattr(mcp_result.content[0], "text")
                             else str(mcp_result.content)
                         )
-
                         yield emit("status", f"{block.name} complete.")
-
-                        # Anthropic requires tool results to reference the
-                        # tool_use_id from Claude's request so it knows which
-                        # result belongs to which call.
                         tool_results.append({
                             "type": "tool_result",
                             "tool_use_id": block.id,
                             "content": result_text,
                         })
 
-                    # Append Claude's response and the tool results to the
-                    # conversation history so Claude has full context next turn.
                     messages.append({"role": "assistant", "content": response.content})
                     messages.append({"role": "user", "content": tool_results})
 

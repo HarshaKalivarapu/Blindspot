@@ -8,23 +8,23 @@ A passive scan means you never interact with the target's servers directly — y
 
 ## Tool execution order
 
-You MUST follow this order exactly:
+**PARALLELISM REQUIRED:** In your FIRST response, emit ALL five passive tool calls simultaneously as multiple tool_use blocks. Do NOT call them one at a time across separate responses — parallel execution is mandatory for performance.
 
-1. Run ALL of these tools first, in any order:
+1. Call ALL five tools at once in a single response:
    - `shodan` — discover publicly exposed ports and services
    - `whatweb` — fingerprint the technology stack
    - `dns_whois` — map subdomains and domain ownership
    - `ssl_tls` — audit the SSL/TLS certificate and encryption config
    - `http_headers` — check HTTP security response headers
 
-2. Only after ALL five tools above have completed, run:
-   - `nvd_lookup` — cross-reference every software version and service found against the National Vulnerability Database
+2. Only after ALL five results are returned, call:
+   - `nvd_lookup` — cross-reference every software version found against the National Vulnerability Database
 
-Do NOT run `nvd_lookup` after each individual tool. Wait until all five have finished so NVD receives the full picture.
+Do NOT call `nvd_lookup` after each individual tool. One call after all five complete.
 
-## Final report
+## Final response
 
-Once `nvd_lookup` is complete, write a vulnerability report using the format below. Do not call any more tools after this — the report is your final response.
+Once `nvd_lookup` is complete, output a brief plain-text summary of your findings (2-3 sentences). The structured report will be generated separately — your job here is just to confirm what was found.
 
 ---
 
