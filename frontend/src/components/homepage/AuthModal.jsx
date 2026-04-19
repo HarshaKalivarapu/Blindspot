@@ -10,7 +10,7 @@ export default function AuthModal({ isOpen, onClose }) {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    // Transition nicely rather than instantly
+    sessionStorage.setItem('authed', 'true')
     onClose()
     setTimeout(() => navigate('/scan'), 300)
   }
@@ -82,6 +82,7 @@ export default function AuthModal({ isOpen, onClose }) {
                 <GoogleLogin
                   onSuccess={(credentialResponse) => {
                     console.log("Login Success: ", credentialResponse)
+                    sessionStorage.setItem('authed', 'true')
                     onClose()
                     navigate('/scan')
                   }}

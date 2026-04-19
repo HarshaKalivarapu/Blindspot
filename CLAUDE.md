@@ -51,6 +51,10 @@ pentest-mcp/
 /scan (src/pages/Scan.jsx)        → Scan dashboard + chat interface with backend
 /scan/new (src/pages/NewScan.jsx) → Full page configuration form for generating scans
 
+## Recent Changes
+- Scan.jsx: "New Scan" button added to Recon Console header — only appears when a scan fails with a network error (`scanError` state)
+- NewScan.jsx: Real-time target validation added — checks IPv4 format (0–255 octets), domain format, strips `http://` prefix errors, blocks paths/query strings; inline animated error + persistent format guidelines shown below input
+
 ## Rules
 - ALWAYS read CLAUDE.md before creating or modifying any file
 - NEVER create files outside the structure above without updating CLAUDE.md

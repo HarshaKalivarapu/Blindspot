@@ -56,6 +56,7 @@ function Scan() {
   }
 
   const handleSignOut = () => {
+    sessionStorage.removeItem('authed')
     navigate('/')
   }
 
