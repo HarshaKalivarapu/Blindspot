@@ -7,10 +7,22 @@ import { supabase } from '../../lib/supabase.js'
 export default function AuthModal({ isOpen, onClose }) {
   const navigate = useNavigate()
   const [isSignUp, setIsSignUp] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(false)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    sessionStorage.setItem('authed', 'true')
+    setError(null)
+    if (isSignUp && password !== confirmPassword) { setError('Passwords do not match'); return }
+    setLoading(true)
+    const { error: authError } = isSignUp
+      ? await supabase.auth.signUp({ email, password })
+      : await supabase.auth.signInWithPassword({ email, password })
+    setLoading(false)
+    if (authError) { setError(authError.message); return }
     onClose()
     setTimeout(() => navigate('/scan'), 300)
   }
@@ -133,6 +145,8 @@ export default function AuthModal({ isOpen, onClose }) {
                   <input
                     type="email"
                     required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@company.com"
                     style={{
                       backgroundColor: 'rgba(255, 255, 255, 0.05)',
@@ -155,6 +169,8 @@ export default function AuthModal({ isOpen, onClose }) {
                   <input
                     type="password"
                     required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
                     style={{
                       backgroundColor: 'rgba(255, 255, 255, 0.05)',
@@ -172,8 +188,49 @@ export default function AuthModal({ isOpen, onClose }) {
                   />
                 </div>
 
+                <AnimatePresence>
+                  {isSignUp && (
+                    <motion.div
+                      key="confirm"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2 }}
+                      style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: 8 }}
+                    >
+                      <label style={{ fontFamily: 'system-ui, sans-serif', fontSize: 13, color: '#ffffff', fontWeight: 500, letterSpacing: '0.02em' }}>Re-enter Password</label>
+                      <input
+                        type="password"
+                        required={isSignUp}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="••••••••"
+                        style={{
+                          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                          border: '1px solid rgba(255, 255, 255, 0.2)',
+                          borderRadius: 8,
+                          padding: '12px 16px',
+                          color: '#ffffff',
+                          fontFamily: 'system-ui, sans-serif',
+                          fontSize: 15,
+                          outline: 'none',
+                          transition: 'border-color 0.2s',
+                        }}
+                        onFocus={(e) => (e.target.style.borderColor = '#ffffff')}
+                        onBlur={(e) => (e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)')}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {error && (
+                  <p style={{ color: '#f87171', fontSize: 13, fontFamily: 'system-ui, sans-serif', margin: 0 }}>
+                    ⚠ {error}
+                  </p>
+                )}
                 <button
                   type="submit"
+                  disabled={loading}
                   style={{
                     marginTop: 12,
                     backgroundColor: '#ffffff',
@@ -184,14 +241,15 @@ export default function AuthModal({ isOpen, onClose }) {
                     fontFamily: 'system-ui, sans-serif',
                     fontSize: 15,
                     fontWeight: 600,
-                    cursor: 'pointer',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    opacity: loading ? 0.6 : 1,
                     width: '100%',
                     transition: 'background-color 0.2s',
                   }}
-                  onMouseEnter={(e) => (e.target.style.backgroundColor = '#e5e5e5')}
-                  onMouseLeave={(e) => (e.target.style.backgroundColor = '#ffffff')}
+                  onMouseEnter={(e) => { if (!loading) e.target.style.backgroundColor = '#e5e5e5' }}
+                  onMouseLeave={(e) => { if (!loading) e.target.style.backgroundColor = '#ffffff' }}
                 >
-                  {isSignUp ? 'Sign Up' : 'Log In'}
+                  {loading ? 'Please wait...' : (isSignUp ? 'Sign Up' : 'Log In')}
                 </button>
               </form>
 
