@@ -24,12 +24,41 @@ const NVD_CX = W / 2
 const NVD_CY = 420
 
 const TOOLS = [
-  { id: 'shodan',       label: 'Shodan API' },
-  { id: 'whatweb',      label: 'WhatWeb' },
-  { id: 'dns_whois',    label: 'DNS & WHOIS' },
-  { id: 'ssl_tls',      label: 'SSL / TLS' },
-  { id: 'http_headers', label: 'HTTP Headers' },
+  { id: 'shodan',       label: 'Shodan API',   estimate: '~3s'  },
+  { id: 'whatweb',      label: 'WhatWeb',       estimate: '~8s'  },
+  { id: 'dns_whois',    label: 'DNS & WHOIS',   estimate: '~12s' },
+  { id: 'ssl_tls',      label: 'SSL / TLS',     estimate: '~18s' },
+  { id: 'http_headers', label: 'HTTP Headers',  estimate: '~5s'  },
 ]
+
+// Generate a keyframe animation profile with a realistic stall zone.
+// Returns an array of {t, p} waypoints: given elapsed ms → visual progress %.
+function generateKeyframes() {
+  const stallAt    = 20 + Math.random() * 45   // stall starts between 20–65%
+  const stallDur   = 3000 + Math.random() * 5000  // stall lasts 3–8 seconds
+  const preDur     = 600  + Math.random() * 1200  // time to reach stall point
+  const postDur    = 500  + Math.random() * 1000  // time to finish after stall
+
+  return [
+    { t: 0,                            p: 0 },
+    { t: preDur,                       p: stallAt },
+    { t: preDur + stallDur,            p: stallAt + 2 + Math.random() * 3 }, // barely moves during stall
+    { t: preDur + stallDur + postDur,  p: 100 },
+  ]
+}
+
+function interpolateKeyframes(elapsed, kf) {
+  if (elapsed >= kf[kf.length - 1].t) return 100
+  for (let i = 1; i < kf.length; i++) {
+    if (elapsed <= kf[i].t) {
+      const { t: t0, p: p0 } = kf[i - 1]
+      const { t: t1, p: p1 } = kf[i]
+      const frac = (elapsed - t0) / (t1 - t0)
+      return p0 + (p1 - p0) * frac
+    }
+  }
+  return 100
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function clamp(v, lo, hi) {
@@ -102,7 +131,7 @@ function Branch({ x1, y1, x2, y2, progress, visible, curvePull = 0, noBadge = fa
 }
 
 // ── SVG block with label ──────────────────────────────────────────────────────
-function Block({ label, done, wide }) {
+function Block({ label, done, wide, estimate }) {
   const bw = wide ? BW + 30 : BW
   return (
     <g>
@@ -116,13 +145,20 @@ function Block({ label, done, wide }) {
       />
       <text
         textAnchor="middle" dominantBaseline="middle"
-        fill="white"
-        fontSize={13}
+        fill="white" fontSize={13}
         fontFamily="system-ui, sans-serif"
         fontWeight={done ? 500 : 400}
+        y={estimate && !done ? -6 : 0}
       >
         {label}
       </text>
+      {estimate && !done && (
+        <text y={9} textAnchor="middle" dominantBaseline="middle"
+          fill="rgba(255,255,255,0.28)" fontSize={9}
+          fontFamily="system-ui, sans-serif">
+          est. {estimate}
+        </text>
+      )}
       {done && (
         <text
           x={bw / 2 - 11} y={-BH / 2 + 13}
@@ -160,7 +196,7 @@ function ReportView({ content }) {
   return (
     <div>
       {/* Toggle — same style as the User Guide */}
-      <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', borderRadius: 12, padding: 6, marginBottom: 40, border: '1px solid rgba(255,255,255,0.05)', maxWidth: 360 }}>
+      <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', borderRadius: 12, padding: 6, marginBottom: 40, border: '1px solid rgba(255,255,255,0.05)', maxWidth: 360, margin: '0 auto 40px' }}>
         {[['non-dev', 'Non-Developer'], ['dev', 'Developer']].map(([key, label]) => (
           <button key={key} onClick={() => setTab(key)} style={{
             flex: 1, padding: '12px 0', borderRadius: 8, border: 'none',
@@ -216,14 +252,12 @@ export default function ScanVisualization({ target, onComplete, externalDone = {
     return () => clearTimeout(t)
   }, [phase])
 
-  // tools: animated progress bars. Real tool completions (externalDoneRef) snap to 100%.
-  // Minimum 1.5s visual duration ensures bars always animate even for instant tools.
+  // tools: keyframe-based animation with stall zones for realism.
+  // Real tool completions (externalDoneRef) snap to 100% immediately.
   useEffect(() => {
     if (phase !== 'tools') return
 
-    const MIN_VISUAL = 1500
-    const MAX_VISUAL = 4000
-    const durations = TOOLS.map(() => MIN_VISUAL + Math.random() * (MAX_VISUAL - MIN_VISUAL))
+    const keyframes = TOOLS.map(() => generateKeyframes())
     const start = Date.now()
 
     const interval = setInterval(() => {
@@ -234,7 +268,7 @@ export default function ScanVisualization({ target, onComplete, externalDone = {
 
       TOOLS.forEach((tool, i) => {
         const forceDone = externalDoneRef.current[tool.id]
-        const p = forceDone ? 100 : Math.min(100, (elapsed / durations[i]) * 100)
+        const p = forceDone ? 100 : interpolateKeyframes(elapsed, keyframes[i])
         newProgress[tool.id] = p
         newDone[tool.id] = p >= 100
         if (p < 100) allDone = false
@@ -358,7 +392,7 @@ export default function ScanVisualization({ target, onComplete, externalDone = {
                   }}
                   transition={{ duration: 0.55, ease: 'easeInOut', opacity: { duration: 0.35 } }}
                 >
-                  <Block label={tool.label} done={toolDone[tool.id]} />
+                  <Block label={tool.label} done={toolDone[tool.id]} estimate={tool.estimate} />
                 </motion.g>
               ))}
 

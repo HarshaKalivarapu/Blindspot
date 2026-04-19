@@ -13,18 +13,42 @@ const TOP_Y = 85
 const BOT_Y = 400
 const CONV_Y = TOP_Y + (BOT_Y - TOP_Y) * 0.48
 
-// Tool IDs match the real MCP tool names so SSE events map directly
 const SIMPLE_TOOLS = [
-  { id: 'nikto',        label: 'Nikto' },
-  { id: 'whatweb_active', label: 'WhatWeb' },
-  { id: 'hydra',        label: 'Hydra' },
+  { id: 'nikto',          label: 'Nikto',   estimate: '~30s' },
+  { id: 'whatweb_active', label: 'WhatWeb', estimate: '~8s'  },
+  { id: 'hydra',          label: 'Hydra',   estimate: '~20s' },
 ]
 const AGGRESSIVE_TOOLS = [
-  { id: 'nikto',        label: 'Nikto' },
-  { id: 'whatweb_active', label: 'WhatWeb' },
-  { id: 'hydra',        label: 'Hydra' },
-  { id: 'ffuf',         label: 'FFuF' },
+  { id: 'nikto',          label: 'Nikto',   estimate: '~30s' },
+  { id: 'whatweb_active', label: 'WhatWeb', estimate: '~8s'  },
+  { id: 'hydra',          label: 'Hydra',   estimate: '~20s' },
+  { id: 'ffuf',           label: 'FFuF',    estimate: '~45s' },
 ]
+
+function generateKeyframes() {
+  const stallAt  = 20 + Math.random() * 45
+  const stallDur = 3000 + Math.random() * 5000
+  const preDur   = 600  + Math.random() * 1200
+  const postDur  = 500  + Math.random() * 1000
+  return [
+    { t: 0,                           p: 0 },
+    { t: preDur,                      p: stallAt },
+    { t: preDur + stallDur,           p: stallAt + 2 + Math.random() * 3 },
+    { t: preDur + stallDur + postDur, p: 100 },
+  ]
+}
+
+function interpolateKeyframes(elapsed, kf) {
+  if (elapsed >= kf[kf.length - 1].t) return 100
+  for (let i = 1; i < kf.length; i++) {
+    if (elapsed <= kf[i].t) {
+      const { t: t0, p: p0 } = kf[i - 1]
+      const { t: t1, p: p1 } = kf[i]
+      return p0 + (p1 - p0) * ((elapsed - t0) / (t1 - t0))
+    }
+  }
+  return 100
+}
 
 function toolXPositions(n) {
   if (n === 1) return [CX]
@@ -88,7 +112,7 @@ function Branch({ x1, y1, x2, y2, progress, visible, noBadge = false, noDot = fa
   )
 }
 
-function Block({ label, done, wide }) {
+function Block({ label, done, wide, estimate }) {
   const bw = wide ? BW + 30 : BW
   return (
     <g>
@@ -98,7 +122,13 @@ function Block({ label, done, wide }) {
         strokeWidth={1} />
       <text textAnchor="middle" dominantBaseline="middle"
         fill="white" fontSize={13} fontFamily="system-ui, sans-serif"
-        fontWeight={done ? 500 : 400}>{label}</text>
+        fontWeight={done ? 500 : 400}
+        y={estimate && !done ? -6 : 0}>{label}</text>
+      {estimate && !done && (
+        <text y={9} textAnchor="middle" dominantBaseline="middle"
+          fill="rgba(255,255,255,0.28)" fontSize={9}
+          fontFamily="system-ui, sans-serif">est. {estimate}</text>
+      )}
       {done && (
         <text x={bw/2-11} y={-BH/2+13} textAnchor="middle" dominantBaseline="middle"
           fill="rgba(34,197,94,1)" fontSize={11} fontFamily="system-ui, sans-serif">✓</text>
@@ -115,7 +145,7 @@ function ReportViewActive({ content }) {
   const [tab, setTab] = useState('non-dev')
   return (
     <div>
-      <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', borderRadius: 12, padding: 6, marginBottom: 40, border: '1px solid rgba(255,255,255,0.05)', maxWidth: 360 }}>
+      <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', borderRadius: 12, padding: 6, marginBottom: 40, border: '1px solid rgba(255,255,255,0.05)', maxWidth: 360, margin: '0 auto 40px' }}>
         {[['non-dev', 'Non-Developer'], ['dev', 'Developer']].map(([key, label]) => (
           <button key={key} onClick={() => setTab(key)} style={{
             flex: 1, padding: '12px 0', borderRadius: 8, border: 'none',
@@ -199,7 +229,7 @@ export default function ScanVisualizationActive({ target, nmapType = 'basic', on
 
   useEffect(() => {
     if (phase !== 'tools') return
-    const durations = tools.map(() => 1500 + Math.random() * 2500)
+    const keyframes = tools.map(() => generateKeyframes())
     const start = Date.now()
     const iv = setInterval(() => {
       const elapsed = Date.now() - start
@@ -207,7 +237,7 @@ export default function ScanVisualizationActive({ target, nmapType = 'basic', on
       let allDone = true
       tools.forEach((t, i) => {
         const forceDone = externalDoneRef.current[t.id]
-        const p = forceDone ? 100 : Math.min(100, (elapsed / durations[i]) * 100)
+        const p = forceDone ? 100 : interpolateKeyframes(elapsed, keyframes[i])
         newProg[t.id] = p
         newDone[t.id] = p >= 100
         if (p < 100) allDone = false
@@ -325,7 +355,7 @@ export default function ScanVisualizationActive({ target, nmapType = 'basic', on
                   initial={{ x: toolXs[i], y: BOT_Y, opacity: 0 }}
                   animate={{ x: toolXs[i], y: toolY, opacity: toolVisible ? 1 : 0 }}
                   transition={{ duration: 0.55, ease: 'easeInOut', opacity: { duration: 0.35 } }}>
-                  <Block label={tool.label} done={toolDone[tool.id]} />
+                  <Block label={tool.label} done={toolDone[tool.id]} estimate={tool.estimate} />
                 </motion.g>
               ))}
 
