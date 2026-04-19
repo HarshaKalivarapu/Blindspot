@@ -322,77 +322,57 @@ Here are all security findings from the scan in a compact structured format:
   "scan_date": null,
   "scan_type": "passive",
   "scan_mode": "simple",
-  "duration_seconds": 90.5,
-  "tools_run": ["dns_whois", "ssl_tls", "http_headers", "nvd_lookup"],
+  "duration_seconds": 50.7,
+  "tools_run": ["whatweb", "dns_whois", "http_headers", "nvd_lookup"],
   "tool_errors": [
-    "shodan: SHODAN_API_KEY is not set in environment",
-    "whatweb: WhatWeb is not installed",
-    "dns_whois: crt.sh request timed out"
+    "shodan: Access denied (403 Forbidden)",
+    "ssl_tls: Network is unreachable on port 443",
+    "dns_whois: crt.sh lookup failed — 502 Bad Gateway"
   ],
   "open_ports": [443],
   "services": {
     "443": {"name": "https", "version": null}
   },
-  "tech_stack": ["Cloudflare", "RapidSSL TLS ECC CA G1", "TLSv1.2", "ECDHE-ECDSA-AES256-GCM-SHA384"],
+  "tech_stack": ["Apache 2.4.7", "Ubuntu Linux", "Google-Analytics Universal", "HTML5"],
   "cves": [
     {
       "id": "CVE-2019-10842",
       "cvss": 9.8,
-      "affected_software": "Cloudflare",
-      "description": "Arbitrary code execution via backdoor code in bootstrap-sass 3.2.0.3, exploitable through a crafted ___cfduid cookie value using base64 encoded input passed to eval().",
+      "affected_software": "Apache 2.4.7",
+      "description": "Critical deserialization vulnerability in Groovy on classpath allowing remote code execution via standard Java serialization mechanisms.",
       "has_exploit": false,
       "exploit_sources": []
     },
     {
-      "id": "CVE-2024-0323",
-      "cvss": 9.8,
-      "affected_software": "TLSv1.0",
-      "description": "An FTP server supporting deprecated encryption mechanisms including TLSv1.0 allows network-based attackers to perform man-in-the-middle attacks or decrypt communications.",
+      "id": "CVE-2021-44224",
+      "cvss": 8.2,
+      "affected_software": "Apache 2.4.7",
+      "description": "A crafted URI sent to httpd configured as a forward proxy can cause a NULL pointer dereference crash or allow requests to be directed to unintended Unix domain sockets.",
       "has_exploit": false,
       "exploit_sources": []
     },
     {
-      "id": "CVE-2022-4428",
-      "cvss": 8.9,
-      "affected_software": "Cloudflare",
-      "description": "Improper validation of the support_uri parameter in the WARP client local settings file allows privilege escalation and arbitrary executable launch.",
+      "id": "CVE-2025-66200",
+      "cvss": 5.4,
+      "affected_software": "Apache 2.4.7",
+      "description": "mod_userdir and suexec bypass via AllowOverride FileInfo allows users with htaccess access to run CGI scripts under an unexpected user ID.",
       "has_exploit": false,
       "exploit_sources": []
     },
     {
-      "id": "CVE-2017-7235",
-      "cvss": 8.8,
-      "affected_software": "Cloudflare",
-      "description": "A malicious website owner can craft a page that executes arbitrary Python code against any cfscrape 1.6.6–1.7.1 user who scrapes that website.",
-      "has_exploit": false,
-      "exploit_sources": []
-    },
-    {
-      "id": "CVE-2020-15236",
-      "cvss": 8.6,
-      "affected_software": "Cloudflare",
-      "description": "Directory traversal in Wiki.js before 2.5.151 allows a malicious user to read arbitrary files when a storage module with local asset cache fetching is enabled.",
-      "has_exploit": false,
-      "exploit_sources": []
-    },
-    {
-      "id": "CVE-2021-3761",
-      "cvss": 7.5,
-      "affected_software": "Cloudflare",
-      "description": "Any CA issuer in the RPKI can trick OctoRPKI prior to 1.3.0 into emitting an invalid VRP MaxLength value, causing RTR sessions to terminate and disabling RPKI Origin Validation.",
+      "id": "CVE-2012-2378",
+      "cvss": 4.3,
+      "affected_software": "Apache 2.4.7",
+      "description": "Apache CXF does not properly enforce child policies of WS-SecurityPolicy 1.1 SupportingToken on the client side, allowing attackers to bypass AlgorithmSuite and other security policies.",
       "has_exploit": false,
       "exploit_sources": []
     }
   ],
   "ssl": {
-    "valid": true,
-    "expiry_date": "2026-12-28",
-    "days_until_expiry": 253,
-    "issues": [
-      "TLS 1.0 supported — deprecated, must be disabled",
-      "TLS 1.1 supported — deprecated, must be disabled",
-      "TLS 1.3 not supported — recommended"
-    ]
+    "valid": null,
+    "expiry_date": null,
+    "days_until_expiry": null,
+    "issues": ["HTTPS not reachable — port 443 returned network unreachable", "No HTTPS configured on target"]
   },
   "http_headers": {
     "missing_security_headers": [

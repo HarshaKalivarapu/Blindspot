@@ -174,16 +174,43 @@ function Block({ label, done, wide, estimate }) {
   )
 }
 
+// ── Report generation progress bars ──────────────────────────────────────────
+function ReportProgress({ label, current, estimated }) {
+  const pct = Math.min(95, (current / estimated) * 100)
+  return (
+    <div style={{ width: 320, display: 'flex', flexDirection: 'column', gap: 7 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'rgba(255,255,255,0.5)', fontFamily: 'system-ui, sans-serif' }}>
+        <span>{label}</span>
+        <span style={{ fontFamily: 'monospace', fontSize: 11 }}>{current > 0 ? `${current.toLocaleString()} chars` : 'waiting...'}</span>
+      </div>
+      <div style={{ height: 5, background: 'rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
+        <motion.div
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+          style={{ height: '100%', background: 'rgba(255,255,255,0.45)', borderRadius: 3 }}
+        />
+      </div>
+    </div>
+  )
+}
+
 // ── Main visualization component ──────────────────────────────────────────────
-function ReportView({ reportNonDev, reportDev }) {
+function ReportView({ reportNonDev, reportDev, devChunkLen, nondevChunkLen }) {
   const [tab, setTab] = useState('non-dev')
   const content = tab === 'dev' ? reportDev : reportNonDev
+  const chunkLen = tab === 'dev' ? devChunkLen : nondevChunkLen
+  const estimated = tab === 'dev' ? 10000 : 8000
+
+  function handleTab(key) {
+    setTab(key)
+    onTabChange?.(key)
+  }
 
   return (
     <div>
       <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', borderRadius: 12, padding: 6, marginBottom: 40, border: '1px solid rgba(255,255,255,0.05)', maxWidth: 360, margin: '0 auto 40px' }}>
         {[['non-dev', 'Non-Developer'], ['dev', 'Developer']].map(([key, label]) => (
-          <button key={key} onClick={() => setTab(key)} style={{
+          <button key={key} onClick={() => handleTab(key)} style={{
             flex: 1, padding: '12px 0', borderRadius: 8, border: 'none',
             background: tab === key ? 'rgba(255,255,255,0.1)' : 'transparent',
             color: tab === key ? '#ffffff' : 'rgba(255,255,255,0.4)',
@@ -194,14 +221,32 @@ function ReportView({ reportNonDev, reportDev }) {
           </button>
         ))}
       </div>
-      <ReportRenderer jsonString={content} />
+      {content ? (
+        <ReportRenderer jsonString={content} />
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '80px 0', gap: 24 }}>
+          <motion.div
+            animate={{ opacity: [0.4, 1, 0.4] }}
+            transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+            style={{ fontSize: 16, color: 'rgba(255,255,255,0.6)', fontFamily: 'system-ui, sans-serif', letterSpacing: '0.02em' }}
+          >
+            Generating report...
+          </motion.div>
+          <ReportProgress
+            label={tab === 'dev' ? 'Developer Report' : 'Owner Report'}
+            current={chunkLen}
+            estimated={estimated}
+          />
+        </div>
+      )}
     </div>
   )
 }
 
 // externalDone: { [toolId]: boolean } — tools confirmed done by real SSE events
+// externalRunning: { [toolId]: boolean } — tools confirmed started by real SSE events
 // report: the actual markdown report text from the backend
-export default function ScanVisualization({ target, onComplete, onReportPhase, externalDone = {}, generatingReport = false, reportDev = null, reportNonDev = null, topOffset = 0 }) {
+export default function ScanVisualization({ target, onComplete, onReportPhase, externalDone = {}, externalRunning = {}, generatingReport = false, reportDev = null, reportNonDev = null, devChunkLen = 0, nondevChunkLen = 0, topOffset = 0 }) {
   const report = reportNonDev || reportDev  // trigger on whichever arrives first
   const [phase, setPhase] = useState('intro')
   const [toolProgress, setToolProgress] = useState(
@@ -215,9 +260,11 @@ export default function ScanVisualization({ target, onComplete, onReportPhase, e
   const [nvdDone, setNvdDone] = useState(false)
   const [showReport, setShowReport] = useState(false)
 
-  // Keep a ref so intervals always read the latest externalDone without stale closures
+  // Keep refs so intervals always read the latest external state without stale closures
   const externalDoneRef = useRef(externalDone)
   useEffect(() => { externalDoneRef.current = externalDone }, [externalDone])
+  const externalRunningRef = useRef(externalRunning)
+  useEffect(() => { externalRunningRef.current = externalRunning }, [externalRunning])
 
   // When report generation starts, snap all tools done and advance to nvd phase
   useEffect(() => {
@@ -242,22 +289,42 @@ export default function ScanVisualization({ target, onComplete, onReportPhase, e
   }, [phase])
 
   // tools: keyframe-based animation with stall zones for realism.
-  // Real tool completions (externalDoneRef) snap to 100% immediately.
+  // Each tool's animation starts only when its "Running X..." SSE event arrives.
+  // Falls back to starting after 5s so the visualization never gets stuck.
   useEffect(() => {
     if (phase !== 'tools') return
 
     const keyframes = TOOLS.map(() => generateKeyframes())
-    const start = Date.now()
+    const toolStartTimes = {}  // { [toolId]: timestamp } — when animation began for each tool
+    const phaseStart = Date.now()
 
     const interval = setInterval(() => {
-      const elapsed = Date.now() - start
+      const now = Date.now()
+      const elapsedPhase = now - phaseStart
       const newProgress = {}
       const newDone = {}
       let allDone = true
 
       TOOLS.forEach((tool, i) => {
         const forceDone = externalDoneRef.current[tool.id]
-        const p = forceDone ? 100 : interpolateKeyframes(elapsed, keyframes[i])
+        if (forceDone) {
+          newProgress[tool.id] = 100
+          newDone[tool.id] = true
+          return
+        }
+
+        // Start this tool's animation when SSE says it's running, or after 5s fallback
+        const isRunning = externalRunningRef.current[tool.id] || elapsedPhase > 5000
+        if (!isRunning) {
+          newProgress[tool.id] = toolProgress[tool.id] ?? 0
+          newDone[tool.id] = false
+          allDone = false
+          return
+        }
+
+        if (!toolStartTimes[tool.id]) toolStartTimes[tool.id] = now
+        const elapsed = now - toolStartTimes[tool.id]
+        const p = interpolateKeyframes(elapsed, keyframes[i])
         newProgress[tool.id] = p
         newDone[tool.id] = p >= 100
         if (p < 100) allDone = false
@@ -273,15 +340,15 @@ export default function ScanVisualization({ target, onComplete, onReportPhase, e
     }, 50)
 
     return () => clearInterval(interval)
-  }, [phase])
+  }, [phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // nvd: branches fill in 500ms, trunk fills over 3-6s.
+  // nvd: branches fill in 500ms, trunk fills over 18-26s (matches report generation time).
   // Snaps to done immediately if nvd_lookup is confirmed complete externally.
   useEffect(() => {
     if (phase !== 'nvd') return
 
     const BRANCH_MS = 500
-    const trunkDuration = 3000 + Math.random() * 3000
+    const trunkDuration = 18000 + Math.random() * 8000
     const start = Date.now()
 
     const interval = setInterval(() => {
@@ -308,7 +375,7 @@ export default function ScanVisualization({ target, onComplete, onReportPhase, e
     return () => clearInterval(interval)
   }, [phase])
 
-  // fading → show report
+  // fading → transition to report screen (animation done; report data may still be loading)
   useEffect(() => {
     if (phase !== 'fading') return
     const t = setTimeout(() => {
@@ -330,12 +397,12 @@ export default function ScanVisualization({ target, onComplete, onReportPhase, e
   const trunkY2 = NVD_CY - BH / 2 - 4
 
   return (
-    <div style={{ position: 'fixed', top: topOffset, left: 0, right: 0, bottom: 0, background: '#070a0d' }}>
+    <div style={{ position: 'fixed', top: topOffset, left: 0, right: 0, bottom: 0, background: 'transparent' }}>
       <AnimatePresence>
         {!showReport && (
           <motion.div
             key="viz"
-            style={{ width: '100%', height: '100%' }}
+            style={{ width: '100%', height: '100%', position: 'relative' }}
             exit={{ opacity: 0, transition: { duration: 0.8 } }}
           >
             <svg
@@ -416,20 +483,6 @@ export default function ScanVisualization({ target, onComplete, onReportPhase, e
                 </motion.g>
               )}
 
-              {/* ── Writing report indicator ── */}
-              {generatingReport && !report && (
-                <motion.text
-                  x={W / 2} y={H - 32}
-                  textAnchor="middle"
-                  fill="rgba(255,255,255,0.5)"
-                  fontSize={13}
-                  fontFamily="system-ui, sans-serif"
-                  animate={{ opacity: [0.3, 1, 0.3] }}
-                  transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
-                >
-                  Writing your report...
-                </motion.text>
-              )}
             </svg>
           </motion.div>
         )}
@@ -444,14 +497,16 @@ export default function ScanVisualization({ target, onComplete, onReportPhase, e
               position: 'absolute',
               inset: 0,
               overflowY: 'auto',
-              padding: '48px 12%',
+              padding: '104px 0 64px',
               color: 'white',
               fontFamily: 'system-ui, sans-serif',
               fontSize: 14,
               lineHeight: 1.75,
             }}
           >
-            <ReportView reportNonDev={reportNonDev} reportDev={reportDev} />
+            <div style={{ width: '100%', maxWidth: 1000, margin: '0 auto', padding: '0 32px' }}>
+              <ReportView reportNonDev={reportNonDev} reportDev={reportDev} devChunkLen={devChunkLen} nondevChunkLen={nondevChunkLen} />
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

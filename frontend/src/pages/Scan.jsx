@@ -12,7 +12,75 @@ import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../lib/AuthContext.jsx'
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ?? 'http://localhost:5000'
+const SANS = 'system-ui, -apple-system, sans-serif'
 
+function scoreColor(score) {
+  if (score === null || score === undefined) return 'rgba(255,255,255,0.4)'
+  if (score < 4.0) return '#f87171'
+  if (score < 7.0) return '#fbbf24'
+  return '#34d399'
+}
+
+function formatDate(iso) {
+  if (!iso) return ''
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+function ScanHistoryCard({ row, onClick, onDelete }) {
+  const score = row.score ?? null
+  const color = scoreColor(score)
+  return (
+    <motion.div
+      onClick={onClick}
+      whileHover={{ backgroundColor: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.25)' }}
+      whileTap={{ scale: 0.98 }}
+      style={{
+        aspectRatio: '1', display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+        backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: 16, padding: 20, cursor: 'pointer', backdropFilter: 'blur(4px)',
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <span style={{ fontFamily: SANS, fontSize: 32, fontWeight: 700, color, lineHeight: 1 }}>
+            {score !== null ? score.toFixed(1) : '—'}
+          </span>
+          <span style={{ fontFamily: SANS, fontSize: 14, color: 'rgba(255,255,255,0.35)', marginLeft: 4 }}>/10</span>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontFamily: 'monospace', fontSize: 13, color: '#ffffff', marginBottom: 2 }}>
+            {row.target ?? '—'}
+          </div>
+          <div style={{ fontFamily: SANS, fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>
+            {formatDate(row.scan_date)}
+          </div>
+          <span style={{
+            fontFamily: SANS, fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 99,
+            backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', textTransform: 'capitalize',
+          }}>
+            {row.scan_type ?? 'scan'}
+          </span>
+        </div>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontFamily: SANS, fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>
+          {row.total_issues_count ?? 0} vulnerabilities found
+        </span>
+        <motion.button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onDelete(row.id) }}
+          whileHover={{ color: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', borderColor: 'rgba(239,68,68,0.4)' }}
+          initial={{ color: 'rgba(255,255,255,0.25)', backgroundColor: 'transparent', borderColor: 'rgba(255,255,255,0.1)' }}
+          transition={{ duration: 0.15 }}
+          style={{ fontFamily: SANS, fontSize: 11, fontWeight: 500, padding: '4px 10px',
+            border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, cursor: 'pointer', flexShrink: 0 }}
+        >
+          Delete
+        </motion.button>
+      </div>
+    </motion.div>
+  )
+}
 
 function Scan() {
   const navigate = useNavigate()
@@ -35,6 +103,12 @@ function Scan() {
   const [targetError, setTargetError] = useState(null)
   const [targetValidated, setTargetValidated] = useState(false)
   const [vizReportPhase, setVizReportPhase] = useState(false)
+  const [devChunkLen, setDevChunkLen] = useState(0)
+  const [nondevChunkLen, setNondevChunkLen] = useState(0)
+  const [scans, setScans] = useState([])
+  const [scansLoading, setScansLoading] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const scrollRef = useRef(null)
   const scanInserted = useRef(false)
   const vizTimerRef = useRef(null)
@@ -75,8 +149,32 @@ function Scan() {
     }
   }, [view]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (!user) return
+    setScansLoading(true)
+    supabase
+      .from('scans')
+      .select('id, target, scan_date, scan_type, total_issues_count, score')
+      .eq('user_id', user.id)
+      .order('scan_date', { ascending: false })
+      .then(({ data }) => {
+        setScans(data ?? [])
+        setScansLoading(false)
+      })
+  }, [user])
+
   const handleStartScan = () => {
-    navigate('/scan/new')
+    const id = crypto.randomUUID()
+    navigate('/scan/' + id, { state: { isNew: true } })
+  }
+
+  const handleDeleteAll = async () => {
+    if (!user) return
+    setDeleting(true)
+    await supabase.from('scans').delete().eq('user_id', user.id)
+    setScans([])
+    setDeleting(false)
+    setShowDeleteModal(false)
   }
 
   const handleSignOut = async () => {
@@ -109,6 +207,8 @@ function Scan() {
     setTargetError(null)
     setTargetValidated(false)
     setVizReportPhase(false)
+    setDevChunkLen(0)
+    setNondevChunkLen(0)
     setMessages([])
 
     try {
@@ -158,6 +258,10 @@ function Scan() {
               }
             } else if (event.type === 'report_dev_chunk' || event.type === 'report_nondev_chunk') {
               setGeneratingReport(true)
+            } else if (event.type === 'report_dev_chunk') {
+              setDevChunkLen(prev => prev + event.message.length)
+            } else if (event.type === 'report_nondev_chunk') {
+              setNondevChunkLen(prev => prev + event.message.length)
             } else if (event.type === 'report_dev') {
               setReportDev(event.message)
             } else if (event.type === 'report_nondev') {
@@ -191,21 +295,28 @@ function Scan() {
         alignItems: 'center',
         padding: '64px 32px',
         zIndex: 1,
+        overflowY: 'auto',
       }}
     >
       <div style={{ width: '100%', maxWidth: 1000 }}>
-        <h1
-          style={{
-            fontFamily: 'system-ui, -apple-system, sans-serif',
-            fontSize: 36,
-            fontWeight: 600,
-            color: '#ffffff',
-            marginBottom: 40,
-            letterSpacing: '-0.02em',
-          }}
-        >
-          Scan History
-        </h1>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 40 }}>
+          <h1 style={{ fontFamily: SANS, fontSize: 36, fontWeight: 600, color: '#ffffff', letterSpacing: '-0.02em', margin: 0 }}>
+            Scan History
+          </h1>
+          {user && scans.length > 0 && (
+            <motion.button
+              type="button"
+              onClick={() => setShowDeleteModal(true)}
+              whileHover={{ backgroundColor: 'rgba(239,68,68,0.12)', borderColor: 'rgba(239,68,68,0.5)', color: '#f87171' }}
+              initial={{ backgroundColor: 'transparent', borderColor: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.4)' }}
+              transition={{ duration: 0.2 }}
+              style={{ fontFamily: SANS, fontSize: 13, fontWeight: 500, padding: '8px 18px',
+                border: '1px solid rgba(255,255,255,0.12)', borderRadius: 6, cursor: 'pointer', letterSpacing: '0.01em' }}
+            >
+              Clear history
+            </motion.button>
+          )}
+        </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 24 }}>
           {/* New Scan Box */}
@@ -234,6 +345,22 @@ function Scan() {
             <div style={{ fontSize: 48, fontWeight: 300, marginBottom: 8, lineHeight: 1 }}>+</div>
             <div style={{ fontSize: 16, fontWeight: 500, letterSpacing: '0.01em' }}>New Scan</div>
           </motion.button>
+
+          {/* History cards */}
+          {scansLoading && (
+            <div style={{ aspectRatio: '1', borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }} />
+          )}
+          {!scansLoading && scans.map((row) => (
+            <ScanHistoryCard
+              key={row.id}
+              row={row}
+              onClick={() => navigate('/scan/' + row.id)}
+              onDelete={async (id) => {
+                await supabase.from('scans').delete().eq('id', id)
+                setScans(prev => prev.filter(s => s.id !== id))
+              }}
+            />
+          ))}
         </div>
       </div>
     </motion.div>
@@ -423,6 +550,31 @@ function Scan() {
           <ReportSkeleton key="report-skeleton" topOffset={64} />
         )}
       </AnimatePresence>
+      <div style={{ position: 'absolute', inset: '64px 0 0 0' }}>
+        {scanConfig?.level === 'active'
+          ? <ScanVisualizationActive
+              target={scanConfig.target}
+              nmapType={scanConfig.intensity ?? 'simple'}
+              externalDone={externalDone}
+              generatingReport={generatingReport}
+              reportDev={reportDev}
+              reportNonDev={reportNonDev}
+              devChunkLen={devChunkLen}
+              nondevChunkLen={nondevChunkLen}
+              topOffset={64}
+              onComplete={() => setSending(false)} />
+          : <ScanVisualization
+              target={scanConfig?.target ?? ''}
+              externalDone={externalDone}
+              generatingReport={generatingReport}
+              reportDev={reportDev}
+              reportNonDev={reportNonDev}
+              devChunkLen={devChunkLen}
+              nondevChunkLen={nondevChunkLen}
+              topOffset={64}
+              onComplete={() => setSending(false)} />
+        }
+      </div>
     </motion.div>
   )
 
@@ -563,6 +715,56 @@ function Scan() {
           }}
         />
       )}
+      <AnimatePresence>
+        {showDeleteModal && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex',
+              alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)' }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 12 }}
+              transition={{ duration: 0.2 }}
+              style={{ background: 'rgba(18,22,27,0.97)', border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 16, padding: '32px 36px', maxWidth: 420, width: '90%', fontFamily: SANS }}
+            >
+              <h2 style={{ fontSize: 20, fontWeight: 600, color: '#fff', marginBottom: 10, letterSpacing: '-0.01em' }}>
+                Clear all scan history?
+              </h2>
+              <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, marginBottom: 28 }}>
+                This will permanently delete all your scans and reports. This cannot be undone.
+              </p>
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                <motion.button
+                  type="button"
+                  onClick={() => setShowDeleteModal(false)}
+                  whileHover={{ backgroundColor: 'rgba(255,255,255,0.08)' }}
+                  style={{ fontFamily: SANS, fontSize: 14, fontWeight: 500, padding: '10px 22px',
+                    border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, cursor: 'pointer',
+                    color: '#fff', background: 'transparent' }}
+                >
+                  Cancel
+                </motion.button>
+                <motion.button
+                  type="button"
+                  onClick={handleDeleteAll}
+                  disabled={deleting}
+                  whileHover={{ backgroundColor: '#dc2626' }}
+                  style={{ fontFamily: SANS, fontSize: 14, fontWeight: 500, padding: '10px 22px',
+                    border: 'none', borderRadius: 6, cursor: deleting ? 'not-allowed' : 'pointer',
+                    background: '#ef4444', color: '#fff', opacity: deleting ? 0.6 : 1 }}
+                >
+                  {deleting ? 'Deleting…' : 'Delete all'}
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
     </div>
   )

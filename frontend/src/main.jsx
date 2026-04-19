@@ -5,7 +5,6 @@ import { AuthProvider, useAuth } from './lib/AuthContext.jsx'
 import './index.css'
 import Home from './pages/Home.jsx'
 import Scan from './pages/Scan.jsx'
-import NewScan from './pages/NewScan.jsx'
 import Guide from './pages/Guide.jsx'
 import ScanReport from './pages/ScanReport.jsx'
 import VisualizationDemo from './pages/VisualizationDemo.jsx'
@@ -24,9 +23,8 @@ createRoot(document.getElementById('root')).render(
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/guide" element={<Guide />} />
-          <Route path="/scan/new" element={<ProtectedRoute><NewScan /></ProtectedRoute>} />
           <Route path="/scan" element={<ProtectedRoute><Scan /></ProtectedRoute>} />
-          <Route path="/scan/report" element={<ScanReport />} />
+          <Route path="/scan/:id" element={<ScanReport />} />
           <Route path="/demo" element={<VisualizationDemo />} />
           <Route path="/demo-active" element={<VisualizationDemoActive />} />
         </Routes>

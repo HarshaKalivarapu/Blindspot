@@ -141,14 +141,16 @@ function Block({ label, done, wide, estimate }) {
 // intro → nmap → tools → nvd → searchsploit → fading → report
 // Only two layers visible at a time. Each block fades out when no longer needed.
 
-function ReportViewActive({ reportNonDev, reportDev }) {
+function ReportViewActive({ reportNonDev, reportDev, devChunkLen, nondevChunkLen }) {
   const [tab, setTab] = useState('non-dev')
   const content = tab === 'dev' ? reportDev : reportNonDev
+  const chunkLen = tab === 'dev' ? devChunkLen : nondevChunkLen
+  const estimated = tab === 'dev' ? 10000 : 8000
   return (
     <div>
       <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', borderRadius: 12, padding: 6, marginBottom: 40, border: '1px solid rgba(255,255,255,0.05)', maxWidth: 360, margin: '0 auto 40px' }}>
         {[['non-dev', 'Non-Developer'], ['dev', 'Developer']].map(([key, label]) => (
-          <button key={key} onClick={() => setTab(key)} style={{
+          <button key={key} onClick={() => handleTab(key)} style={{
             flex: 1, padding: '12px 0', borderRadius: 8, border: 'none',
             background: tab === key ? 'rgba(255,255,255,0.1)' : 'transparent',
             color: tab === key ? '#ffffff' : 'rgba(255,255,255,0.4)',
@@ -159,7 +161,44 @@ function ReportViewActive({ reportNonDev, reportDev }) {
           </button>
         ))}
       </div>
-      <ReportRenderer jsonString={content} />
+      {content ? (
+        <ReportRenderer jsonString={content} />
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '80px 0', gap: 24 }}>
+          <motion.div
+            animate={{ opacity: [0.4, 1, 0.4] }}
+            transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+            style={{ fontSize: 16, color: 'rgba(255,255,255,0.6)', fontFamily: 'system-ui, sans-serif', letterSpacing: '0.02em' }}
+          >
+            Generating report...
+          </motion.div>
+          <ReportProgress
+            label={tab === 'dev' ? 'Developer Report' : 'Owner Report'}
+            current={chunkLen}
+            estimated={estimated}
+          />
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Report generation progress bars ──────────────────────────────────────────
+function ReportProgress({ label, current, estimated }) {
+  const pct = Math.min(95, (current / estimated) * 100)
+  return (
+    <div style={{ width: 320, display: 'flex', flexDirection: 'column', gap: 7 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'rgba(255,255,255,0.5)', fontFamily: 'system-ui, sans-serif' }}>
+        <span>{label}</span>
+        <span style={{ fontFamily: 'monospace', fontSize: 11 }}>{current > 0 ? `${current.toLocaleString()} chars` : 'waiting...'}</span>
+      </div>
+      <div style={{ height: 5, background: 'rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
+        <motion.div
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+          style={{ height: '100%', background: 'rgba(255,255,255,0.45)', borderRadius: 3 }}
+        />
+      </div>
     </div>
   )
 }
@@ -178,7 +217,7 @@ const mdComponents = {
   blockquote: ({children}) => <blockquote style={{borderLeft:'3px solid rgba(255,255,255,0.2)',paddingLeft:16,margin:'16px 0',color:'rgba(255,255,255,0.6)'}}>{children}</blockquote>,
 }
 
-export default function ScanVisualizationActive({ target, nmapType = 'basic', onComplete, onReportPhase, externalDone = {}, generatingReport = false, reportDev = null, reportNonDev = null, topOffset = 0 }) {
+export default function ScanVisualizationActive({ target, nmapType = 'basic', onComplete, onReportPhase, externalDone = {}, externalRunning = {}, generatingReport = false, reportDev = null, reportNonDev = null, devChunkLen = 0, nondevChunkLen = 0, topOffset = 0 }) {
   const report = reportNonDev || reportDev
   const tools = nmapType === 'aggressive' ? AGGRESSIVE_TOOLS : SIMPLE_TOOLS
   const toolXs = toolXPositions(tools.length)
@@ -198,6 +237,8 @@ export default function ScanVisualizationActive({ target, nmapType = 'basic', on
 
   const externalDoneRef = useRef(externalDone)
   useEffect(() => { externalDoneRef.current = externalDone }, [externalDone])
+  const externalRunningRef = useRef(externalRunning)
+  useEffect(() => { externalRunningRef.current = externalRunning }, [externalRunning])
 
   // When report generation starts, snap all tools done and advance past tools phase
   useEffect(() => {
@@ -226,27 +267,44 @@ export default function ScanVisualizationActive({ target, nmapType = 'basic', on
   useEffect(() => {
     if (phase !== 'nmap') return
     const duration = nmapType === 'aggressive' ? 4000 + Math.random() * 2000 : 2500 + Math.random() * 1500
-    const start = Date.now()
+    const phaseStart = Date.now()
+    let animStart = null
     const iv = setInterval(() => {
+      const now = Date.now()
       const forceDone = externalDoneRef.current['nmap']
-      const p = forceDone ? 100 : Math.min(100, ((Date.now() - start) / duration) * 100)
+      if (forceDone) {
+        setNmapProgress(100)
+        clearInterval(iv); setNmapDone(true); setTimeout(() => setPhase('tools'), 700)
+        return
+      }
+      // Start animation when SSE says nmap is running, or after 3s fallback
+      const isRunning = externalRunningRef.current['nmap'] || (now - phaseStart > 3000)
+      if (!isRunning) { setNmapProgress(0); return }
+      if (!animStart) animStart = now
+      const p = Math.min(100, ((now - animStart) / duration) * 100)
       setNmapProgress(p)
       if (p >= 100) { clearInterval(iv); setNmapDone(true); setTimeout(() => setPhase('tools'), 700) }
     }, 50)
     return () => clearInterval(iv)
-  }, [phase, nmapType])
+  }, [phase, nmapType]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (phase !== 'tools') return
     const keyframes = tools.map(() => generateKeyframes())
-    const start = Date.now()
+    const toolStartTimes = {}
+    const phaseStart = Date.now()
     const iv = setInterval(() => {
-      const elapsed = Date.now() - start
+      const now = Date.now()
+      const elapsedPhase = now - phaseStart
       const newProg = {}, newDone = {}
       let allDone = true
       tools.forEach((t, i) => {
         const forceDone = externalDoneRef.current[t.id]
-        const p = forceDone ? 100 : interpolateKeyframes(elapsed, keyframes[i])
+        if (forceDone) { newProg[t.id] = 100; newDone[t.id] = true; return }
+        const isRunning = externalRunningRef.current[t.id] || elapsedPhase > 5000
+        if (!isRunning) { newProg[t.id] = 0; newDone[t.id] = false; allDone = false; return }
+        if (!toolStartTimes[t.id]) toolStartTimes[t.id] = now
+        const p = interpolateKeyframes(now - toolStartTimes[t.id], keyframes[i])
         newProg[t.id] = p
         newDone[t.id] = p >= 100
         if (p < 100) allDone = false
@@ -256,12 +314,12 @@ export default function ScanVisualizationActive({ target, nmapType = 'basic', on
       if (allDone) { clearInterval(iv); setTimeout(() => setPhase('nvd'), 700) }
     }, 50)
     return () => clearInterval(iv)
-  }, [phase, tools.length])
+  }, [phase, tools.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (phase !== 'nvd') return
     const BRANCH_MS = 500
-    const trunkDur = 2500 + Math.random() * 2000
+    const trunkDur = 18000 + Math.random() * 8000
     const start = Date.now()
     const iv = setInterval(() => {
       const elapsed = Date.now() - start
@@ -319,10 +377,10 @@ export default function ScanVisualizationActive({ target, nmapType = 'basic', on
   const showSsBranch    = phase === 'searchsploit'
 
   return (
-    <div style={{ position: 'fixed', top: topOffset, left: 0, right: 0, bottom: 0, background: '#070a0d' }}>
+    <div style={{ position: 'fixed', top: topOffset, left: 0, right: 0, bottom: 0, background: 'transparent' }}>
       <AnimatePresence>
         {!showReport && (
-          <motion.div key="viz" style={{ width: '100%', height: '100%' }}
+          <motion.div key="viz" style={{ width: '100%', height: '100%', position: 'relative' }}
             exit={{ opacity: 0, transition: { duration: 0.8 } }}>
             <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="100%"
               preserveAspectRatio="xMidYMid meet">
@@ -405,17 +463,9 @@ export default function ScanVisualizationActive({ target, nmapType = 'basic', on
                 </motion.g>
               )}
 
-              {/* ── Writing report indicator ── */}
-              {generatingReport && !report && (
-                <motion.text
-                  x={W / 2} y={H - 32}
-                  textAnchor="middle"
-                  fill="rgba(255,255,255,0.5)"
-                  fontSize={13}
-                  fontFamily="system-ui, sans-serif"
-                  animate={{ opacity: [0.3, 1, 0.3] }}
-                  transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
-                >
+              {/* placeholder — report progress rendered as HTML overlay below */}
+              {false && (
+                <motion.text x={W / 2} y={H - 32} textAnchor="middle">
                   Writing your report...
                 </motion.text>
               )}
@@ -429,9 +479,11 @@ export default function ScanVisualizationActive({ target, nmapType = 'basic', on
             initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             style={{ position: 'absolute', inset: 0, overflowY: 'auto',
-              padding: '48px 12%', color: 'white',
+              padding: '104px 0 64px', color: 'white',
               fontFamily: 'system-ui, sans-serif', fontSize: 14, lineHeight: 1.75 }}>
-            <ReportViewActive reportNonDev={reportNonDev} reportDev={reportDev} />
+            <div style={{ width: '100%', maxWidth: 1000, margin: '0 auto', padding: '0 32px' }}>
+              <ReportViewActive reportNonDev={reportNonDev} reportDev={reportDev} devChunkLen={devChunkLen} nondevChunkLen={nondevChunkLen} />
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
