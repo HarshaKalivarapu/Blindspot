@@ -9,7 +9,7 @@ def run(params: dict[str, Any]) -> dict[str, Any]:
     aggressive = params.get("aggressive", False)
     
     if aggressive:
-        cmd = ["nmap", "-p-", "-sV", "-A", "--script", "vuln", ip]
+        cmd = ["nmap", "-p-", "-sV", "-A", ip]
         timeout = 600
     else:
         cmd = ["nmap", "-sV", "-A", ip]
