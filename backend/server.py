@@ -54,6 +54,7 @@ def nmap(ip: str, aggressive: bool = False) -> str:
     Runs an nmap scan on a target IP to discover open ports and service versions.
     Always use this tool for nmap scans. Never run nmap manually and never modify or add any flags.
     Use aggressive=True for a full port scan (-p-), False for a standard scan.
+    Always use the -Pn flag for every single nmap scan.
     Args:
         ip: Target IP address to scan.
         aggressive: If True, scans all 65535 ports. If False, scans common ports only.
