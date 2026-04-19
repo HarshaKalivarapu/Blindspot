@@ -1,7 +1,7 @@
 """
 server.py — MCP Server entry point
 ------------------------------------
-Uses FastMCP to expose tools to any MCP-compatible client (e.g. Antigravity).
+Uses FastMCP to expose tools to any MCP-compatible client.
 
 Run with:
     python backend/server.py
@@ -14,35 +14,39 @@ output to stderr instead.
 import sys
 from mcp.server.fastmcp import FastMCP
 
-# Import tool functions from their modules
-from tools.active.example_command import run as example_command_run
+from tools.passive.shodan import run as shodan_run
+from tools.passive.whatweb import run as whatweb_passive_run
+from tools.passive.dns_whois import run as dns_whois_run
+from tools.passive.ssl_tls import run as ssl_tls_run
+from tools.passive.http_headers import run as http_headers_run
+from tools.shared.nvd_lookup import run as nvd_lookup_run
 from tools.active.nmap import run as nmap_run
 from tools.active.nikto import run as nikto_run
 from tools.active.ffuf import run as ffuf_run
 from tools.active.hydra import run as hydra_run
 from tools.active.whatweb import run as whatweb_active_run
 from tools.active.searchsploit import run as searchsploit_run
-# ── Server setup ────────────────────────────────────────────────────────────
 
 mcp = FastMCP("claudehack-mcp")
 
 
-# ── Tool registrations ───────────────────────────────────────────────────────
+# ── Passive tools ─────────────────────────────────────────────────────────────
 
 @mcp.tool()
-def example_command(message: str) -> str:
+def shodan(target: str) -> str:
     """
-    Echoes the provided message back to the caller.
-    Use this to verify the MCP server is connected and working.
+    Query Shodan's public database for information about the target.
+    Returns open ports, running services, software versions, banners,
+    and any CVEs Shodan has already flagged. Never contacts the target
+    directly — only queries Shodan's existing index.
 
     Args:
-        message: Any string you want echoed back.
+        target: Domain name or IP address to look up (e.g. 'example.com').
 
     Returns:
-        The echoed string, prefixed with 'Echo: '.
+        Plain text summary of everything Shodan knows about the target.
     """
-    result = example_command_run({"message": message})
-    return result["result"]
+    return shodan_run(target)
 
 @mcp.tool()
 def nmap(ip: str, aggressive: bool = False) -> str:
@@ -122,7 +126,128 @@ def searchsploit(query: str) -> str:
     """
     return searchsploit_run({"query": query})["result"]
 
-# ── Entry point ──────────────────────────────────────────────────────────────
+@mcp.tool()
+def whatweb(target: str) -> str:
+    """
+    Fingerprint the technology stack of a target website using WhatWeb in passive
+    mode (aggression level 1 — one request only). Identifies CMS, frameworks,
+    server software, JavaScript libraries, and other technologies with version numbers.
+
+    Use this in passive scans. Version numbers returned here should be passed to
+    nvd_lookup for CVE correlation.
+
+    Args:
+        target: Domain name or URL to fingerprint (e.g. 'example.com').
+
+    Returns:
+        Plain text list of detected technologies, grouped by whether version
+        info is available.
+    """
+    return whatweb_passive_run(target)
+
+
+@mcp.tool()
+def dns_whois(target: str) -> str:
+    """
+    Perform DNS record lookup, WHOIS registration query, and certificate
+    transparency search (crt.sh) for the target domain. All three are fully
+    passive — no packets are sent to the target's servers.
+
+    DNS reveals IP addresses, mail servers, nameservers, and TXT records.
+    WHOIS reveals domain ownership, registration dates, and expiry (domains
+    expiring soon can be hijacked). crt.sh reveals every subdomain that has
+    ever had an SSL certificate issued — including forgotten dev/staging sites.
+
+    Args:
+        target: Domain name to investigate (e.g. 'example.com'). Schemes
+                (http://) are stripped automatically.
+
+    Returns:
+        Three clearly labelled sections: DNS records, WHOIS data, and
+        subdomains discovered via certificate transparency logs.
+    """
+    return dns_whois_run(target)
+
+
+@mcp.tool()
+def ssl_tls(target: str) -> str:
+    """
+    Audit the SSL/TLS configuration of the target's HTTPS endpoint (port 443).
+    Checks certificate validity and expiry, hostname matching, cipher suite
+    strength, and which TLS protocol versions the server accepts.
+
+    Flags: expired or near-expiry certs, deprecated TLS 1.0/1.1 support,
+    weak cipher suites (RC4, DES, NULL, EXPORT), self-signed certificates,
+    and hostname mismatches.
+
+    Does not require authorization — port 443 is publicly accessible.
+
+    Args:
+        target: Domain name or URL (e.g. 'example.com'). Scheme is stripped
+                automatically.
+
+    Returns:
+        Three sections: Certificate details, Cipher info, TLS version support.
+    """
+    return ssl_tls_run(target)
+
+
+@mcp.tool()
+def http_headers(target: str) -> str:
+    """
+    Check the HTTP security response headers of a target website. Makes a
+    single GET request — no authorization required.
+
+    Checks for the presence of required security headers (HSTS, CSP,
+    X-Frame-Options, X-Content-Type-Options, Referrer-Policy,
+    Permissions-Policy, X-XSS-Protection) and flags missing ones with
+    severity level and remediation advice.
+
+    Also checks for information disclosure headers (Server, X-Powered-By,
+    X-AspNet-Version) that leak server software details to attackers.
+
+    For headers that are present, performs deeper analysis — e.g. flags
+    weak CSP policies containing 'unsafe-inline' or HSTS with short max-age.
+
+    Args:
+        target: Domain name or URL (e.g. 'example.com'). Scheme is added
+                automatically if missing; falls back to HTTP if HTTPS fails.
+
+    Returns:
+        Two sections: required security headers (present/missing with severity
+        and fix instructions), and information disclosure headers found.
+    """
+    return http_headers_run(target)
+
+
+@mcp.tool()
+def nvd_lookup(software_list: str) -> str:
+    """
+    Query the National Vulnerability Database (NVD) for known CVEs affecting
+    the software versions discovered during the scan.
+
+    Call this ONCE after all other tools have finished — pass ALL software
+    names and versions found in a single call, comma or newline separated.
+    Do NOT call this after each individual tool.
+
+    Example input:
+        "WordPress 5.8, PHP 7.4.3, Apache 2.4.51, OpenSSH 7.2"
+
+    Results are grouped by severity (Critical → High → Medium → Low).
+    After this tool completes, pass the CVE IDs to searchsploit to check
+    for public exploit scripts.
+
+    Args:
+        software_list: Comma or newline separated list of "Name Version" pairs
+                       collected from shodan, whatweb, ssl_tls, nmap, etc.
+
+    Returns:
+        Per-software CVE listings and a grouped severity summary.
+    """
+    return nvd_lookup_run(software_list)
+
+
+# ── Entry point ───────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     print("MCP server starting...", file=sys.stderr)

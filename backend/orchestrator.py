@@ -79,6 +79,7 @@ ACTIVE_TOOL_NAMES = {
     "hydra_db", "hydra_ftp",
     "ssh_check", "telnet_check",
     "eternalblue", "searchsploit",
+    "whatweb_active",
     # nvd_lookup is intentionally excluded — it's a passive-safe API query
     # needed in both passive and active scans
 }
