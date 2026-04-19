@@ -150,7 +150,7 @@ function ReportViewActive({ reportNonDev, reportDev, devChunkLen, nondevChunkLen
     <div>
       <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', borderRadius: 12, padding: 6, marginBottom: 40, border: '1px solid rgba(255,255,255,0.05)', maxWidth: 360, margin: '0 auto 40px' }}>
         {[['non-dev', 'Non-Developer'], ['dev', 'Developer']].map(([key, label]) => (
-          <button key={key} onClick={() => setTab(key)} style={{
+          <button key={key} onClick={() => handleTab(key)} style={{
             flex: 1, padding: '12px 0', borderRadius: 8, border: 'none',
             background: tab === key ? 'rgba(255,255,255,0.1)' : 'transparent',
             color: tab === key ? '#ffffff' : 'rgba(255,255,255,0.4)',
@@ -460,7 +460,7 @@ export default function ScanVisualizationActive({ target, nmapType = 'basic', on
             initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             style={{ position: 'absolute', inset: 0, overflowY: 'auto',
-              padding: '104px 12% 64px', color: 'white',
+              padding: '104px 0 64px', color: 'white',
               fontFamily: 'system-ui, sans-serif', fontSize: 14, lineHeight: 1.75 }}>
             <ReportViewActive reportNonDev={reportNonDev} reportDev={reportDev} devChunkLen={devChunkLen} nondevChunkLen={nondevChunkLen} />
           </motion.div>

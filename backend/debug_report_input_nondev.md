@@ -288,7 +288,6 @@ Here are all security findings from the scan in a compact structured format:
   },
   "http_headers": {
     "missing_security_headers": [
-      "Strict-Transport-Security",
       "Content-Security-Policy",
       "X-Frame-Options",
       "X-Content-Type-Options",
