@@ -322,24 +322,24 @@ Here are all security findings from the scan in a compact structured format:
   "scan_date": null,
   "scan_type": "passive",
   "scan_mode": "simple",
-  "duration_seconds": 66.2,
+  "duration_seconds": 50.7,
   "tools_run": ["whatweb", "dns_whois", "http_headers", "nvd_lookup"],
   "tool_errors": [
     "shodan: Access denied (403 Forbidden)",
     "ssl_tls: Network is unreachable on port 443",
-    "dns_whois: crt.sh request timed out"
+    "dns_whois: crt.sh lookup failed — 502 Bad Gateway"
   ],
   "open_ports": [80],
   "services": {
     "80": {"name": "http", "version": "Apache/2.4.7 (Ubuntu)"}
   },
-  "tech_stack": ["Apache 2.4.7", "Ubuntu", "Google-Analytics Universal", "HTML5"],
+  "tech_stack": ["Apache 2.4.7", "Ubuntu Linux", "Google-Analytics Universal", "HTML5"],
   "cves": [
     {
       "id": "CVE-2016-6814",
       "cvss": 9.8,
       "affected_software": "Apache 2.4.7",
-      "description": "Unsupported Codehaus/Apache Groovy versions using standard Java serialization mechanisms allow remote attackers to execute arbitrary code.",
+      "description": "Critical deserialization vulnerability in Groovy on classpath allowing remote code execution via standard Java serialization mechanisms.",
       "has_exploit": false,
       "exploit_sources": []
     },
@@ -363,7 +363,7 @@ Here are all security findings from the scan in a compact structured format:
       "id": "CVE-2012-2378",
       "cvss": 4.3,
       "affected_software": "Apache 2.4.7",
-      "description": "Apache CXF does not properly enforce child policies of a WS-SecurityPolicy 1.1 SupportingToken policy on the client side, allowing remote attackers to bypass AlgorithmSuite and other security policies.",
+      "description": "Apache CXF does not properly enforce child policies of WS-SecurityPolicy 1.1 SupportingToken on the client side, allowing attackers to bypass AlgorithmSuite and other security policies.",
       "has_exploit": false,
       "exploit_sources": []
     }
@@ -372,7 +372,7 @@ Here are all security findings from the scan in a compact structured format:
     "valid": null,
     "expiry_date": null,
     "days_until_expiry": null,
-    "issues": ["Port 443 unreachable — HTTPS not configured or not responding"]
+    "issues": ["HTTPS not reachable — port 443 returned network unreachable", "No HTTPS configured on target"]
   },
   "http_headers": {
     "missing_security_headers": [

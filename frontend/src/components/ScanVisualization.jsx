@@ -244,8 +244,9 @@ function ReportView({ reportNonDev, reportDev, devChunkLen, nondevChunkLen }) {
 }
 
 // externalDone: { [toolId]: boolean } — tools confirmed done by real SSE events
+// externalRunning: { [toolId]: boolean } — tools confirmed started by real SSE events
 // report: the actual markdown report text from the backend
-export default function ScanVisualization({ target, onComplete, externalDone = {}, generatingReport = false, reportDev = null, reportNonDev = null, devChunkLen = 0, nondevChunkLen = 0, topOffset = 0 }) {
+export default function ScanVisualization({ target, onComplete, externalDone = {}, externalRunning = {}, generatingReport = false, reportDev = null, reportNonDev = null, devChunkLen = 0, nondevChunkLen = 0, topOffset = 0 }) {
   const report = reportNonDev || reportDev  // trigger on whichever arrives first
   const [phase, setPhase] = useState('intro')
   const [toolProgress, setToolProgress] = useState(
@@ -259,9 +260,11 @@ export default function ScanVisualization({ target, onComplete, externalDone = {
   const [nvdDone, setNvdDone] = useState(false)
   const [showReport, setShowReport] = useState(false)
 
-  // Keep a ref so intervals always read the latest externalDone without stale closures
+  // Keep refs so intervals always read the latest external state without stale closures
   const externalDoneRef = useRef(externalDone)
   useEffect(() => { externalDoneRef.current = externalDone }, [externalDone])
+  const externalRunningRef = useRef(externalRunning)
+  useEffect(() => { externalRunningRef.current = externalRunning }, [externalRunning])
 
   // When report generation starts, snap all tools done and advance to nvd phase
   useEffect(() => {
@@ -286,22 +289,42 @@ export default function ScanVisualization({ target, onComplete, externalDone = {
   }, [phase])
 
   // tools: keyframe-based animation with stall zones for realism.
-  // Real tool completions (externalDoneRef) snap to 100% immediately.
+  // Each tool's animation starts only when its "Running X..." SSE event arrives.
+  // Falls back to starting after 5s so the visualization never gets stuck.
   useEffect(() => {
     if (phase !== 'tools') return
 
     const keyframes = TOOLS.map(() => generateKeyframes())
-    const start = Date.now()
+    const toolStartTimes = {}  // { [toolId]: timestamp } — when animation began for each tool
+    const phaseStart = Date.now()
 
     const interval = setInterval(() => {
-      const elapsed = Date.now() - start
+      const now = Date.now()
+      const elapsedPhase = now - phaseStart
       const newProgress = {}
       const newDone = {}
       let allDone = true
 
       TOOLS.forEach((tool, i) => {
         const forceDone = externalDoneRef.current[tool.id]
-        const p = forceDone ? 100 : interpolateKeyframes(elapsed, keyframes[i])
+        if (forceDone) {
+          newProgress[tool.id] = 100
+          newDone[tool.id] = true
+          return
+        }
+
+        // Start this tool's animation when SSE says it's running, or after 5s fallback
+        const isRunning = externalRunningRef.current[tool.id] || elapsedPhase > 5000
+        if (!isRunning) {
+          newProgress[tool.id] = toolProgress[tool.id] ?? 0
+          newDone[tool.id] = false
+          allDone = false
+          return
+        }
+
+        if (!toolStartTimes[tool.id]) toolStartTimes[tool.id] = now
+        const elapsed = now - toolStartTimes[tool.id]
+        const p = interpolateKeyframes(elapsed, keyframes[i])
         newProgress[tool.id] = p
         newDone[tool.id] = p >= 100
         if (p < 100) allDone = false
@@ -317,7 +340,7 @@ export default function ScanVisualization({ target, onComplete, externalDone = {
     }, 50)
 
     return () => clearInterval(interval)
-  }, [phase])
+  }, [phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // nvd: branches fill in 500ms, trunk fills over 18-26s (matches report generation time).
   // Snaps to done immediately if nvd_lookup is confirmed complete externally.

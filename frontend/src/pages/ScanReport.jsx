@@ -25,6 +25,7 @@ export default function ScanReport() {
   const [showWarning, setShowWarning] = useState(false)
   const [sending, setSending] = useState(false)
   const [externalDone, setExternalDone] = useState({})
+  const [externalRunning, setExternalRunning] = useState({})
   const [reportDev, setReportDev] = useState(null)
   const [reportNonDev, setReportNonDev] = useState(null)
   const [generatingReport, setGeneratingReport] = useState(false)
@@ -89,6 +90,7 @@ export default function ScanReport() {
   const startScan = async (config, isAuthorized) => {
     setSending(true)
     setExternalDone({})
+    setExternalRunning({})
     setReportDev(null)
     setReportNonDev(null)
     setGeneratingReport(false)
@@ -129,6 +131,9 @@ export default function ScanReport() {
               if (event.message.endsWith(' complete.')) {
                 const toolName = event.message.slice(0, -' complete.'.length)
                 setExternalDone(prev => ({ ...prev, [toolName]: true }))
+              } else if (event.message.startsWith('Running ') && event.message.endsWith('...')) {
+                const toolName = event.message.slice(8, -3)
+                setExternalRunning(prev => ({ ...prev, [toolName]: true }))
               } else if (
                 event.message === 'Analyzing findings...' ||
                 event.message === 'Generating reports...'
@@ -277,6 +282,7 @@ export default function ScanReport() {
                 target={scanConfig.target}
                 nmapType={scanConfig.intensity ?? 'simple'}
                 externalDone={externalDone}
+                externalRunning={externalRunning}
                 generatingReport={generatingReport}
                 reportDev={reportDev}
                 reportNonDev={reportNonDev}
@@ -288,6 +294,7 @@ export default function ScanReport() {
             : <ScanVisualization
                 target={scanConfig?.target ?? ''}
                 externalDone={externalDone}
+                externalRunning={externalRunning}
                 generatingReport={generatingReport}
                 reportDev={reportDev}
                 reportNonDev={reportNonDev}
