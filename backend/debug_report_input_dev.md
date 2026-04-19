@@ -322,9 +322,12 @@ Here are all security findings from the scan in a compact structured format:
   "scan_date": "2026-04-18T23:10:02Z",
   "scan_type": "passive",
   "scan_mode": "simple",
-  "duration_seconds": 60.1,
-  "tools_run": ["shodan", "whatweb", "dns_whois", "ssl_tls", "http_headers", "nvd_lookup"],
-  "tool_errors": ["dns_whois: crt.sh lookup failed — 502 Bad Gateway"],
+  "duration_seconds": 103.3,
+  "tools_run": ["shodan", "dns_whois", "ssl_tls", "http_headers", "nvd_lookup"],
+  "tool_errors": [
+    "whatweb: timed out after 30 seconds",
+    "dns_whois: crt.sh certificate transparency lookup failed — 502 Bad Gateway"
+  ],
   "open_ports": [80, 443, 2052, 2053, 2082, 2083, 2086, 2087, 2095, 2096, 8080, 8443, 8880],
   "services": {
     "80": {"name": "HTTP", "version": null},
@@ -341,13 +344,82 @@ Here are all security findings from the scan in a compact structured format:
     "8443": {"name": "HTTPS (Cloudflare)", "version": null},
     "8880": {"name": "HTTP", "version": null}
   },
-  "tech_stack": ["Cloudflare", "Express", "Bootstrap", "HTML5"],
-  "cves": [],
+  "tech_stack": ["Cloudflare CDN", "Express.js", "Node.js"],
+  "cves": [
+    {
+      "id": "CVE-2026-2833",
+      "cvss": 9.1,
+      "affected_software": "Cloudflare CDN (Pingora)",
+      "description": "HTTP request smuggling in Pingora's handling of HTTP/1.1 connection upgrades allows attackers to smuggle hidden requests through the proxy layer.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2026-2835",
+      "cvss": 9.1,
+      "affected_software": "Cloudflare CDN (Pingora)",
+      "description": "HTTP request smuggling in Pingora's parsing of HTTP/1.0 and Transfer-Encoding requests due to improper handling of close-delimited bodies and multiple encodings.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2026-2836",
+      "cvss": 8.1,
+      "affected_software": "Cloudflare CDN (Pingora)",
+      "description": "Cache poisoning in Pingora's default cache key construction, which uses only the URI path and ignores critical differentiating headers.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2017-16118",
+      "cvss": 7.5,
+      "affected_software": "Express.js (forwarded module)",
+      "description": "ReDoS vulnerability in the forwarded module used by Express.js when processing a specially crafted X-Forwarded-For header, blocking the Node.js event loop.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2017-16119",
+      "cvss": 7.5,
+      "affected_software": "Express.js (fresh module)",
+      "description": "ReDoS vulnerability in the fresh module used by Express.js for HTTP response freshness testing when passed specially crafted input.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2017-16136",
+      "cvss": 7.5,
+      "affected_software": "Express.js (method-override module)",
+      "description": "ReDoS vulnerability in the method-override module used by Express.js when processing specially crafted HTTP verb override input.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2025-67731",
+      "cvss": 7.5,
+      "affected_software": "Express.js",
+      "description": "express.json() used without a request body size limit allows attackers to send extremely large payloads, causing memory exhaustion and denial of service.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2018-10813",
+      "cvss": 7.3,
+      "affected_software": "Express.js",
+      "description": "Hardcoded cookie and session secrets in an Express.js application allow attackers to forge and re-sign session cookies for unauthorized access.",
+      "has_exploit": false,
+      "exploit_sources": []
+    }
+  ],
   "ssl": {
     "valid": true,
     "expiry_date": "2026-06-03",
     "days_until_expiry": 45,
-    "issues": ["Certificate expires in 45 days"]
+    "issues": [
+      "Certificate expires in 45 days — renewal required",
+      "Issuer: Google Trust Services (WE1)",
+      "TLS 1.2 supported in addition to TLS 1.3 — consider restricting to TLS 1.3 only"
+    ]
   },
   "http_headers": {
     "missing_security_headers": [
@@ -368,7 +440,10 @@ Here are all security findings from the scan in a compact structured format:
     "registrar": "NAMECHEAP INC",
     "expiry_date": "2026-05-13",
     "days_until_expiry": 25,
-    "nameservers": ["dns1.registrar-servers.com", "dns2.registrar-servers.com"],
+    "nameservers": [
+      "dns1.registrar-servers.com",
+      "dns2.registrar-servers.com"
+    ],
     "subdomains_found": []
   },
   "shodan": {
@@ -385,7 +460,7 @@ Here are all security findings from the scan in a compact structured format:
   "ffuf_findings": [],
   "searchsploit_results": [],
   "confirmed_exploits_count": 0,
-  "total_issues_count": 11
+  "total_issues_count": 19
 }
 ```
 

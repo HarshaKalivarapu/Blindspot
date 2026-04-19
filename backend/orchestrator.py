@@ -71,6 +71,7 @@ class ScanRequest(BaseModel):
     intensity: str = "simple"          # "simple" | "aggressive"
     authorization_confirmed: bool = False
     user_id: str | None = None
+    scan_id: str | None = None         # pre-generated UUID from frontend
 
 
 # ── Tool name sets ───────────────────────────────────────────────────────────
@@ -411,7 +412,7 @@ async def scan(req: ScanRequest):
                                 for c in cves:
                                     counts[_cvss_bucket(c.get("cvss") or 0)] += 1
 
-                                supabase_client.table("scans").insert({
+                                insert_row = {
                                     "user_id": req.user_id,
                                     "target": ext.get("target"),
                                     "scan_date": ext.get("scan_date"),
@@ -428,7 +429,10 @@ async def scan(req: ScanRequest):
                                     "report_dev": json.loads(assembled["dev"]),
                                     "report_nondev": json.loads(assembled["nondev"]),
                                     "extraction_json": ext,
-                                }).execute()
+                                }
+                                if req.scan_id:
+                                    insert_row["id"] = req.scan_id
+                                supabase_client.table("scans").insert(insert_row).execute()
                                 print("[supabase] scan saved", file=sys.stderr)
                             except Exception as e:
                                 print(f"[supabase] insert failed: {e}", file=sys.stderr)
