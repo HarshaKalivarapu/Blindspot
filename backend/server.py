@@ -12,7 +12,10 @@ output to stderr instead.
 """
 
 import sys
+from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
+
+load_dotenv()
 
 from tools.passive.shodan import run as shodan_run
 from tools.passive.whatweb import run as whatweb_passive_run
