@@ -111,6 +111,31 @@ function Block({ label, done, wide }) {
 // intro → nmap → tools → nvd → searchsploit → fading → report
 // Only two layers visible at a time. Each block fades out when no longer needed.
 
+function ReportViewActive({ content }) {
+  const [tab, setTab] = useState('non-dev')
+  return (
+    <div>
+      <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', borderRadius: 12, padding: 6, marginBottom: 40, border: '1px solid rgba(255,255,255,0.05)', maxWidth: 360 }}>
+        {[['non-dev', 'Non-Developer'], ['dev', 'Developer']].map(([key, label]) => (
+          <button key={key} onClick={() => setTab(key)} style={{
+            flex: 1, padding: '12px 0', borderRadius: 8, border: 'none',
+            background: tab === key ? 'rgba(255,255,255,0.1)' : 'transparent',
+            color: tab === key ? '#ffffff' : 'rgba(255,255,255,0.4)',
+            fontFamily: 'system-ui, -apple-system, sans-serif',
+            fontSize: 14, fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s',
+          }}>
+            {label}
+          </button>
+        ))}
+      </div>
+      {content
+        ? <ReactMarkdown components={mdComponents}>{content}</ReactMarkdown>
+        : <p style={{ color: 'rgba(255,255,255,0.4)' }}>Scan complete — waiting for report...</p>
+      }
+    </div>
+  )
+}
+
 const mdComponents = {
   h1: ({children}) => <h1 style={{fontSize:26,fontWeight:700,marginBottom:12,letterSpacing:'-0.02em',color:'#fff'}}>{children}</h1>,
   h2: ({children}) => <h2 style={{fontSize:20,fontWeight:600,marginTop:36,marginBottom:10,color:'rgba(255,255,255,0.95)',borderBottom:'1px solid rgba(255,255,255,0.08)',paddingBottom:8}}>{children}</h2>,
@@ -352,10 +377,7 @@ export default function ScanVisualizationActive({ target, nmapType = 'basic', on
             style={{ position: 'absolute', inset: 0, overflowY: 'auto',
               padding: '48px 12%', color: 'white',
               fontFamily: 'system-ui, sans-serif', fontSize: 14, lineHeight: 1.75 }}>
-            {report
-              ? <ReactMarkdown components={mdComponents}>{report}</ReactMarkdown>
-              : <p style={{ color: 'rgba(255,255,255,0.4)' }}>Scan complete — waiting for report...</p>
-            }
+            <ReportViewActive content={report} />
           </motion.div>
         )}
       </AnimatePresence>

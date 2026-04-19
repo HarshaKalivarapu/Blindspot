@@ -154,11 +154,33 @@ const mdComponents = {
   blockquote: ({children}) => <blockquote style={{borderLeft:'3px solid rgba(255,255,255,0.2)',paddingLeft:16,margin:'16px 0',color:'rgba(255,255,255,0.6)'}}>{children}</blockquote>,
 }
 
-function ReportMarkdown({ content }) {
-  if (!content) return (
-    <p style={{ color: 'rgba(255,255,255,0.4)' }}>Scan complete — waiting for report...</p>
+function ReportView({ content }) {
+  const [tab, setTab] = useState('non-dev')
+
+  return (
+    <div>
+      {/* Toggle — same style as the User Guide */}
+      <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', borderRadius: 12, padding: 6, marginBottom: 40, border: '1px solid rgba(255,255,255,0.05)', maxWidth: 360 }}>
+        {[['non-dev', 'Non-Developer'], ['dev', 'Developer']].map(([key, label]) => (
+          <button key={key} onClick={() => setTab(key)} style={{
+            flex: 1, padding: '12px 0', borderRadius: 8, border: 'none',
+            background: tab === key ? 'rgba(255,255,255,0.1)' : 'transparent',
+            color: tab === key ? '#ffffff' : 'rgba(255,255,255,0.4)',
+            fontFamily: 'system-ui, -apple-system, sans-serif',
+            fontSize: 14, fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s',
+          }}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Report content — both tabs show the same markdown for now */}
+      {content
+        ? <ReactMarkdown components={mdComponents}>{content}</ReactMarkdown>
+        : <p style={{ color: 'rgba(255,255,255,0.4)' }}>Scan complete — waiting for report...</p>
+      }
+    </div>
   )
-  return <ReactMarkdown components={mdComponents}>{content}</ReactMarkdown>
 }
 
 // externalDone: { [toolId]: boolean } — tools confirmed done by real SSE events
@@ -390,7 +412,7 @@ export default function ScanVisualization({ target, onComplete, externalDone = {
               lineHeight: 1.75,
             }}
           >
-            <ReportMarkdown content={report} />
+            <ReportView content={report} />
           </motion.div>
         )}
       </AnimatePresence>
