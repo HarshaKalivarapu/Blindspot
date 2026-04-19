@@ -480,7 +480,9 @@ export default function ScanVisualization({ target, onComplete, externalDone = {
               lineHeight: 1.75,
             }}
           >
-            <ReportView reportNonDev={reportNonDev} reportDev={reportDev} devChunkLen={devChunkLen} nondevChunkLen={nondevChunkLen} />
+            <div style={{ width: '100%', maxWidth: 1000, margin: '0 auto', padding: '0 32px' }}>
+              <ReportView reportNonDev={reportNonDev} reportDev={reportDev} devChunkLen={devChunkLen} nondevChunkLen={nondevChunkLen} />
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
