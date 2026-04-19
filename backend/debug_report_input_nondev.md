@@ -230,112 +230,133 @@ Here are all security findings from the scan in a compact structured format:
 
 ```json
 {
-  "target": "serviq-volunteer.org",
-  "scan_date": "2026-04-18T23:10:02Z",
+  "target": "samaypatel.netlify.app",
+  "scan_date": "2026-04-19T08:36:15Z",
   "scan_type": "passive",
   "scan_mode": "simple",
-  "duration_seconds": 103.3,
-  "tools_run": ["shodan", "dns_whois", "ssl_tls", "http_headers", "nvd_lookup"],
-  "tool_errors": [
-    "whatweb: timed out after 30 seconds",
-    "dns_whois: crt.sh certificate transparency lookup failed — 502 Bad Gateway"
-  ],
-  "open_ports": [80, 443, 2052, 2053, 2082, 2083, 2086, 2087, 2095, 2096, 8080, 8443, 8880],
+  "duration_seconds": 76.3,
+  "tools_run": ["shodan", "whatweb", "dns_whois", "ssl_tls", "http_headers", "nvd_lookup"],
+  "tool_errors": ["dns_whois: crt.sh request timed out"],
+  "open_ports": [80, 443],
   "services": {
-    "80": {"name": "HTTP", "version": null},
-    "443": {"name": "HTTPS", "version": null},
-    "2052": {"name": "HTTP", "version": null},
-    "2053": {"name": "HTTPS (Cloudflare)", "version": null},
-    "2082": {"name": "HTTP", "version": null},
-    "2083": {"name": "HTTPS (Cloudflare)", "version": null},
-    "2086": {"name": "HTTP", "version": null},
-    "2087": {"name": "HTTPS (Cloudflare)", "version": null},
-    "2095": {"name": "HTTP", "version": null},
-    "2096": {"name": "HTTPS (Cloudflare)", "version": null},
-    "8080": {"name": "HTTP", "version": null},
-    "8443": {"name": "HTTPS (Cloudflare)", "version": null},
-    "8880": {"name": "HTTP", "version": null}
+    "80": {"name": "http", "version": null},
+    "443": {"name": "https", "version": null}
   },
-  "tech_stack": ["Cloudflare CDN", "Express.js", "Node.js"],
+  "tech_stack": ["Netlify", "Bootstrap", "HTML5"],
   "cves": [
     {
-      "id": "CVE-2026-2833",
-      "cvss": 9.1,
-      "affected_software": "Cloudflare CDN (Pingora)",
-      "description": "HTTP request smuggling in Pingora's handling of HTTP/1.1 connection upgrades allows attackers to smuggle hidden requests through the proxy layer.",
+      "id": "CVE-2020-36363",
+      "cvss": 9.8,
+      "affected_software": "TLSv1.2",
+      "description": "Amazon AWS CloudFront TLSv1.2_2019 allows weak cipher suites TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256 and TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384.",
       "has_exploit": false,
       "exploit_sources": []
     },
     {
-      "id": "CVE-2026-2835",
-      "cvss": 9.1,
-      "affected_software": "Cloudflare CDN (Pingora)",
-      "description": "HTTP request smuggling in Pingora's parsing of HTTP/1.0 and Transfer-Encoding requests due to improper handling of close-delimited bodies and multiple encodings.",
+      "id": "CVE-2019-11873",
+      "cvss": 9.8,
+      "affected_software": "TLSv1.3",
+      "description": "wolfSSL 4.0.0 has a buffer overflow in DoPreSharedKeys in tls13.c when a current identity size exceeds the client identity size.",
       "has_exploit": false,
       "exploit_sources": []
     },
     {
-      "id": "CVE-2026-2836",
-      "cvss": 8.1,
-      "affected_software": "Cloudflare CDN (Pingora)",
-      "description": "Cache poisoning in Pingora's default cache key construction, which uses only the URI path and ignores critical differentiating headers.",
+      "id": "CVE-2010-3019",
+      "cvss": 9.3,
+      "affected_software": "HTML5",
+      "description": "Heap-based buffer overflow in Opera before 10.61 via HTML5 canvas painting operations allowing arbitrary code execution.",
       "has_exploit": false,
       "exploit_sources": []
     },
     {
-      "id": "CVE-2017-16118",
+      "id": "CVE-2020-26197",
       "cvss": 7.5,
-      "affected_software": "Express.js (forwarded module)",
-      "description": "ReDoS vulnerability in the forwarded module used by Express.js when processing a specially crafted X-Forwarded-For header, blocking the Node.js event loop.",
+      "affected_software": "TLSv1.2",
+      "description": "Dell PowerScale OneFS 8.1.0-9.1.0 LDAP provider fails to connect over TLSv1.2, potentially allowing traffic eavesdropping.",
       "has_exploit": false,
       "exploit_sources": []
     },
     {
-      "id": "CVE-2017-16119",
+      "id": "CVE-2026-39304",
       "cvss": 7.5,
-      "affected_software": "Express.js (fresh module)",
-      "description": "ReDoS vulnerability in the fresh module used by Express.js for HTTP response freshness testing when passed specially crafted input.",
+      "affected_software": "TLSv1.2",
+      "description": "Apache ActiveMQ NIO SSL transports do not correctly handle TLSv1.3 handshake KeyUpdates, enabling denial of service via out-of-memory.",
       "has_exploit": false,
       "exploit_sources": []
     },
     {
-      "id": "CVE-2017-16136",
+      "id": "CVE-2019-0215",
       "cvss": 7.5,
-      "affected_software": "Express.js (method-override module)",
-      "description": "ReDoS vulnerability in the method-override module used by Express.js when processing specially crafted HTTP verb override input.",
+      "affected_software": "TLSv1.3",
+      "description": "Apache HTTP Server 2.4.37-2.4.38 mod_ssl bug with TLSv1.3 allows clients to bypass per-location client certificate access controls.",
       "has_exploit": false,
       "exploit_sources": []
     },
     {
-      "id": "CVE-2025-67731",
+      "id": "CVE-2019-6659",
       "cvss": 7.5,
-      "affected_software": "Express.js",
-      "description": "express.json() used without a request body size limit allows attackers to send extremely large payloads, causing memory exhaustion and denial of service.",
+      "affected_software": "TLSv1.3",
+      "description": "BIG-IP 14.0.0-14.1.0.1 virtual servers with TLSv1.3 enabled may experience denial of service via undisclosed incoming messages.",
       "has_exploit": false,
       "exploit_sources": []
     },
     {
-      "id": "CVE-2018-10813",
-      "cvss": 7.3,
-      "affected_software": "Express.js",
-      "description": "Hardcoded cookie and session secrets in an Express.js application allow attackers to forge and re-sign session cookies for unauthorized access.",
+      "id": "CVE-2024-5971",
+      "cvss": 7.5,
+      "affected_software": "TLSv1.3",
+      "description": "Undertow chunked response hangs after body flush due to missing 0\\r\\n termination, causing denial of service.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2021-3449",
+      "cvss": 5.9,
+      "affected_software": "TLSv1.2",
+      "description": "OpenSSL TLS server may crash if sent a maliciously crafted TLSv1.2 renegotiation ClientHello omitting the signature_algorithms extension.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2011-0166",
+      "cvss": 5.8,
+      "affected_software": "HTML5",
+      "description": "WebKit in Apple Safari before 5.0.4 HTML5 drag-and-drop allows user-assisted bypass of the Same Origin Policy.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2010-1664",
+      "cvss": 5.0,
+      "affected_software": "HTML5",
+      "description": "Google Chrome before 4.1.249.1064 improperly handles HTML5 media, causing memory corruption and potential denial of service.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2010-4484",
+      "cvss": 5.0,
+      "affected_software": "HTML5",
+      "description": "Google Chrome before 8.0.552.215 improperly handles HTML5 databases, allowing attackers to crash the application.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2012-0445",
+      "cvss": 5.0,
+      "affected_software": "HTML5",
+      "description": "Firefox 4.x-9.0 and SeaMonkey before 2.7 allow bypass of the HTML5 frame-navigation policy to replace arbitrary sub-frames.",
       "has_exploit": false,
       "exploit_sources": []
     }
   ],
   "ssl": {
     "valid": true,
-    "expiry_date": "2026-06-03",
-    "days_until_expiry": 45,
-    "issues": [
-      "Certificate expires in 45 days — renewal required",
-      "Issuer: Google Trust Services (WE1)",
-      "TLS 1.2 supported in addition to TLS 1.3 — consider restricting to TLS 1.3 only"
-    ]
+    "expiry_date": "2027-03-19",
+    "days_until_expiry": 334,
+    "issues": []
   },
   "http_headers": {
     "missing_security_headers": [
-      "Strict-Transport-Security",
       "Content-Security-Policy",
       "X-Frame-Options",
       "X-Content-Type-Options",
@@ -343,25 +364,19 @@ Here are all security findings from the scan in a compact structured format:
       "Permissions-Policy",
       "X-XSS-Protection"
     ],
-    "info_disclosure": [
-      "Server: cloudflare",
-      "X-Powered-By: Express"
-    ]
+    "info_disclosure": ["Server: Netlify"]
   },
   "dns_whois": {
-    "registrar": "NAMECHEAP INC",
-    "expiry_date": "2026-05-13",
-    "days_until_expiry": 25,
-    "nameservers": [
-      "dns1.registrar-servers.com",
-      "dns2.registrar-servers.com"
-    ],
+    "registrar": null,
+    "expiry_date": null,
+    "days_until_expiry": null,
+    "nameservers": [],
     "subdomains_found": []
   },
   "shodan": {
     "country": "United States",
-    "isp": "Render",
-    "ports_indexed": [80, 443, 2052, 2053, 2082, 2083, 2086, 2087, 2095, 2096, 8080, 8443, 8880],
+    "isp": "Amazon Data Services NoVa",
+    "ports_indexed": [80, 443],
     "previously_flagged_cves": []
   },
   "nikto_findings": [],
@@ -372,7 +387,7 @@ Here are all security findings from the scan in a compact structured format:
   "ffuf_findings": [],
   "searchsploit_results": [],
   "confirmed_exploits_count": 0,
-  "total_issues_count": 19
+  "total_issues_count": 7
 }
 ```
 

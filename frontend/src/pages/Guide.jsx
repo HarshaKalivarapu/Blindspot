@@ -469,7 +469,7 @@ export default function Guide() {
           <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
             <motion.button 
               type="button"
-              onClick={() => navigate('/scan/new')}
+              onClick={() => navigate('/scan')}
               whileHover={{ backgroundColor: '#ffffff', color: '#0a0a0a', borderColor: '#ffffff' }}
               initial={{ backgroundColor: 'rgba(255, 255, 255, 0.03)', color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.15)' }}
               transition={{ duration: 0.2 }}

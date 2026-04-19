@@ -2,6 +2,9 @@
 // Handles both Developer-Report and Non-Developer-Report schemas.
 // Annotation syntax: [[term|definition]] → underlined word with tooltip.
 
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+
 // ── Annotation parser ─────────────────────────────────────────────────────────
 function Annotated({ text }) {
   if (!text) return null
@@ -65,6 +68,19 @@ function cvssColor(score) {
   if (score >= 7) return '#f97316'
   if (score >= 4) return '#eab308'
   return '#22c55e'
+}
+
+// ── Generic list helper — numbered only when >2 items ─────────────────────────
+function ItemList({ items, itemStyle }) {
+  if (!items?.length) return null
+  const Tag = items.length > 2 ? 'ol' : 'ul'
+  return (
+    <Tag style={{ margin: 0, paddingLeft: 20 }}>
+      {items.map((item, i) => (
+        <li key={i} style={itemStyle}>{item}</li>
+      ))}
+    </Tag>
+  )
 }
 
 // ── Non-developer block renderers ─────────────────────────────────────────────
@@ -147,13 +163,10 @@ function FindingBlock({ block }) {
       {block.how_to_fix?.length > 0 && (
         <div>
           <div style={S.label}>How to fix it</div>
-          <ol style={{ margin: 0, paddingLeft: 20 }}>
-            {block.how_to_fix.map((step, i) => (
-              <li key={i} style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', lineHeight: 1.6, marginBottom: 4 }}>
-                {step}
-              </li>
-            ))}
-          </ol>
+          <ItemList
+            items={block.how_to_fix}
+            itemStyle={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', lineHeight: 1.6, marginBottom: 4 }}
+          />
         </div>
       )}
     </div>
@@ -296,13 +309,10 @@ function CvesBlock({ block }) {
 
 function RecommendationsBlock({ block }) {
   return (
-    <ol style={{ paddingLeft: 20, margin: 0 }}>
-      {block.items?.map((item, i) => (
-        <li key={i} style={{ color: 'rgba(255,255,255,0.8)', lineHeight: 1.7, marginBottom: 6, fontSize: 14 }}>
-          {item}
-        </li>
-      ))}
-    </ol>
+    <ItemList
+      items={block.items}
+      itemStyle={{ color: 'rgba(255,255,255,0.8)', lineHeight: 1.7, marginBottom: 6, fontSize: 14 }}
+    />
   )
 }
 
@@ -384,6 +394,59 @@ function Block({ block }) {
   }
 }
 
+// ── Collapsible section ───────────────────────────────────────────────────────
+
+function CollapsibleSection({ heading, children }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <section style={{ marginBottom: 12 }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          background: open ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.02)',
+          border: '1px solid rgba(255,255,255,0.08)', borderRadius: open ? '8px 8px 0 0' : 8,
+          padding: '14px 20px', cursor: 'pointer', transition: 'background 0.2s, border-radius 0.2s',
+        }}
+        onMouseEnter={e => { if (!open) e.currentTarget.style.background = 'rgba(255,255,255,0.04)' }}
+        onMouseLeave={e => { if (!open) e.currentTarget.style.background = 'rgba(255,255,255,0.02)' }}
+      >
+        <span style={{
+          fontSize: 17, fontWeight: 600, color: 'rgba(255,255,255,0.95)',
+          fontFamily: 'system-ui, -apple-system, sans-serif', textAlign: 'left',
+        }}>
+          {heading}
+        </span>
+        <motion.span
+          animate={{ rotate: open ? 180 : 0 }}
+          transition={{ duration: 0.2 }}
+          style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', flexShrink: 0, marginLeft: 12 }}
+        >
+          ▼
+        </motion.span>
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.22 }}
+            style={{
+              overflow: 'hidden',
+              border: '1px solid rgba(255,255,255,0.08)', borderTop: 'none',
+              borderRadius: '0 0 8px 8px',
+              padding: '20px 20px 8px',
+            }}
+          >
+            {children}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </section>
+  )
+}
+
 // ── Main renderer ─────────────────────────────────────────────────────────────
 
 export default function ReportRenderer({ jsonString }) {
@@ -393,11 +456,9 @@ export default function ReportRenderer({ jsonString }) {
 
   let data
   try {
-    // Claude sometimes wraps JSON in markdown fences — strip them
     const cleaned = jsonString.replace(/^```json?\s*/i, '').replace(/```\s*$/i, '').trim()
     data = JSON.parse(cleaned)
   } catch {
-    // Fallback: show raw text if JSON parsing fails
     return (
       <div style={{ fontFamily: 'monospace', fontSize: 12, color: 'rgba(255,255,255,0.6)', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
         {jsonString}
@@ -408,18 +469,26 @@ export default function ReportRenderer({ jsonString }) {
   return (
     <div>
       {data.sections?.map((section, i) => (
-        <section key={i} style={{ marginBottom: 40 }}>
-          <h2 style={{
-            fontSize: 20, fontWeight: 600, color: 'rgba(255,255,255,0.95)',
-            borderBottom: '1px solid rgba(255,255,255,0.08)',
-            paddingBottom: 10, marginBottom: 20,
-          }}>
-            {section.heading}
-          </h2>
-          {section.blocks?.map((block, j) => (
-            <Block key={j} block={block} />
-          ))}
-        </section>
+        i === 0 ? (
+          <section key={i} style={{ marginBottom: 24 }}>
+            <h2 style={{
+              fontSize: 20, fontWeight: 600, color: 'rgba(255,255,255,0.95)',
+              borderBottom: '1px solid rgba(255,255,255,0.08)',
+              paddingBottom: 10, marginBottom: 20,
+            }}>
+              {section.heading}
+            </h2>
+            {section.blocks?.map((block, j) => (
+              <Block key={j} block={block} />
+            ))}
+          </section>
+        ) : (
+          <CollapsibleSection key={i} heading={section.heading}>
+            {section.blocks?.map((block, j) => (
+              <Block key={j} block={block} />
+            ))}
+          </CollapsibleSection>
+        )
       ))}
     </div>
   )

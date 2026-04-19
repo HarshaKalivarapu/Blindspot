@@ -160,7 +160,7 @@ function Scan() {
 
       <motion.div
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}
-        style={{ position: 'absolute', inset: '64px 0 0 0', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '64px 32px', zIndex: 1 }}
+        style={{ position: 'absolute', inset: '64px 0 0 0', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '64px 32px', zIndex: 1, overflowY: 'auto' }}
       >
         <div style={{ width: '100%', maxWidth: 1000 }}>
           <h1 style={{ fontFamily: SANS, fontSize: 36, fontWeight: 600, color: '#ffffff', marginBottom: 40, letterSpacing: '-0.02em' }}>
