@@ -10,7 +10,64 @@ import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../lib/AuthContext.jsx'
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ?? 'http://localhost:5000'
+const SANS = 'system-ui, -apple-system, sans-serif'
 
+function scoreColor(score) {
+  if (score === null || score === undefined) return 'rgba(255,255,255,0.4)'
+  if (score < 4.0) return '#f87171'
+  if (score < 7.0) return '#fbbf24'
+  return '#34d399'
+}
+
+function formatDate(iso) {
+  if (!iso) return ''
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+function ScanHistoryCard({ row, onClick }) {
+  const score = row.score ?? null
+  const color = scoreColor(score)
+  return (
+    <motion.div
+      onClick={onClick}
+      whileHover={{ backgroundColor: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.25)' }}
+      whileTap={{ scale: 0.98 }}
+      style={{
+        aspectRatio: '1', display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+        backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: 16, padding: 20, cursor: 'pointer', backdropFilter: 'blur(4px)',
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <span style={{ fontFamily: SANS, fontSize: 32, fontWeight: 700, color, lineHeight: 1 }}>
+            {score !== null ? score.toFixed(1) : '—'}
+          </span>
+          <span style={{ fontFamily: SANS, fontSize: 14, color: 'rgba(255,255,255,0.35)', marginLeft: 4 }}>/10</span>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontFamily: 'monospace', fontSize: 13, color: '#ffffff', marginBottom: 2 }}>
+            {row.target ?? '—'}
+          </div>
+          <div style={{ fontFamily: SANS, fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>
+            {formatDate(row.scan_date)}
+          </div>
+          <span style={{
+            fontFamily: SANS, fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 99,
+            backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', textTransform: 'capitalize',
+          }}>
+            {row.scan_type ?? 'scan'}
+          </span>
+        </div>
+      </div>
+      <div>
+        <span style={{ fontFamily: SANS, fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>
+          {row.total_issues_count ?? 0} vulnerabilities found
+        </span>
+      </div>
+    </motion.div>
+  )
+}
 
 function Scan() {
   const navigate = useNavigate()
@@ -31,6 +88,8 @@ function Scan() {
   const [generatingReport, setGeneratingReport] = useState(false)
   const [devChunkLen, setDevChunkLen] = useState(0)
   const [nondevChunkLen, setNondevChunkLen] = useState(0)
+  const [scans, setScans] = useState([])
+  const [scansLoading, setScansLoading] = useState(false)
   const scrollRef = useRef(null)
   const scanInserted = useRef(false)
 
@@ -61,8 +120,23 @@ function Scan() {
     }
   }, [view]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (!user) return
+    setScansLoading(true)
+    supabase
+      .from('scans')
+      .select('id, target, scan_date, scan_type, total_issues_count, score')
+      .eq('user_id', user.id)
+      .order('scan_date', { ascending: false })
+      .then(({ data }) => {
+        setScans(data ?? [])
+        setScansLoading(false)
+      })
+  }, [user])
+
   const handleStartScan = () => {
-    navigate('/scan/new')
+    const id = crypto.randomUUID()
+    navigate('/scan/' + id, { state: { isNew: true } })
   }
 
   const handleSignOut = async () => {
@@ -171,6 +245,7 @@ function Scan() {
         alignItems: 'center',
         padding: '64px 32px',
         zIndex: 1,
+        overflowY: 'auto',
       }}
     >
       <div style={{ width: '100%', maxWidth: 1000 }}>
@@ -214,6 +289,14 @@ function Scan() {
             <div style={{ fontSize: 48, fontWeight: 300, marginBottom: 8, lineHeight: 1 }}>+</div>
             <div style={{ fontSize: 16, fontWeight: 500, letterSpacing: '0.01em' }}>New Scan</div>
           </motion.button>
+
+          {/* History cards */}
+          {scansLoading && (
+            <div style={{ aspectRatio: '1', borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }} />
+          )}
+          {!scansLoading && scans.map((row) => (
+            <ScanHistoryCard key={row.id} row={row} onClick={() => navigate('/scan/' + row.id)} />
+          ))}
         </div>
       </div>
     </motion.div>
