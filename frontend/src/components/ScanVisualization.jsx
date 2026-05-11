@@ -496,6 +496,7 @@ export default function ScanVisualization({ target, onComplete, onTabChange, ext
               position: 'absolute',
               inset: 0,
               overflowY: 'auto',
+              overscrollBehavior: 'contain',
               padding: '104px 0 64px',
               color: 'white',
               fontFamily: 'system-ui, sans-serif',

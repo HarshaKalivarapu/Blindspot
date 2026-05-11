@@ -126,7 +126,7 @@ def _load_prompt(level: str, intensity: str, target: str) -> str:
 
 
 MCP_SERVER_PARAMS = StdioServerParameters(
-    command="python",
+    command=os.path.join(os.path.dirname(os.path.abspath(__file__)), "venv", "bin", "python"),
     args=["server.py"],
     cwd=os.path.dirname(os.path.abspath(__file__)),
 )

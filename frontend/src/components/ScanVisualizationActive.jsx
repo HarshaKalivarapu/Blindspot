@@ -485,7 +485,7 @@ export default function ScanVisualizationActive({ target, nmapType = 'basic', on
             initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             style={{ position: 'absolute', inset: 0, overflowY: 'auto',
-              padding: '104px 0 64px', color: 'white',
+              overscrollBehavior: 'contain', padding: '104px 0 64px', color: 'white',
               fontFamily: 'system-ui, sans-serif', fontSize: 14, lineHeight: 1.75 }}>
             <div style={{ width: '100%', maxWidth: 1000, margin: '0 auto', padding: '0 32px' }}>
               <ReportViewActive reportNonDev={reportNonDev} reportDev={reportDev} devChunkLen={devChunkLen} nondevChunkLen={nondevChunkLen} onTabChange={onTabChange} />
