@@ -186,8 +186,8 @@ export default function ScanReport() {
         justifyContent: 'space-between', fontFamily: 'system-ui, -apple-system, sans-serif',
       }}>
         <div
-          style={{ fontSize: 18, fontWeight: 600, color: '#ffffff', letterSpacing: '-0.02em', cursor: 'pointer' }}
-          onClick={() => navigate('/scan')}
+          style={{ fontSize: 18, fontWeight: 600, color: '#ffffff', letterSpacing: '-0.02em', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace" }}
+          onClick={() => navigate('/')}
         >
           Blindspot
         </div>

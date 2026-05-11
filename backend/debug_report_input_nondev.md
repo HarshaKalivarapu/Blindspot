@@ -230,6 +230,17 @@ Here are all security findings from the scan in a compact structured format:
 
 ```json
 {
+  "target": "samaypatel.netlify.app",
+  "scan_date": "2026-05-11T13:12:06Z",
+  "scan_type": "passive",
+  "scan_mode": "simple",
+  "duration_seconds": 91.6,
+  "tools_run": ["shodan", "whatweb", "dns_whois", "ssl_tls", "http_headers", "nvd_lookup"],
+  "tool_errors": ["dns_whois: crt.sh request timed out"],
+  "open_ports": [80, 443],
+  "services": {
+    "80": {"name": "http", "version": null},
+    "443": {"name": "https", "version": null}
   "target": "leidos.com",
   "scan_date": "2025-05-11T00:00:00Z",
   "scan_type": "passive",
@@ -248,6 +259,10 @@ Here are all security findings from the scan in a compact structured format:
   "tech_stack": ["Cloudflare", "TLS 1.2", "TLS 1.3", "Google Trust Services WE1"],
   "cves": [
     {
+      "id": "CVE-2022-39239",
+      "cvss": 6.1,
+      "affected_software": "netlify-ipx",
+      "description": "Attacker can bypass source image domain allowlist via crafted headers to load arbitrary images.",
       "id": "CVE-2019-10842",
       "cvss": 9.8,
       "affected_software": "Cloudflare (bootstrap-sass 3.2.0.3)",
@@ -256,6 +271,10 @@ Here are all security findings from the scan in a compact structured format:
       "exploit_sources": []
     },
     {
+      "id": "CVE-2023-38904",
+      "cvss": 5.4,
+      "affected_software": "Netlify CMS 2.10.192",
+      "description": "Cross-Site Scripting vulnerability via crafted payload in the body parameter of the new post function.",
       "id": "CVE-2022-4428",
       "cvss": 8.9,
       "affected_software": "Cloudflare WARP client",
@@ -264,6 +283,10 @@ Here are all security findings from the scan in a compact structured format:
       "exploit_sources": []
     },
     {
+      "id": "CVE-2025-54793",
+      "cvss": 6.1,
+      "affected_software": "Netlify (Astro 5.2.0–5.12.7)",
+      "description": "Open redirect vulnerability in trailing slash redirection logic when handling paths with double slashes.",
       "id": "CVE-2017-7235",
       "cvss": 8.8,
       "affected_software": "cloudflare-scrape 1.6.6–1.7.1",
@@ -272,6 +295,10 @@ Here are all security findings from the scan in a compact structured format:
       "exploit_sources": []
     },
     {
+      "id": "CVE-2024-56332",
+      "cvss": 5.3,
+      "affected_software": "Next.js 13.0.0–15.1.1",
+      "description": "Denial of Service vulnerability allowing attackers to construct requests that crash the server.",
       "id": "CVE-2020-15236",
       "cvss": 8.6,
       "affected_software": "Cloudflare (Wiki.js before 2.5.151)",
@@ -370,6 +397,44 @@ Here are all security findings from the scan in a compact structured format:
   ],
   "ssl": {
     "valid": true,
+    "expiry_date": "2027-03-19",
+    "days_until_expiry": 312,
+    "issues": []
+  },
+  "http_headers": {
+    "missing_security_headers": [
+      "Content-Security-Policy",
+      "X-Frame-Options",
+      "X-Content-Type-Options",
+      "Referrer-Policy",
+      "Permissions-Policy",
+      "X-XSS-Protection"
+    ],
+    "info_disclosure": ["Server: Netlify"]
+  },
+  "dns_whois": {
+    "registrar": null,
+    "expiry_date": null,
+    "days_until_expiry": null,
+    "nameservers": [],
+    "subdomains_found": []
+  },
+  "shodan": {
+    "country": "United States",
+    "isp": "Amazon Technologies Inc.",
+    "ports_indexed": [80, 443],
+    "previously_flagged_cves": []
+  },
+  "nikto_findings": [],
+  "hydra_results": {
+    "service": null,
+    "credentials_found": []
+  },
+  "ffuf_findings": [],
+  "searchsploit_results": [],
+  "confirmed_exploits_count": 0,
+  "total_issues_count": 7
+}
     "expiry_date": "2026-06-24",
     "days_until_expiry": 44,
     "issues": [

@@ -181,7 +181,7 @@ function ReportProgress({ label, current, estimated }) {
     <div style={{ width: 320, display: 'flex', flexDirection: 'column', gap: 7 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'rgba(255,255,255,0.5)', fontFamily: 'system-ui, sans-serif' }}>
         <span>{label}</span>
-        <span style={{ fontFamily: 'monospace', fontSize: 11 }}>{current > 0 ? `${current.toLocaleString()} chars` : 'waiting...'}</span>
+        <span style={{ fontFamily: 'system-ui, sans-serif', fontSize: 11 }}>{current > 0 ? `${current.toLocaleString()} chars` : 'waiting...'}</span>
       </div>
       <div style={{ height: 5, background: 'rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
         <motion.div
@@ -214,7 +214,7 @@ function ReportView({ reportNonDev, reportDev, devChunkLen, nondevChunkLen, onTa
             flex: 1, padding: '12px 0', borderRadius: 8, border: 'none',
             background: tab === key ? 'rgba(255,255,255,0.1)' : 'transparent',
             color: tab === key ? '#ffffff' : 'rgba(255,255,255,0.4)',
-            fontFamily: 'system-ui, -apple-system, sans-serif',
+            fontFamily: 'system-ui, sans-serif',
             fontSize: 14, fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s',
           }}>
             {label}
