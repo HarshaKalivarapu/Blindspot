@@ -103,6 +103,8 @@ function Scan() {
   const [scansLoading, setScansLoading] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [deleteScanId, setDeleteScanId] = useState(null)
+  const [deletingSingle, setDeletingSingle] = useState(false)
   const scrollRef = useRef(null)
   const scanInserted = useRef(false)
 
@@ -327,10 +329,7 @@ function Scan() {
               key={row.id}
               row={row}
               onClick={() => navigate('/scan/' + row.id)}
-              onDelete={async (id) => {
-                await supabase.from('scans').delete().eq('id', id)
-                setScans(prev => prev.filter(s => s.id !== id))
-              }}
+              onDelete={(id) => setDeleteScanId(id)}
             />
           ))}
         </div>
@@ -459,7 +458,7 @@ function Scan() {
           justifyContent: 'space-between',
           fontFamily: 'system-ui, -apple-system, sans-serif'
         }}>
-          <div style={{ fontSize: 18, fontWeight: 600, color: '#ffffff', letterSpacing: '-0.02em', cursor: 'pointer' }} onClick={() => setView('dashboard')}>
+          <div style={{ fontSize: 18, fontWeight: 600, color: '#ffffff', letterSpacing: '-0.02em', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace" }} onClick={() => navigate('/')}>
             Blindspot
           </div>
           <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
@@ -608,6 +607,62 @@ function Scan() {
                     background: '#ef4444', color: '#fff', opacity: deleting ? 0.6 : 1 }}
                 >
                   {deleting ? 'Deleting…' : 'Delete all'}
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {deleteScanId && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex',
+              alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)' }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 12 }}
+              transition={{ duration: 0.2 }}
+              style={{ background: 'rgba(18,22,27,0.97)', border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 16, padding: '32px 36px', maxWidth: 420, width: '90%', fontFamily: SANS }}
+            >
+              <h2 style={{ fontSize: 20, fontWeight: 600, color: '#fff', marginBottom: 10, letterSpacing: '-0.01em' }}>
+                Delete this scan?
+              </h2>
+              <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, marginBottom: 28 }}>
+                This will permanently delete the scan and its report. This cannot be undone.
+              </p>
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                <motion.button
+                  type="button"
+                  onClick={() => setDeleteScanId(null)}
+                  whileHover={{ backgroundColor: 'rgba(255,255,255,0.08)' }}
+                  style={{ fontFamily: SANS, fontSize: 14, fontWeight: 500, padding: '10px 22px',
+                    border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, cursor: 'pointer',
+                    color: '#fff', background: 'transparent' }}
+                >
+                  Cancel
+                </motion.button>
+                <motion.button
+                  type="button"
+                  onClick={async () => {
+                    setDeletingSingle(true)
+                    await supabase.from('scans').delete().eq('id', deleteScanId)
+                    setScans(prev => prev.filter(s => s.id !== deleteScanId))
+                    setDeletingSingle(false)
+                    setDeleteScanId(null)
+                  }}
+                  disabled={deletingSingle}
+                  whileHover={{ backgroundColor: '#dc2626' }}
+                  style={{ fontFamily: SANS, fontSize: 14, fontWeight: 500, padding: '10px 22px',
+                    border: 'none', borderRadius: 6, cursor: deletingSingle ? 'not-allowed' : 'pointer',
+                    background: '#ef4444', color: '#fff', opacity: deletingSingle ? 0.6 : 1 }}
+                >
+                  {deletingSingle ? 'Deleting…' : 'Delete scan'}
                 </motion.button>
               </div>
             </motion.div>

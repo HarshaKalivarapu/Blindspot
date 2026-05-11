@@ -231,36 +231,24 @@ Here are all security findings from the scan in a compact structured format:
 ```json
 {
   "target": "samaypatel.netlify.app",
-  "scan_date": null,
-  "scan_type": "active",
+  "scan_date": "2026-05-11T13:12:06Z",
+  "scan_type": "passive",
   "scan_mode": "simple",
-  "duration_seconds": 197.8,
-  "tools_run": ["whatweb_active", "http_headers", "ssl_tls", "nvd_lookup"],
-  "tool_errors": [
-    "nmap: timed out — CDN blocks raw TCP probes",
-    "nikto: No such file or directory",
-    "searchsploit: No such file or directory"
-  ],
+  "duration_seconds": 91.6,
+  "tools_run": ["shodan", "whatweb", "dns_whois", "ssl_tls", "http_headers", "nvd_lookup"],
+  "tool_errors": ["dns_whois: crt.sh request timed out"],
   "open_ports": [80, 443],
   "services": {
-    "80": {"name": "HTTP", "version": null},
-    "443": {"name": "HTTPS", "version": null}
+    "80": {"name": "http", "version": null},
+    "443": {"name": "https", "version": null}
   },
   "tech_stack": ["Netlify", "Bootstrap", "HTML5"],
   "cves": [
     {
       "id": "CVE-2022-39239",
       "cvss": 6.1,
-      "affected_software": "netlify-ipx < 1.2.3",
-      "description": "Attacker can bypass source image domain allowlist via crafted headers, causing handler to load arbitrary images.",
-      "has_exploit": false,
-      "exploit_sources": []
-    },
-    {
-      "id": "CVE-2025-54793",
-      "cvss": 6.1,
-      "affected_software": "Astro 5.2.0–5.12.7",
-      "description": "Open redirect vulnerability in trailing slash redirection logic when handling paths with double slashes.",
+      "affected_software": "netlify-ipx",
+      "description": "Attacker can bypass source image domain allowlist via crafted headers to load arbitrary images.",
       "has_exploit": false,
       "exploit_sources": []
     },
@@ -268,7 +256,15 @@ Here are all security findings from the scan in a compact structured format:
       "id": "CVE-2023-38904",
       "cvss": 5.4,
       "affected_software": "Netlify CMS 2.10.192",
-      "description": "Cross-site scripting vulnerability allows remote attacker to execute arbitrary code via crafted payload in new post body parameter.",
+      "description": "Cross-Site Scripting vulnerability via crafted payload in the body parameter of the new post function.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2025-54793",
+      "cvss": 6.1,
+      "affected_software": "Netlify (Astro 5.2.0–5.12.7)",
+      "description": "Open redirect vulnerability in trailing slash redirection logic when handling paths with double slashes.",
       "has_exploit": false,
       "exploit_sources": []
     },
@@ -276,7 +272,7 @@ Here are all security findings from the scan in a compact structured format:
       "id": "CVE-2024-56332",
       "cvss": 5.3,
       "affected_software": "Next.js 13.0.0–15.1.1",
-      "description": "Denial of Service vulnerability allows attackers to construct requests that exhaust server resources.",
+      "description": "Denial of Service vulnerability allowing attackers to construct requests that crash the server.",
       "has_exploit": false,
       "exploit_sources": []
     }
@@ -298,14 +294,28 @@ Here are all security findings from the scan in a compact structured format:
     ],
     "info_disclosure": ["Server: Netlify"]
   },
-  "dns_whois": null,
-  "shodan": null,
+  "dns_whois": {
+    "registrar": null,
+    "expiry_date": null,
+    "days_until_expiry": null,
+    "nameservers": [],
+    "subdomains_found": []
+  },
+  "shodan": {
+    "country": "United States",
+    "isp": "Amazon Technologies Inc.",
+    "ports_indexed": [80, 443],
+    "previously_flagged_cves": []
+  },
   "nikto_findings": [],
-  "hydra_results": null,
+  "hydra_results": {
+    "service": null,
+    "credentials_found": []
+  },
   "ffuf_findings": [],
   "searchsploit_results": [],
   "confirmed_exploits_count": 0,
-  "total_issues_count": 11
+  "total_issues_count": 7
 }
 ```
 
