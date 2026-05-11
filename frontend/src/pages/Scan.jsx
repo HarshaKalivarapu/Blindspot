@@ -12,6 +12,20 @@ import { useAuth } from '../lib/AuthContext.jsx'
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ?? 'http://localhost:5000'
 const SANS = 'system-ui, -apple-system, sans-serif'
 
+const STRIP_PREFIXES = ['https://', 'http://', 'www.']
+
+function cleanSearchInput(raw) {
+  let q = raw.trim().toLowerCase()
+  for (const prefix of STRIP_PREFIXES) {
+    if (q.startsWith(prefix)) { q = q.slice(prefix.length); break }
+  }
+  const slashIdx = q.indexOf('/')
+  if (slashIdx !== -1) q = q.slice(0, slashIdx)
+  const queryIdx = q.indexOf('?')
+  if (queryIdx !== -1) q = q.slice(0, queryIdx)
+  return q
+}
+
 function scoreColor(score) {
   if (score === null || score === undefined) return 'rgba(255,255,255,0.4)'
   if (score < 4.0) return '#f87171'
@@ -24,15 +38,15 @@ function formatDate(iso) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-function ScanHistoryCard({ row, onClick, onDelete, index }) {
+function ScanHistoryCard({ row, onClick, onDelete, index, animated }) {
   const score = row.score ?? null
   const color = scoreColor(score)
   return (
     <motion.div
       onClick={onClick}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 1.5, ease: 'easeOut', delay: index * 0.25 }}
+      initial={animated ? { opacity: 0, y: 20 } : false}
+      animate={animated ? { opacity: 1, y: 0 } : undefined}
+      transition={animated ? { duration: 1.5, ease: 'easeOut', delay: index * 0.25 } : undefined}
       whileHover={{ backgroundColor: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.25)' }}
       whileTap={{ scale: 0.98 }}
       style={{
@@ -106,6 +120,9 @@ function Scan() {
   const [scansLoading, setScansLoading] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState([])
+  const [searchLoading, setSearchLoading] = useState(false)
   const [deleteScanId, setDeleteScanId] = useState(null)
   const [deletingSingle, setDeletingSingle] = useState(false)
   const scrollRef = useRef(null)
@@ -151,6 +168,22 @@ function Scan() {
         setScansLoading(false)
       })
   }, [user])
+
+  useEffect(() => {
+    if (!user || searchQuery.length === 0) {
+      setSearchResults([])
+      return
+    }
+    const cleaned = cleanSearchInput(searchQuery)
+    if (!cleaned) { setSearchResults([]); return }
+    const isIpLike = /^\d[\d.]*$/.test(cleaned)
+    const q = isIpLike ? cleaned.replace(/\./g, '') : cleaned
+    setSearchLoading(true)
+    fetch(`${BACKEND_URL}/scans/search?q=${encodeURIComponent(q)}&user_id=${user.id}`)
+      .then(r => r.json())
+      .then(data => { setSearchResults(Array.isArray(data) ? data : []); setSearchLoading(false) })
+      .catch(() => { setSearchResults([]); setSearchLoading(false) })
+  }, [searchQuery, user])
 
   const handleStartScan = () => {
     const id = crypto.randomUUID()
@@ -280,19 +313,43 @@ function Scan() {
           <h1 style={{ fontFamily: SANS, fontSize: 36, fontWeight: 600, color: '#ffffff', letterSpacing: '-0.02em', margin: 0 }}>
             Scan History
           </h1>
-          {user && scans.length > 0 && (
-            <motion.button
-              type="button"
-              onClick={() => setShowDeleteModal(true)}
-              whileHover={{ backgroundColor: 'rgba(239,68,68,0.12)', borderColor: 'rgba(239,68,68,0.5)', color: '#f87171' }}
-              initial={{ backgroundColor: 'transparent', borderColor: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.4)' }}
-              transition={{ duration: 0.2 }}
-              style={{ fontFamily: SANS, fontSize: 13, fontWeight: 500, padding: '8px 18px',
-                border: '1px solid rgba(255,255,255,0.12)', borderRadius: 6, cursor: 'pointer', letterSpacing: '0.01em' }}
-            >
-              Clear history
-            </motion.button>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ position: 'relative', width: 280 }}>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search by network or ip address"
+                style={{
+                  fontFamily: SANS, fontSize: 13, color: '#ffffff',
+                  background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)',
+                  borderRadius: 6, padding: '8px 36px 8px 14px', outline: 'none', width: '100%',
+                  letterSpacing: '0.01em', boxSizing: 'border-box',
+                }}
+              />
+              <svg
+                xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                stroke="rgba(255,255,255,0.35)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', width: 15, height: 15, pointerEvents: 'none' }}
+              >
+                <circle cx="11" cy="11" r="7" />
+                <line x1="16.5" y1="16.5" x2="21" y2="21" />
+              </svg>
+            </div>
+            {user && scans.length > 0 && (
+              <motion.button
+                type="button"
+                onClick={() => setShowDeleteModal(true)}
+                whileHover={{ backgroundColor: 'rgba(239,68,68,0.12)', borderColor: 'rgba(239,68,68,0.5)', color: '#f87171' }}
+                initial={{ backgroundColor: 'transparent', borderColor: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.4)' }}
+                transition={{ duration: 0.2 }}
+                style={{ fontFamily: SANS, fontSize: 13, fontWeight: 500, padding: '8px 18px',
+                  border: '1px solid rgba(255,255,255,0.12)', borderRadius: 6, cursor: 'pointer', letterSpacing: '0.01em' }}
+              >
+                Clear history
+              </motion.button>
+            )}
+          </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 24 }}>
@@ -324,14 +381,15 @@ function Scan() {
           </motion.button>
 
           {/* History cards */}
-          {scansLoading && (
+          {(scansLoading || searchLoading) && (
             <div style={{ aspectRatio: '1', borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }} />
           )}
-          {!scansLoading && scans.map((row, i) => (
+          {!scansLoading && !searchLoading && (searchQuery.length > 0 ? searchResults : scans).map((row, i) => (
             <ScanHistoryCard
               key={row.id}
               row={row}
               index={i}
+              animated={searchQuery.length === 0}
               onClick={() => navigate('/scan/' + row.id)}
               onDelete={(id) => setDeleteScanId(id)}
             />
