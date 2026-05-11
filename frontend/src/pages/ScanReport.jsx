@@ -269,7 +269,7 @@ export default function ScanReport() {
 
       {/* Phase: config */}
       {phase === 'config' && (
-        <div style={{ position: 'absolute', inset: '64px 0 0 0', overflowY: 'auto', zIndex: 1 }}>
+        <div style={{ position: 'absolute', inset: '64px 0 0 0', overflowY: 'auto', overscrollBehavior: 'contain', zIndex: 1 }}>
           <NewScan onSubmit={handleConfigSubmit} onBack={() => navigate('/scan')} />
         </div>
       )}

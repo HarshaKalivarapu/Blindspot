@@ -57,6 +57,7 @@ const S = {
     fontSize: 12,
     color: 'rgba(255,255,255,0.75)',
     overflowX: 'auto',
+    overscrollBehavior: 'contain',
     marginBottom: 16,
     whiteSpace: 'pre-wrap',
     wordBreak: 'break-all',
@@ -237,7 +238,7 @@ function OutputBlock({ block }) {
   return (
     <div style={{ marginBottom: 16 }}>
       <div style={{ ...S.label, marginBottom: 4 }}>{block.tool} — output</div>
-      <div style={{ ...S.code, maxHeight: 300, overflowY: 'auto' }}>{block.content}</div>
+      <div style={{ ...S.code, maxHeight: 300, overflowY: 'auto', overscrollBehavior: 'contain' }}>{block.content}</div>
     </div>
   )
 }
@@ -311,7 +312,7 @@ function RecommendationsBlock({ block }) {
 
 function LogBlock({ block }) {
   return (
-    <div style={{ overflowX: 'auto' }}>
+    <div style={{ overflowX: 'auto', overscrollBehavior: 'contain' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
         <thead>
           <tr>

@@ -268,6 +268,7 @@ function Scan() {
         padding: '64px 32px',
         zIndex: 1,
         overflowY: 'auto',
+        overscrollBehavior: 'contain',
       }}
     >
       <div style={{ width: '100%', maxWidth: 1000 }}>

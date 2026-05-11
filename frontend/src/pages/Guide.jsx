@@ -70,7 +70,7 @@ function TypewriterCommand({ command, attachBadge }) {
           {attachBadge}
         </div>
       )}
-      <div style={{ position: 'relative', padding: '14px 18px', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontFamily: 'monospace', fontSize: 13, color: '#10b981', overflowX: 'auto', whiteSpace: 'pre' }}>
+      <div style={{ position: 'relative', padding: '14px 18px', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontFamily: 'monospace', fontSize: 13, color: '#10b981', overflowX: 'auto', overscrollBehavior: 'contain', whiteSpace: 'pre' }}>
         <div style={{ position: 'absolute', top: 8, right: 8 }}>
           <CopyButton text={command} />
         </div>
@@ -297,7 +297,7 @@ function DeveloperTab() {
       transition={{ duration: 0.3 }}
       style={{ width: '100%' }}
     >
-      <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 24, marginBottom: 40, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+      <div style={{ display: 'flex', gap: 12, overflowX: 'auto', overscrollBehavior: 'contain', paddingBottom: 24, marginBottom: 40, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
         {tools.map(tool => (
           <LogoBadge key={tool} name={tool} />
         ))}
@@ -501,6 +501,7 @@ export default function Guide() {
           padding: '48px 32px',
           zIndex: 1,
           overflowY: 'auto',
+          overscrollBehavior: 'contain',
           scrollBehavior: 'smooth',
         }}
       >
