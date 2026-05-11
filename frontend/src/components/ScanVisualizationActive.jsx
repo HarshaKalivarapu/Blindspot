@@ -179,7 +179,7 @@ function ReportViewActive({ reportNonDev, reportDev, devChunkLen, nondevChunkLen
             Generating report...
           </motion.div>
           <ReportProgress
-            label={tab === 'dev' ? 'Developer Report' : 'Owner Report'}
+            label={tab === 'dev' ? 'Developer Report' : 'Non-Developer Report'}
             current={chunkLen}
             estimated={estimated}
           />

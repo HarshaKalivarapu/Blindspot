@@ -57,14 +57,16 @@ function formatDate(iso) {
 }
 
 function ScanHistoryCard({ row, onClick, onDelete, index, animated }) {
+  // Capture animated at mount time — parent re-renders must not interrupt a running stagger
+  const shouldAnimate = useRef(animated)
   const score = row.score ?? null
   const color = scoreColor(score)
   return (
     <motion.div
       onClick={onClick}
-      initial={animated ? { opacity: 0, y: 20 } : false}
-      animate={animated ? { opacity: 1, y: 0 } : undefined}
-      transition={animated ? { duration: 1.5, ease: 'easeOut', delay: index * 0.25 } : undefined}
+      initial={shouldAnimate.current ? { opacity: 0, y: 20 } : false}
+      animate={shouldAnimate.current ? { opacity: 1, y: 0 } : undefined}
+      transition={shouldAnimate.current ? { duration: 1.5, ease: 'easeOut', delay: index * 0.25 } : undefined}
       whileHover={{ backgroundColor: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.25)' }}
       whileTap={{ scale: 0.98 }}
       style={{
@@ -135,7 +137,6 @@ function Scan() {
   const [devChunkLen, setDevChunkLen] = useState(0)
   const [nondevChunkLen, setNondevChunkLen] = useState(0)
   const [scans, setScans] = useState([])
-  const [scansLoading, setScansLoading] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -176,7 +177,6 @@ function Scan() {
 
   useEffect(() => {
     if (!user) return
-    setScansLoading(true)
     supabase
       .from('scans')
       .select('id, target, scan_date, scan_type, total_issues_count, score')
@@ -184,9 +184,8 @@ function Scan() {
       .order('scan_date', { ascending: false })
       .then(({ data }) => {
         setScans(data ?? [])
-        setScansLoading(false)
       })
-  }, [user])
+  }, [user?.id])
 
   useEffect(() => {
     if (scans.length > 0) animatedOnce.current = true
@@ -405,8 +404,7 @@ function Scan() {
           </motion.button>
 
           {/* History cards */}
-          {(scansLoading || searchLoading) && <SkeletonCard />}
-          {!scansLoading && !searchLoading && (searchQuery.length > 0 ? searchResults : scans).map((row, i) => (
+          {!searchLoading && (searchQuery.length > 0 ? searchResults : scans).map((row, i) => (
             <ScanHistoryCard
               key={row.id}
               row={row}

@@ -230,199 +230,72 @@ Here are all security findings from the scan in a compact structured format:
 
 ```json
 {
-  "target": "samaypatel.netlify.app",
-  "scan_date": "2026-05-11T13:12:06Z",
-  "scan_type": "passive",
+  "target": "intellixsoftware.com",
+  "scan_date": null,
+  "scan_type": "active",
   "scan_mode": "simple",
-  "duration_seconds": 91.6,
-  "tools_run": ["shodan", "whatweb", "dns_whois", "ssl_tls", "http_headers", "nvd_lookup"],
-  "tool_errors": ["dns_whois: crt.sh request timed out"],
+  "duration_seconds": 275.7,
+  "tools_run": ["http_headers", "ssl_tls", "dns_whois", "whatweb"],
+  "tool_errors": [
+    "nmap: TIMEOUT — exceeded time limit",
+    "nikto: No such file or directory",
+    "whatweb_active: TIMEOUT — exceeded time limit",
+    "shodan: 403 Forbidden — Access denied",
+    "searchsploit: No such file or directory"
+  ],
   "open_ports": [80, 443],
   "services": {
-    "80": {"name": "http", "version": null},
-    "443": {"name": "https", "version": null}
-  "target": "leidos.com",
-  "scan_date": "2025-05-11T00:00:00Z",
-  "scan_type": "passive",
-  "scan_mode": "simple",
-  "duration_seconds": 140.2,
-  "tools_run": ["dns_whois", "ssl_tls", "http_headers", "nvd_lookup"],
-  "tool_errors": [
-    "shodan: Access denied (403 Forbidden)",
-    "whatweb: Not installed — run: sudo apt install whatweb",
-    "dns_whois: crt.sh request timed out"
-  ],
-  "open_ports": [443],
-  "services": {
-    "443": {"name": "HTTPS", "version": null}
+    "80": {"name": "HTTP", "version": "Sucuri/Cloudproxy"},
+    "443": {"name": "HTTPS", "version": "Sucuri/Cloudproxy"}
   },
-  "tech_stack": ["Cloudflare", "TLS 1.2", "TLS 1.3", "Google Trust Services WE1"],
+  "tech_stack": [
+    "WordPress 6.7.5",
+    "WooCommerce 9.6.4",
+    "jQuery 1.8.3",
+    "jQuery 3.7.1",
+    "Sucuri/Cloudproxy"
+  ],
   "cves": [
     {
-      "id": "CVE-2022-39239",
-      "cvss": 6.1,
-      "affected_software": "netlify-ipx",
-      "description": "Attacker can bypass source image domain allowlist via crafted headers to load arbitrary images.",
-      "id": "CVE-2019-10842",
-      "cvss": 9.8,
-      "affected_software": "Cloudflare (bootstrap-sass 3.2.0.3)",
-      "description": "Arbitrary code execution via backdoor in bootstrap-sass 3.2.0.3 using a crafted ___cfduid cookie value evaluated through eval().",
-      "has_exploit": false,
-      "exploit_sources": []
-    },
-    {
-      "id": "CVE-2023-38904",
-      "cvss": 5.4,
-      "affected_software": "Netlify CMS 2.10.192",
-      "description": "Cross-Site Scripting vulnerability via crafted payload in the body parameter of the new post function.",
-      "id": "CVE-2022-4428",
-      "cvss": 8.9,
-      "affected_software": "Cloudflare WARP client",
-      "description": "Improper validation of support_uri in mdm.xml allows privilege escalation and arbitrary executable launch on local machine.",
-      "has_exploit": false,
-      "exploit_sources": []
-    },
-    {
-      "id": "CVE-2025-54793",
-      "cvss": 6.1,
-      "affected_software": "Netlify (Astro 5.2.0–5.12.7)",
-      "description": "Open redirect vulnerability in trailing slash redirection logic when handling paths with double slashes.",
-      "id": "CVE-2017-7235",
-      "cvss": 8.8,
-      "affected_software": "cloudflare-scrape 1.6.6–1.7.1",
-      "description": "Malicious website owner can craft a page that executes arbitrary Python code against cfscrape users.",
-      "has_exploit": false,
-      "exploit_sources": []
-    },
-    {
-      "id": "CVE-2024-56332",
-      "cvss": 5.3,
-      "affected_software": "Next.js 13.0.0–15.1.1",
-      "description": "Denial of Service vulnerability allowing attackers to construct requests that crash the server.",
-      "id": "CVE-2020-15236",
-      "cvss": 8.6,
-      "affected_software": "Cloudflare (Wiki.js before 2.5.151)",
-      "description": "Directory traversal vulnerability allows a malicious user to read arbitrary files via crafted URIs when local asset cache fetching is enabled.",
-      "has_exploit": false,
-      "exploit_sources": []
-    },
-    {
-      "id": "CVE-2021-3761",
-      "cvss": 7.5,
-      "affected_software": "Cloudflare (OctoRPKI before 1.3.0)",
-      "description": "Any CA in RPKI can trick OctoRPKI into emitting invalid VRP MaxLength values, terminating RTR sessions and disabling RPKI Origin Validation.",
-      "has_exploit": false,
-      "exploit_sources": []
-    },
-    {
-      "id": "CVE-2018-0487",
-      "cvss": 9.8,
-      "affected_software": "ARM mbed TLS (TLS 1.3, before 1.3.22/2.1.10/2.7.0)",
-      "description": "Remote attackers can execute arbitrary code or cause DoS via a crafted certificate chain mishandled during RSASSA-PSS signature verification.",
-      "has_exploit": false,
-      "exploit_sources": []
-    },
-    {
-      "id": "CVE-2018-0488",
-      "cvss": 9.8,
-      "affected_software": "ARM mbed TLS (TLS 1.3, before 1.3.22/2.1.10/2.7.0)",
-      "description": "When truncated HMAC extension and CBC are used, remote attackers can cause heap corruption via a crafted application packet.",
-      "has_exploit": false,
-      "exploit_sources": []
-    },
-    {
-      "id": "CVE-2017-2784",
-      "cvss": 8.1,
-      "affected_software": "ARM mbed TLS (TLS 1.3, before 1.3.19/2.1.7/2.4.2)",
-      "description": "Specially crafted x509 certificate causes a free of a stack pointer during certificate parsing, enabling code execution or DoS.",
-      "has_exploit": false,
-      "exploit_sources": []
-    },
-    {
-      "id": "CVE-2017-14032",
-      "cvss": 8.1,
-      "affected_software": "ARM mbed TLS (TLS 1.3, before 1.3.21/2.1.9)",
-      "description": "With optional authentication configured, remote attackers can bypass peer authentication via an X.509 certificate chain with many intermediates.",
-      "has_exploit": false,
-      "exploit_sources": []
-    },
-    {
-      "id": "CVE-2018-16528",
-      "cvss": 8.1,
-      "affected_software": "AWS FreeRTOS through 1.3.1 (TLS 1.3/mbedTLS)",
-      "description": "Remote attackers can execute arbitrary code due to mbedTLS context object corruption in AWS TLS connectivity modules.",
-      "has_exploit": false,
-      "exploit_sources": []
-    },
-    {
-      "id": "CVE-2012-2333",
-      "cvss": 6.8,
-      "affected_software": "OpenSSL (TLS 1.2, before 0.9.8x/1.0.0j/1.0.1c)",
-      "description": "Integer underflow with CBC encryption in TLS 1.1/1.2/DTLS allows remote DoS via buffer over-read.",
-      "has_exploit": false,
-      "exploit_sources": []
-    },
-    {
-      "id": "CVE-2015-5291",
-      "cvss": 6.8,
-      "affected_software": "PolarSSL/ARM mbed TLS (TLS 1.2, before 1.2.17/1.3.14/2.1.2)",
-      "description": "Heap-based buffer overflow via long response from SSL server can cause client crash or arbitrary code execution.",
-      "has_exploit": false,
-      "exploit_sources": []
-    },
-    {
-      "id": "CVE-2009-3243",
-      "cvss": 5.0,
-      "affected_software": "Wireshark 1.2.0–1.2.1 (TLS 1.2)",
-      "description": "Unspecified vulnerability in TLS dissector on Windows causes application crash via unknown vectors in TLS 1.2 conversations.",
-      "has_exploit": false,
-      "exploit_sources": []
-    },
-    {
-      "id": "CVE-2012-2686",
-      "cvss": 5.0,
-      "affected_software": "OpenSSL 1.0.1 before 1.0.1d (TLS 1.2 AES-NI)",
-      "description": "Remote attackers can cause application crash via crafted CBC data in AES-NI TLS 1.1/1.2 implementation.",
-      "has_exploit": false,
-      "exploit_sources": []
-    },
-    {
-      "id": "CVE-2013-1621",
-      "cvss": 4.3,
-      "affected_software": "PolarSSL before 1.2.5 (TLS 1.2)",
-      "description": "Array index error in SSL module allows remote DoS via crafted padding-length value during CBC padding validation.",
+      "id": "CVE-2026-2437",
+      "cvss": 6.4,
+      "affected_software": "WordPress 6.7.5",
+      "description": "Stored XSS via the 'wte_trip_tax' shortcode in the WP Travel Engine plugin for WordPress in versions up to and including 6.7.5 due to insufficient input sanitization.",
       "has_exploit": false,
       "exploit_sources": []
     }
   ],
   "ssl": {
     "valid": true,
-    "expiry_date": "2027-03-19",
-    "days_until_expiry": 312,
+    "expiry_date": "2026-07-26",
+    "days_until_expiry": 75,
     "issues": []
   },
   "http_headers": {
     "missing_security_headers": [
-      "Content-Security-Policy",
-      "X-Frame-Options",
-      "X-Content-Type-Options",
+      "Strict-Transport-Security",
       "Referrer-Policy",
-      "Permissions-Policy",
-      "X-XSS-Protection"
+      "Permissions-Policy"
     ],
-    "info_disclosure": ["Server: Netlify"]
+    "info_disclosure": [
+      "Server: Sucuri/Cloudproxy",
+      "x-pingback: https://intellixsoftware.com/xmlrpc.php"
+    ]
   },
   "dns_whois": {
-    "registrar": null,
-    "expiry_date": null,
+    "registrar": "GoDaddy.com, LLC",
+    "expiry_date": "2028-12-13",
     "days_until_expiry": null,
-    "nameservers": [],
+    "nameservers": [
+      "ns73.domaincontrol.com",
+      "ns74.domaincontrol.com"
+    ],
     "subdomains_found": []
   },
   "shodan": {
-    "country": "United States",
-    "isp": "Amazon Technologies Inc.",
-    "ports_indexed": [80, 443],
+    "country": null,
+    "isp": null,
+    "ports_indexed": [],
     "previously_flagged_cves": []
   },
   "nikto_findings": [],
@@ -433,12 +306,8 @@ Here are all security findings from the scan in a compact structured format:
   "ffuf_findings": [],
   "searchsploit_results": [],
   "confirmed_exploits_count": 0,
-  "total_issues_count": 7
+  "total_issues_count": 8
 }
-    "expiry_date": "2026-06-24",
-    "days_until_expiry": 44,
-    "issues": [
-      "Certificate expires in 44 days (2026-06-24)",
 ```
 
 Generate the complete non-developer vulnerability report following your schema exactly. Return ONLY the complete JSON report object. No preamble, no markdown fences, no trailing text.
