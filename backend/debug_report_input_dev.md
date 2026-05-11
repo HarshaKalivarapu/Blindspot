@@ -318,82 +318,160 @@ Here are all security findings from the scan in a compact structured format:
 
 ```json
 {
-  "target": "samaypatel.netlify.app",
+  "target": "hi.com",
   "scan_date": null,
-  "scan_type": "active",
+  "scan_type": "passive",
   "scan_mode": "simple",
-  "duration_seconds": 197.8,
-  "tools_run": ["whatweb_active", "http_headers", "ssl_tls", "nvd_lookup"],
+  "duration_seconds": 53.3,
+  "tools_run": ["dns_whois", "ssl_tls", "http_headers", "nvd_lookup"],
   "tool_errors": [
-    "nmap: timed out — CDN blocks raw TCP probes",
-    "nikto: No such file or directory",
-    "searchsploit: No such file or directory"
+    "shodan: Access denied (403 Forbidden)",
+    "whatweb: WhatWeb is not installed. Run: sudo apt install whatweb",
+    "dns_whois: crt.sh lookup failed — 502 Server Error: Bad Gateway"
   ],
-  "open_ports": [80, 443],
+  "open_ports": [443],
   "services": {
-    "80": {"name": "HTTP", "version": null},
-    "443": {"name": "HTTPS", "version": null}
+    "443": {"name": "https", "version": null}
   },
-  "tech_stack": ["Netlify", "Bootstrap", "HTML5"],
+  "tech_stack": ["Next.js"],
   "cves": [
     {
-      "id": "CVE-2022-39239",
-      "cvss": 6.1,
-      "affected_software": "netlify-ipx < 1.2.3",
-      "description": "Attacker can bypass source image domain allowlist via crafted headers, causing handler to load arbitrary images.",
+      "id": "CVE-2021-32702",
+      "cvss": 8.0,
+      "affected_software": "Next.js",
+      "description": "Auth0 Next.js SDK versions before 1.4.1 are vulnerable to reflected XSS via a payload in the error parameter.",
       "has_exploit": false,
       "exploit_sources": []
     },
     {
-      "id": "CVE-2025-54793",
-      "cvss": 6.1,
-      "affected_software": "Astro 5.2.0–5.12.7",
-      "description": "Open redirect vulnerability in trailing slash redirection logic when handling paths with double slashes.",
+      "id": "CVE-2017-16877",
+      "cvss": 7.5,
+      "affected_software": "Next.js",
+      "description": "ZEIT Next.js before 2.4.1 has directory traversal under the /_next and /static request namespaces.",
       "has_exploit": false,
       "exploit_sources": []
     },
     {
-      "id": "CVE-2023-38904",
-      "cvss": 5.4,
-      "affected_software": "Netlify CMS 2.10.192",
-      "description": "Cross-site scripting vulnerability allows remote attacker to execute arbitrary code via crafted payload in new post body parameter.",
+      "id": "CVE-2018-6184",
+      "cvss": 7.5,
+      "affected_software": "Next.js",
+      "description": "ZEIT Next.js 4 before 4.2.3 has directory traversal under the /_next request namespace.",
       "has_exploit": false,
       "exploit_sources": []
     },
     {
-      "id": "CVE-2024-56332",
-      "cvss": 5.3,
-      "affected_software": "Next.js 13.0.0–15.1.1",
-      "description": "Denial of Service vulnerability allows attackers to construct requests that exhaust server resources.",
+      "id": "CVE-2021-39178",
+      "cvss": 7.5,
+      "affected_software": "Next.js",
+      "description": "Next.js versions 10.0.0 to 11.0.0 contain an XSS vulnerability when images.domains is configured in next.config.js.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2021-43803",
+      "cvss": 7.5,
+      "affected_software": "Next.js",
+      "description": "Next.js versions above 11.1.0 and below 12.0.5 can crash the server when processing invalid or malformed URLs.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2020-36363",
+      "cvss": 9.8,
+      "affected_software": "TLSv1.2",
+      "description": "Amazon AWS CloudFront TLSv1.2_2019 allows weak cipher suites TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256 and TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2020-26197",
+      "cvss": 7.5,
+      "affected_software": "TLSv1.2",
+      "description": "Dell PowerScale OneFS 8.1.0-9.1.0 LDAP Provider inability to connect over TLSv1.2 may allow eavesdropping.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2026-39304",
+      "cvss": 7.5,
+      "affected_software": "TLSv1.2",
+      "description": "Apache ActiveMQ NIO SSL transports do not correctly handle TLSv1.3 handshake KeyUpdates, enabling denial of service via out-of-memory.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2021-3449",
+      "cvss": 5.9,
+      "affected_software": "TLSv1.2",
+      "description": "An OpenSSL TLS server may crash if sent a maliciously crafted TLSv1.2 renegotiation ClientHello omitting the signature_algorithms extension.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2019-11873",
+      "cvss": 9.8,
+      "affected_software": "TLSv1.3",
+      "description": "wolfSSL 4.0.0 has a buffer overflow in DoPreSharedKeys in tls13.c when processing a crafted TLSv1.3 hello client packet.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2019-0215",
+      "cvss": 7.5,
+      "affected_software": "TLSv1.3",
+      "description": "Apache HTTP Server 2.4.37-2.4.38 mod_ssl bug allows a client to bypass per-location access control restrictions when using TLSv1.3.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2019-6659",
+      "cvss": 7.5,
+      "affected_software": "TLSv1.3",
+      "description": "BIG-IP 14.0.0-14.1.0.1 virtual servers with TLSv1.3 enabled may experience denial of service via undisclosed incoming messages.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2024-5971",
+      "cvss": 7.5,
+      "affected_software": "TLSv1.3",
+      "description": "Undertow vulnerability where chunked response hangs after body flush due to missing 0\\r\\n termination.",
       "has_exploit": false,
       "exploit_sources": []
     }
   ],
   "ssl": {
     "valid": true,
-    "expiry_date": "2027-03-19",
-    "days_until_expiry": 312,
+    "expiry_date": "2026-11-25",
+    "days_until_expiry": 198,
     "issues": []
   },
   "http_headers": {
-    "missing_security_headers": [
-      "Content-Security-Policy",
-      "X-Frame-Options",
-      "X-Content-Type-Options",
-      "Referrer-Policy",
-      "Permissions-Policy",
-      "X-XSS-Protection"
-    ],
-    "info_disclosure": ["Server: Netlify"]
+    "missing_security_headers": ["Content-Security-Policy", "Permissions-Policy"],
+    "info_disclosure": ["X-Powered-By: Next.js"]
   },
-  "dns_whois": null,
-  "shodan": null,
+  "dns_whois": {
+    "registrar": "GoDaddy.com, LLC",
+    "expiry_date": "2031-04-09",
+    "days_until_expiry": null,
+    "nameservers": ["amber.ns.cloudflare.com", "lars.ns.cloudflare.com"],
+    "subdomains_found": []
+  },
+  "shodan": {
+    "country": null,
+    "isp": null,
+    "ports_indexed": [],
+    "previously_flagged_cves": []
+  },
   "nikto_findings": [],
-  "hydra_results": null,
+  "hydra_results": {
+    "service": null,
+    "credentials_found": []
+  },
   "ffuf_findings": [],
   "searchsploit_results": [],
   "confirmed_exploits_count": 0,
-  "total_issues_count": 11
+  "total_issues_count": 6
 }
 ```
 
