@@ -26,6 +26,24 @@ function cleanSearchInput(raw) {
   return q
 }
 
+function SkeletonCard() {
+  return (
+    <div style={{
+      aspectRatio: '1', borderRadius: 16, overflow: 'hidden', position: 'relative',
+      backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+    }}>
+      <motion.div
+        animate={{ x: ['-100%', '100%'] }}
+        transition={{ duration: 1.4, repeat: Infinity, ease: 'linear', repeatDelay: 0.5 }}
+        style={{
+          position: 'absolute', inset: 0,
+          background: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.07) 50%, transparent 70%)',
+        }}
+      />
+    </div>
+  )
+}
+
 function scoreColor(score) {
   if (score === null || score === undefined) return 'rgba(255,255,255,0.4)'
   if (score < 4.0) return '#f87171'
@@ -127,6 +145,7 @@ function Scan() {
   const [deletingSingle, setDeletingSingle] = useState(false)
   const scrollRef = useRef(null)
   const scanInserted = useRef(false)
+  const animatedOnce = useRef(false)
 
   useEffect(() => {
     if (view === 'chat') {
@@ -168,6 +187,10 @@ function Scan() {
         setScansLoading(false)
       })
   }, [user])
+
+  useEffect(() => {
+    if (scans.length > 0) animatedOnce.current = true
+  }, [scans])
 
   useEffect(() => {
     if (!user || searchQuery.length === 0) {
@@ -381,15 +404,13 @@ function Scan() {
           </motion.button>
 
           {/* History cards */}
-          {(scansLoading || searchLoading) && (
-            <div style={{ aspectRatio: '1', borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }} />
-          )}
+          {(scansLoading || searchLoading) && <SkeletonCard />}
           {!scansLoading && !searchLoading && (searchQuery.length > 0 ? searchResults : scans).map((row, i) => (
             <ScanHistoryCard
               key={row.id}
               row={row}
               index={i}
-              animated={searchQuery.length === 0}
+              animated={!animatedOnce.current}
               onClick={() => navigate('/scan/' + row.id)}
               onDelete={(id) => setDeleteScanId(id)}
             />
