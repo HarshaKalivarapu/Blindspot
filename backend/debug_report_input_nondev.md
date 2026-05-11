@@ -230,65 +230,65 @@ Here are all security findings from the scan in a compact structured format:
 
 ```json
 {
-  "target": "scanme.nmap.org",
+  "target": "samaypatel.netlify.app",
   "scan_date": null,
-  "scan_type": "passive",
+  "scan_type": "active",
   "scan_mode": "simple",
-  "duration_seconds": 50.7,
-  "tools_run": ["whatweb", "dns_whois", "http_headers", "nvd_lookup"],
+  "duration_seconds": 197.8,
+  "tools_run": ["whatweb_active", "http_headers", "ssl_tls", "nvd_lookup"],
   "tool_errors": [
-    "shodan: Access denied (403 Forbidden)",
-    "ssl_tls: Network is unreachable on port 443",
-    "dns_whois: crt.sh lookup failed — 502 Bad Gateway"
+    "nmap: timed out — CDN blocks raw TCP probes",
+    "nikto: No such file or directory",
+    "searchsploit: No such file or directory"
   ],
-  "open_ports": [80],
+  "open_ports": [80, 443],
   "services": {
-    "80": {"name": "http", "version": "Apache/2.4.7 (Ubuntu)"}
+    "80": {"name": "HTTP", "version": null},
+    "443": {"name": "HTTPS", "version": null}
   },
-  "tech_stack": ["Apache 2.4.7", "Ubuntu Linux", "Google-Analytics Universal", "HTML5"],
+  "tech_stack": ["Netlify", "Bootstrap", "HTML5"],
   "cves": [
     {
-      "id": "CVE-2016-6814",
-      "cvss": 9.8,
-      "affected_software": "Apache 2.4.7",
-      "description": "Critical deserialization vulnerability in Groovy on classpath allowing remote code execution via standard Java serialization mechanisms.",
+      "id": "CVE-2022-39239",
+      "cvss": 6.1,
+      "affected_software": "netlify-ipx < 1.2.3",
+      "description": "Attacker can bypass source image domain allowlist via crafted headers, causing handler to load arbitrary images.",
       "has_exploit": false,
       "exploit_sources": []
     },
     {
-      "id": "CVE-2021-44224",
-      "cvss": 8.2,
-      "affected_software": "Apache 2.4.7",
-      "description": "A crafted URI sent to httpd configured as a forward proxy can cause a NULL pointer dereference crash or allow requests to be directed to unintended Unix domain sockets.",
+      "id": "CVE-2025-54793",
+      "cvss": 6.1,
+      "affected_software": "Astro 5.2.0–5.12.7",
+      "description": "Open redirect vulnerability in trailing slash redirection logic when handling paths with double slashes.",
       "has_exploit": false,
       "exploit_sources": []
     },
     {
-      "id": "CVE-2025-66200",
+      "id": "CVE-2023-38904",
       "cvss": 5.4,
-      "affected_software": "Apache 2.4.7",
-      "description": "mod_userdir and suexec bypass via AllowOverride FileInfo allows users with htaccess access to run CGI scripts under an unexpected user ID.",
+      "affected_software": "Netlify CMS 2.10.192",
+      "description": "Cross-site scripting vulnerability allows remote attacker to execute arbitrary code via crafted payload in new post body parameter.",
       "has_exploit": false,
       "exploit_sources": []
     },
     {
-      "id": "CVE-2012-2378",
-      "cvss": 4.3,
-      "affected_software": "Apache 2.4.7",
-      "description": "Apache CXF does not properly enforce child policies of WS-SecurityPolicy 1.1 SupportingToken on the client side, allowing attackers to bypass AlgorithmSuite and other security policies.",
+      "id": "CVE-2024-56332",
+      "cvss": 5.3,
+      "affected_software": "Next.js 13.0.0–15.1.1",
+      "description": "Denial of Service vulnerability allows attackers to construct requests that exhaust server resources.",
       "has_exploit": false,
       "exploit_sources": []
     }
   ],
   "ssl": {
-    "valid": null,
-    "expiry_date": null,
-    "days_until_expiry": null,
-    "issues": ["HTTPS not reachable — port 443 returned network unreachable", "No HTTPS configured on target"]
+    "valid": true,
+    "expiry_date": "2027-03-19",
+    "days_until_expiry": 312,
+    "issues": []
   },
   "http_headers": {
     "missing_security_headers": [
-      "Strict-Transport-Security",
       "Content-Security-Policy",
       "X-Frame-Options",
       "X-Content-Type-Options",
@@ -296,36 +296,16 @@ Here are all security findings from the scan in a compact structured format:
       "Permissions-Policy",
       "X-XSS-Protection"
     ],
-    "info_disclosure": ["Server: Apache/2.4.7 (Ubuntu)"]
+    "info_disclosure": ["Server: Netlify"]
   },
-  "dns_whois": {
-    "registrar": "DYNADOT LLC",
-    "expiry_date": "2029-01-18",
-    "days_until_expiry": null,
-    "nameservers": [
-      "ns1.linode.com",
-      "ns2.linode.com",
-      "ns3.linode.com",
-      "ns4.linode.com",
-      "ns5.linode.com"
-    ],
-    "subdomains_found": []
-  },
-  "shodan": {
-    "country": null,
-    "isp": null,
-    "ports_indexed": [],
-    "previously_flagged_cves": []
-  },
+  "dns_whois": null,
+  "shodan": null,
   "nikto_findings": [],
-  "hydra_results": {
-    "service": null,
-    "credentials_found": []
-  },
+  "hydra_results": null,
   "ffuf_findings": [],
   "searchsploit_results": [],
   "confirmed_exploits_count": 0,
-  "total_issues_count": 13
+  "total_issues_count": 11
 }
 ```
 

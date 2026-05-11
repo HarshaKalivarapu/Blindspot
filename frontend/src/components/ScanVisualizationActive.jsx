@@ -141,11 +141,17 @@ function Block({ label, done, wide, estimate }) {
 // intro → nmap → tools → nvd → searchsploit → fading → report
 // Only two layers visible at a time. Each block fades out when no longer needed.
 
-function ReportViewActive({ reportNonDev, reportDev, devChunkLen, nondevChunkLen }) {
+function ReportViewActive({ reportNonDev, reportDev, devChunkLen, nondevChunkLen, onTabChange }) {
   const [tab, setTab] = useState('non-dev')
   const content = tab === 'dev' ? reportDev : reportNonDev
   const chunkLen = tab === 'dev' ? devChunkLen : nondevChunkLen
   const estimated = tab === 'dev' ? 10000 : 8000
+
+  function handleTab(key) {
+    setTab(key)
+    onTabChange?.(key)
+  }
+
   return (
     <div>
       <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', borderRadius: 12, padding: 6, marginBottom: 40, border: '1px solid rgba(255,255,255,0.05)', maxWidth: 360, margin: '0 auto 40px' }}>
@@ -217,7 +223,7 @@ const mdComponents = {
   blockquote: ({children}) => <blockquote style={{borderLeft:'3px solid rgba(255,255,255,0.2)',paddingLeft:16,margin:'16px 0',color:'rgba(255,255,255,0.6)'}}>{children}</blockquote>,
 }
 
-export default function ScanVisualizationActive({ target, nmapType = 'basic', onComplete, externalDone = {}, externalRunning = {}, generatingReport = false, reportDev = null, reportNonDev = null, devChunkLen = 0, nondevChunkLen = 0, topOffset = 0 }) {
+export default function ScanVisualizationActive({ target, nmapType = 'basic', onComplete, onTabChange, externalDone = {}, externalRunning = {}, generatingReport = false, reportDev = null, reportNonDev = null, devChunkLen = 0, nondevChunkLen = 0, topOffset = 0 }) {
   const report = reportNonDev || reportDev
   const tools = nmapType === 'aggressive' ? AGGRESSIVE_TOOLS : SIMPLE_TOOLS
   const toolXs = toolXPositions(tools.length)
@@ -482,7 +488,7 @@ export default function ScanVisualizationActive({ target, nmapType = 'basic', on
               padding: '104px 0 64px', color: 'white',
               fontFamily: 'system-ui, sans-serif', fontSize: 14, lineHeight: 1.75 }}>
             <div style={{ width: '100%', maxWidth: 1000, margin: '0 auto', padding: '0 32px' }}>
-              <ReportViewActive reportNonDev={reportNonDev} reportDev={reportDev} devChunkLen={devChunkLen} nondevChunkLen={nondevChunkLen} />
+              <ReportViewActive reportNonDev={reportNonDev} reportDev={reportDev} devChunkLen={devChunkLen} nondevChunkLen={nondevChunkLen} onTabChange={onTabChange} />
             </div>
           </motion.div>
         )}

@@ -195,7 +195,7 @@ function ReportProgress({ label, current, estimated }) {
 }
 
 // ── Main visualization component ──────────────────────────────────────────────
-function ReportView({ reportNonDev, reportDev, devChunkLen, nondevChunkLen }) {
+function ReportView({ reportNonDev, reportDev, devChunkLen, nondevChunkLen, onTabChange }) {
   const [tab, setTab] = useState('non-dev')
   const content = tab === 'dev' ? reportDev : reportNonDev
   const chunkLen = tab === 'dev' ? devChunkLen : nondevChunkLen
@@ -246,7 +246,7 @@ function ReportView({ reportNonDev, reportDev, devChunkLen, nondevChunkLen }) {
 // externalDone: { [toolId]: boolean } — tools confirmed done by real SSE events
 // externalRunning: { [toolId]: boolean } — tools confirmed started by real SSE events
 // report: the actual markdown report text from the backend
-export default function ScanVisualization({ target, onComplete, externalDone = {}, externalRunning = {}, generatingReport = false, reportDev = null, reportNonDev = null, devChunkLen = 0, nondevChunkLen = 0, topOffset = 0 }) {
+export default function ScanVisualization({ target, onComplete, onTabChange, externalDone = {}, externalRunning = {}, generatingReport = false, reportDev = null, reportNonDev = null, devChunkLen = 0, nondevChunkLen = 0, topOffset = 0 }) {
   const report = reportNonDev || reportDev  // trigger on whichever arrives first
   const [phase, setPhase] = useState('intro')
   const [toolProgress, setToolProgress] = useState(
@@ -504,7 +504,7 @@ export default function ScanVisualization({ target, onComplete, externalDone = {
             }}
           >
             <div style={{ width: '100%', maxWidth: 1000, margin: '0 auto', padding: '0 32px' }}>
-              <ReportView reportNonDev={reportNonDev} reportDev={reportDev} devChunkLen={devChunkLen} nondevChunkLen={nondevChunkLen} />
+              <ReportView reportNonDev={reportNonDev} reportDev={reportDev} devChunkLen={devChunkLen} nondevChunkLen={nondevChunkLen} onTabChange={onTabChange} />
             </div>
           </motion.div>
         )}
