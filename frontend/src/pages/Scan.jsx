@@ -24,12 +24,15 @@ function formatDate(iso) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-function ScanHistoryCard({ row, onClick, onDelete }) {
+function ScanHistoryCard({ row, onClick, onDelete, index }) {
   const score = row.score ?? null
   const color = scoreColor(score)
   return (
     <motion.div
       onClick={onClick}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 1.5, ease: 'easeOut', delay: index * 0.25 }}
       whileHover={{ backgroundColor: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.25)' }}
       whileTap={{ scale: 0.98 }}
       style={{
@@ -324,10 +327,11 @@ function Scan() {
           {scansLoading && (
             <div style={{ aspectRatio: '1', borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }} />
           )}
-          {!scansLoading && scans.map((row) => (
+          {!scansLoading && scans.map((row, i) => (
             <ScanHistoryCard
               key={row.id}
               row={row}
+              index={i}
               onClick={() => navigate('/scan/' + row.id)}
               onDelete={(id) => setDeleteScanId(id)}
             />
@@ -485,41 +489,28 @@ function Scan() {
               User Guide
             </motion.button>
             {user ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <motion.button
-                  type="button"
-                  onClick={handleSignOut}
-                  whileHover={{ backgroundColor: '#ffffff', color: '#0a0a0a', borderColor: '#ffffff' }}
-                  initial={{ backgroundColor: 'rgba(255, 255, 255, 0.03)', color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.15)' }}
-                  transition={{ duration: 0.2 }}
-                  style={{
-                    fontFamily: 'system-ui, -apple-system, sans-serif',
-                    fontSize: 14,
-                    fontWeight: 500,
-                    padding: '10px 24px',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
-                    borderRadius: 6,
-                    cursor: 'pointer',
-                    outline: 'none',
-                    letterSpacing: '0.01em',
-                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                    backdropFilter: 'blur(4px)',
-                  }}
-                >
-                  Sign Out
-                </motion.button>
-                {user.user_metadata?.avatar_url ? (
-                  <img
-                    src={user.user_metadata.avatar_url}
-                    alt="profile"
-                    style={{ width: 32, height: 32, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.2)' }}
-                  />
-                ) : (
-                  <span style={{ fontFamily: 'system-ui, sans-serif', fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>
-                    {user.email}
-                  </span>
-                )}
-              </div>
+              <motion.button
+                type="button"
+                onClick={handleSignOut}
+                whileHover={{ backgroundColor: '#ffffff', color: '#0a0a0a', borderColor: '#ffffff' }}
+                initial={{ backgroundColor: 'rgba(255, 255, 255, 0.03)', color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.15)' }}
+                transition={{ duration: 0.2 }}
+                style={{
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  fontSize: 14,
+                  fontWeight: 500,
+                  padding: '10px 24px',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  outline: 'none',
+                  letterSpacing: '0.01em',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                  backdropFilter: 'blur(4px)',
+                }}
+              >
+                Sign Out
+              </motion.button>
             ) : (
               <motion.button
                 type="button"
