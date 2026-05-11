@@ -172,7 +172,8 @@ You need two terminals.
 
 ```bash
 cd backend
-venv/bin/python orchestrator.py # Mac / Linux
+source venv/bin/activate # MAKE SURE YOU MAKE THE VIRTUAL ENVIORNMENT FIRST OTHERWISE THIS WONT WORK
+uvicorn orchestrator:app --host 127.0.0.1 --port 5000 --reload
 ```
 
 Listens on `http://localhost:5000`. Hit `/health` to confirm the key is loaded.
