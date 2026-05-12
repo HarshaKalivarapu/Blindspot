@@ -107,10 +107,14 @@ def _load_prompt(level: str, intensity: str, target: str) -> str:
         return f.read().replace("{target}", target)
 
 
+_here = os.path.dirname(os.path.abspath(__file__))
+_venv_python = os.path.join(_here, "venv", "bin", "python")
+_python = _venv_python if os.path.exists(_venv_python) else sys.executable
+
 MCP_SERVER_PARAMS = StdioServerParameters(
-    command=os.path.join(os.path.dirname(os.path.abspath(__file__)), "venv", "bin", "python"),
+    command=_python,
     args=["server.py"],
-    cwd=os.path.dirname(os.path.abspath(__file__)),
+    cwd=_here,
 )
 
 
