@@ -3,6 +3,7 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import ShaderBackground from '../components/homepage/ShaderBackground.jsx'
 import WarningModal from '../components/WarningModal'
+import ScanInProgressModal from '../components/ScanInProgressModal'
 import ScanVisualization from '../components/ScanVisualization.jsx'
 import ScanVisualizationActive from '../components/ScanVisualizationActive.jsx'
 import NewScan from './NewScan.jsx'
@@ -36,6 +37,8 @@ export default function ScanReport() {
   const [activeTab, setActiveTab] = useState('non-dev')
   const [exportOpen, setExportOpen] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [showExitWarning, setShowExitWarning] = useState(false)
+  const [scanSaved, setScanSaved] = useState(false)
   const scanStarted = useRef(false)
   const exportRef = useRef(null)
 
@@ -49,6 +52,25 @@ export default function ScanReport() {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [exportOpen])
+
+  // On-load check: if this scan ID already exists in the DB, no warning needed
+  useEffect(() => {
+    supabase.from('scans').select('id').eq('id', id).single()
+      .then(({ data }) => { if (data) setScanSaved(true) })
+  }, [id])
+
+  // Attach native "Leave site?" dialog while scan is not yet saved
+  useEffect(() => {
+    if (scanSaved) return
+    const handler = e => { e.preventDefault(); e.returnValue = '' }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [scanSaved])
+
+  // When both reports arrive in state, the scan is complete — no warning needed
+  useEffect(() => {
+    if (reportDev && reportNonDev) setScanSaved(true)
+  }, [reportDev, reportNonDev])
 
   // History fetch
   useEffect(() => {
@@ -245,7 +267,7 @@ export default function ScanReport() {
           )}
           <motion.button
             type="button"
-            onClick={() => navigate('/scan')}
+            onClick={() => { if (!scanSaved) setShowExitWarning(true); else navigate('/scan') }}
             whileHover={{ backgroundColor: '#ffffff', color: '#0a0a0a', borderColor: '#ffffff' }}
             initial={{ backgroundColor: 'rgba(255,255,255,0.03)', color: '#ffffff', borderColor: 'rgba(255,255,255,0.15)' }}
             transition={{ duration: 0.2 }}
@@ -367,6 +389,13 @@ export default function ScanReport() {
             setShowWarning(false)
             navigate('/scan')
           }}
+        />
+      )}
+
+      {showExitWarning && (
+        <ScanInProgressModal
+          onStay={() => setShowExitWarning(false)}
+          onLeave={() => { setShowExitWarning(false); setScanSaved(true); navigate('/scan') }}
         />
       )}
     </div>

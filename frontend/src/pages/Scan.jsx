@@ -145,12 +145,14 @@ function Scan() {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState([])
   const [searchLoading, setSearchLoading] = useState(false)
+  const [searchActive, setSearchActive] = useState(false)
   const [deleteScanId, setDeleteScanId] = useState(null)
   const [deletingSingle, setDeletingSingle] = useState(false)
   const scrollRef = useRef(null)
   const scanInserted = useRef(false)
   const animatedOnce = useRef(false)
   const gridRef = useRef(null)
+  const searchTimestamps = useRef([])
   const [thumbTop, setThumbTop] = useState(0)
   const [thumbHeight, setThumbHeight] = useState(0)
 
@@ -223,10 +225,12 @@ function Scan() {
   }, [scans])
 
   useEffect(() => {
-    if (!user || searchQuery.length === 0) {
-      setSearchResults([])
-      return
-    }
+    if (searchQuery.length === 0) { setSearchResults([]); setSearchActive(false) }
+  }, [searchQuery])
+
+  function handleSearch() {
+    if (!user || searchQuery.length === 0) { setSearchResults([]); setSearchActive(false); return }
+    setSearchActive(true)
     const cleaned = cleanSearchInput(searchQuery)
     if (!cleaned) { setSearchResults([]); return }
     const isIpLike = /^\d[\d.]*$/.test(cleaned)
@@ -236,7 +240,15 @@ function Scan() {
       .then(r => r.json())
       .then(data => { setSearchResults(Array.isArray(data) ? data : []); setSearchLoading(false) })
       .catch(() => { setSearchResults([]); setSearchLoading(false) })
-  }, [searchQuery, user])
+  }
+
+  function rateLimitedSearch() {
+    const now = Date.now()
+    searchTimestamps.current = searchTimestamps.current.filter(t => now - t < 10000)
+    if (searchTimestamps.current.length >= 5) return
+    searchTimestamps.current.push(now)
+    handleSearch()
+  }
 
   const handleStartScan = () => {
     const id = crypto.randomUUID()
@@ -372,6 +384,7 @@ function Scan() {
                 type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') rateLimitedSearch() }}
                 placeholder="Search by network or IP address"
                 style={{
                   fontFamily: SANS, fontSize: 13, color: '#ffffff',
@@ -389,6 +402,17 @@ function Scan() {
                 <line x1="16.5" y1="16.5" x2="21" y2="21" />
               </svg>
             </div>
+            <motion.button
+              type="button"
+              onClick={rateLimitedSearch}
+              whileHover={{ backgroundColor: 'rgba(255,255,255,0.07)', borderColor: 'rgba(255,255,255,0.3)', color: 'rgba(255,255,255,0.9)' }}
+              initial={{ backgroundColor: 'transparent', borderColor: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.4)' }}
+              transition={{ duration: 0.2 }}
+              style={{ fontFamily: SANS, fontSize: 13, fontWeight: 500, padding: '8px 18px',
+                border: '1px solid rgba(255,255,255,0.12)', borderRadius: 6, cursor: 'pointer', letterSpacing: '0.01em' }}
+            >
+              Search
+            </motion.button>
             {user && scans.length > 0 && (
               <motion.button
                 type="button"
@@ -435,7 +459,7 @@ function Scan() {
           </motion.button>
 
           {/* History cards */}
-          {!searchLoading && (searchQuery.length > 0 ? searchResults : scans).map((row, i) => (
+          {!searchLoading && (searchActive ? searchResults : scans).map((row, i) => (
             <ScanHistoryCard
               key={row.id}
               row={row}
@@ -445,6 +469,45 @@ function Scan() {
               onDelete={(id) => setDeleteScanId(id)}
             />
           ))}
+
+          {/* Empty search state */}
+          {searchActive && !searchLoading && searchResults.length === 0 && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+                style={{
+                  aspectRatio: '1',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: 'rgba(255,255,255,0.02)',
+                  border: '1px dashed rgba(255,255,255,0.12)',
+                  borderRadius: 16,
+                  padding: 20,
+                  backdropFilter: 'blur(4px)',
+                }}
+              >
+                <div style={{ fontFamily: SANS, fontSize: 14, color: 'rgba(255,255,255,0.3)', textAlign: 'center', letterSpacing: '0.01em' }}>
+                  No scans found
+                </div>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3, delay: 0.05 }}
+                style={{
+                  aspectRatio: '1',
+                  backgroundColor: 'rgba(255,255,255,0.01)',
+                  border: '1px dashed rgba(255,255,255,0.06)',
+                  borderRadius: 16,
+                  backdropFilter: 'blur(4px)',
+                }}
+              />
+            </>
+          )}
           </div>
         </div>
       </div>
