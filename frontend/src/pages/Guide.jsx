@@ -269,11 +269,11 @@ function NonDeveloperTab() {
         </div>
       </SectionReveal>
 
-      <Checkpoint 
-        question="Your scan comes back with a score of 3. What should you do?"
-        options={["Nothing, 3 out of 10 sounds fine", "Fix it sometime this month", "Treat it as an emergency and act immediately"]}
-        correctAnswerIndex={2}
-        explanation="Wait! The question is slightly tricky based on normal school failing grades, but a score of 3 in vulnerability scanning means confirmed attack paths exist. This is not a warning — it is an emergency."
+      <Checkpoint
+        question="What does it mean when our scanner finds an 'open port' on your server?"
+        options={["A piece of software on your server is broken and needs to be repaired", "A doorway is open on your server that outside programs can connect through", "Someone has already gotten into your server without permission", "Your server is running too many programs at once"]}
+        correctAnswerIndex={1}
+        explanation="Think of ports like labeled mailboxes on the side of your building — each one handles a specific type of traffic. Your website uses one, your database uses another. An open port just means that mailbox is active and accepting deliveries. The risk comes when a mailbox is open that should be private, or when the software handling it has a known security flaw that attackers can exploit."
       />
 
       <SectionReveal>
@@ -290,10 +290,139 @@ function NonDeveloperTab() {
   )
 }
 
-function DeveloperTab() {
-  const tools = ['Shodan', 'WhatWeb', 'nmap', 'Nikto', 'Gobuster', 'FFuF', 'Hydra', 'Metasploit', 'John the Ripper', 'NVD', 'ExploitDB']
-  
+function PassiveFullGraph() {
+  const toolXs = [90, 275, 500, 725, 910]
+  const toolLabels = ['Shodan API', 'WhatWeb', 'DNS & WHOIS', 'SSL / TLS', 'HTTP Headers']
+  const bs = { fill: 'rgba(255,255,255,0.07)', stroke: 'rgba(255,255,255,0.22)', strokeWidth: 1 }
+  const ls = { stroke: 'rgba(255,255,255,0.5)', strokeWidth: 1.5, fill: 'none' }
+  function curve(x1, y1, x2, y2) {
+    const dy = y2 - y1
+    return `M ${x1} ${y1} C ${x1} ${y1+dy*0.45}, ${x2} ${y2-dy*0.45}, ${x2} ${y2}`
+  }
   return (
+    <svg viewBox="0 0 1000 520" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
+      {toolXs.map((tx, i) => <path key={`fo-${i}`} d={curve(500,105,tx,235)} {...ls} />)}
+      {toolXs.map((tx, i) => <path key={`cv-${i}`} d={curve(tx,285,500,420)} {...ls} />)}
+      <g transform="translate(500,80)">
+        <rect x={-91} y={-25} width={182} height={50} rx={10} {...bs} />
+        <text textAnchor="middle" dominantBaseline="middle" fill="white" fontSize={13} fontFamily="system-ui,sans-serif">yourdomain.com</text>
+      </g>
+      {toolXs.map((tx, i) => (
+        <g key={i} transform={`translate(${tx},260)`}>
+          <rect x={-76} y={-25} width={152} height={50} rx={10} {...bs} />
+          <text textAnchor="middle" dominantBaseline="middle" fill="white" fontSize={11} fontFamily="system-ui,sans-serif">{toolLabels[i]}</text>
+        </g>
+      ))}
+      <g transform="translate(500,445)">
+        <rect x={-76} y={-25} width={152} height={50} rx={10} {...bs} />
+        <text textAnchor="middle" dominantBaseline="middle" fill="white" fontSize={13} fontFamily="system-ui,sans-serif">NVD CVE Lookup</text>
+      </g>
+    </svg>
+  )
+}
+
+function ActiveFullGraph() {
+  const toolXs = [200, 500, 800]
+  const toolLabels = ['Nikto', 'WhatWeb', 'Hydra']
+  const bs = { fill: 'rgba(255,255,255,0.07)', stroke: 'rgba(255,255,255,0.22)', strokeWidth: 1 }
+  const ls = { stroke: 'rgba(255,255,255,0.5)', strokeWidth: 1.5, fill: 'none' }
+  function curve(x1, y1, x2, y2) {
+    const dy = y2 - y1
+    return `M ${x1} ${y1} C ${x1} ${y1+dy*0.45}, ${x2} ${y2-dy*0.45}, ${x2} ${y2}`
+  }
+  return (
+    <svg viewBox="0 0 1000 620" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
+      <path d={curve(500,90,500,155)} {...ls} />
+      {toolXs.map((tx, i) => <path key={`fo-${i}`} d={curve(500,205,tx,290)} {...ls} />)}
+      {toolXs.map((tx, i) => <path key={`cv-${i}`} d={curve(tx,340,500,420)} {...ls} />)}
+      <path d={curve(500,470,500,535)} {...ls} />
+      <g transform="translate(500,65)">
+        <rect x={-91} y={-25} width={182} height={50} rx={10} {...bs} />
+        <text textAnchor="middle" dominantBaseline="middle" fill="white" fontSize={13} fontFamily="system-ui,sans-serif">yourdomain.com</text>
+      </g>
+      <g transform="translate(500,180)">
+        <rect x={-91} y={-25} width={182} height={50} rx={10} {...bs} />
+        <text textAnchor="middle" dominantBaseline="middle" fill="white" fontSize={13} fontFamily="system-ui,sans-serif">NMAP Basic Scan</text>
+      </g>
+      {toolXs.map((tx, i) => (
+        <g key={i} transform={`translate(${tx},315)`}>
+          <rect x={-76} y={-25} width={152} height={50} rx={10} {...bs} />
+          <text textAnchor="middle" dominantBaseline="middle" fill="white" fontSize={12} fontFamily="system-ui,sans-serif">{toolLabels[i]}</text>
+        </g>
+      ))}
+      <g transform="translate(500,445)">
+        <rect x={-76} y={-25} width={152} height={50} rx={10} {...bs} />
+        <text textAnchor="middle" dominantBaseline="middle" fill="white" fontSize={12} fontFamily="system-ui,sans-serif">NVD CVE Lookup</text>
+      </g>
+      <g transform="translate(500,560)">
+        <rect x={-76} y={-25} width={152} height={50} rx={10} {...bs} />
+        <text textAnchor="middle" dominantBaseline="middle" fill="white" fontSize={12} fontFamily="system-ui,sans-serif">searchsploit</text>
+      </g>
+    </svg>
+  )
+}
+
+function GraphOverlay({ type, onClose }) {
+  useEffect(() => {
+    const handler = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [onClose])
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 200 }}>
+      {/* Animated background only — plain div outer so no transform creates a containing block */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.3 }}
+        style={{ position: 'absolute', inset: 0, background: 'rgba(7,10,13,0.97)' }}
+      />
+      <div style={{
+        position: 'absolute', top: 24, left: 32, zIndex: 202,
+        fontFamily: 'system-ui, sans-serif', fontSize: 13, fontWeight: 600,
+        color: 'rgba(255,255,255,0.5)', letterSpacing: '0.08em', textTransform: 'uppercase',
+      }}>
+        {type === 'passive' ? 'Passive Recon Pipeline' : 'Active Recon Pipeline'}
+      </div>
+      <motion.button
+        onClick={onClose}
+        whileHover={{ backgroundColor: 'rgba(255,255,255,0.08)' }}
+        style={{
+          position: 'absolute', top: 18, right: 24, zIndex: 202,
+          background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)',
+          borderRadius: 8, padding: '8px 16px', cursor: 'pointer',
+          color: 'rgba(255,255,255,0.7)', fontFamily: 'system-ui, sans-serif',
+          fontSize: 13, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8,
+        }}
+      >
+        <span>Zoom out</span>
+        <span style={{ fontSize: 11, opacity: 0.6 }}>✕</span>
+      </motion.button>
+      <div style={{
+        position: 'absolute',
+        top: 64,
+        left: 48,
+        right: 48,
+        bottom: 48,
+        zIndex: 201,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        {type === 'passive' ? <PassiveFullGraph /> : <ActiveFullGraph />}
+      </div>
+    </div>
+  )
+}
+
+function DeveloperTab() {
+  const tools = ['Shodan', 'WhatWeb', 'nmap', 'Nikto', 'Gobuster', 'FFuF', 'Hydra', 'Metasploit', 'John the Ripper', 'NVD', 'ExploitDB', 'SSL/TLS', 'HTTP Headers']
+  const [expandedGraph, setExpandedGraph] = useState(null)
+
+  return (
+    <>
     <motion.div
       key="dev"
       initial={{ opacity: 0, y: 10 }}
@@ -322,83 +451,216 @@ function DeveloperTab() {
         </p>
       </SectionReveal>
 
-      <Checkpoint 
-        question="Claude decides which tool to run next based on:"
-        options={["A hardcoded list of if/else rules in the code", "The output of the previous tool — Claude reasons about what to do next", "Whatever the user types in chat"]}
+      <Checkpoint
+        question="How does the app decide which tool to run after nmap?"
+        options={["The order is hardcoded — it always runs the same sequence of tools", "Claude reads what nmap found and decides what to check next", "The user has to tell it what to run next"]}
         correctAnswerIndex={1}
-        explanation="Claude reads each tool's raw output and decides the next step dynamically. The branching logic is Claude's live reasoning, not hardcoded conditionals."
+        explanation="There's no preset order. Claude reads what nmap printed out, thinks about what it means, and decides what to try next. If it found port 80 open, it'll go after the web server. If it found SSH, it'll try that instead."
       />
 
       <SectionReveal>
         <h2 style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 24, fontWeight: 600, color: '#ffffff', marginBottom: 16, letterSpacing: '-0.02em' }}>3. Passive vs Active Reconnaissance</h2>
         <p style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 15, color: 'rgba(255,255,255,0.65)', lineHeight: 1.6, marginBottom: 16 }}>
-          <strong>Passive:</strong> No raw TCP packets are ever routed to the target. All recon relies heavily on querying third-party APIs and DNS registers. This introduces absolutely zero legal risk.
+          <strong>Passive:</strong> Passive mode never actually contacts the target. We pull info from places like Shodan and DNS that already have data on most servers out there. The server never knows we looked.
         </p>
         <p style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 15, color: 'rgba(255,255,255,0.65)', lineHeight: 1.6, marginBottom: 16 }}>
-          <strong>Active:</strong> Direct traffic is routed to the target. The target server will register our footprints in their Apache/Nginx access logs and intrusion detection monitors. It is strictly only legal on systems you own or maintain written permission to attack.
+          <strong>Active:</strong> Active mode actually connects to the target. Your requests show up in their server logs. Scanning a server you don't own is illegal — it falls under the Computer Fraud and Abuse Act. The authorization checkbox in the app is a legal requirement, not just a formality.
         </p>
       </SectionReveal>
 
+      {/* ── Pipeline Overview: static SVG thumbnails ─────────────────────────── */}
+      <SectionReveal>
+        <p style={{ fontFamily: 'system-ui, sans-serif', fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 16 }}>
+          Pipeline Overview — click to expand
+        </p>
+        <div style={{ display: 'flex', gap: 20, marginBottom: 8 }}>
+          {/* Passive Recon card */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <span style={{ fontFamily: 'system-ui, sans-serif', fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Passive Recon</span>
+            <motion.div
+              onClick={() => setExpandedGraph('passive')}
+              whileHover={{ borderColor: 'rgba(255,255,255,0.28)' }}
+              style={{ cursor: 'pointer', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 10, overflow: 'hidden', background: 'rgba(255,255,255,0.02)', aspectRatio: '1000/560' }}
+            >
+              <svg viewBox="0 0 1000 560" width="100%" height="100%" style={{ display: 'block' }}>
+                {/* Fan-out lines: target → tools */}
+                {[90, 275, 500, 725, 910].map((tx, i) => (
+                  <line key={i} x1={500} y1={105} x2={tx} y2={255} stroke="rgba(255,255,255,0.55)" strokeWidth={1.5} />
+                ))}
+                {/* Convergence lines: tools → NVD */}
+                {[90, 275, 500, 725, 910].map((tx, i) => (
+                  <line key={i} x1={tx} y1={305} x2={500} y2={415} stroke="rgba(255,255,255,0.55)" strokeWidth={1.5} />
+                ))}
+                {/* Target block */}
+                <g transform="translate(500, 80)">
+                  <rect x={-91} y={-25} width={182} height={50} rx={10} fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.22)" strokeWidth={1} />
+                  <text textAnchor="middle" dominantBaseline="middle" fill="white" fontSize={13} fontFamily="system-ui, sans-serif">yourdomain.com</text>
+                </g>
+                {/* Tool blocks */}
+                {[90, 275, 500, 725, 910].map((tx, i) => (
+                  <g key={i} transform={`translate(${tx}, 280)`}>
+                    <rect x={-76} y={-25} width={152} height={50} rx={10} fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.22)" strokeWidth={1} />
+                    <text textAnchor="middle" dominantBaseline="middle" fill="white" fontSize={11} fontFamily="system-ui, sans-serif">
+                      {['Shodan API','WhatWeb','DNS & WHOIS','SSL / TLS','HTTP Headers'][i]}
+                    </text>
+                  </g>
+                ))}
+                {/* NVD block */}
+                <g transform="translate(500, 440)">
+                  <rect x={-76} y={-25} width={152} height={50} rx={10} fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.22)" strokeWidth={1} />
+                  <text textAnchor="middle" dominantBaseline="middle" fill="white" fontSize={13} fontFamily="system-ui, sans-serif">NVD CVE Lookup</text>
+                </g>
+              </svg>
+            </motion.div>
+            <p style={{ fontFamily: 'system-ui, sans-serif', fontSize: 11, color: 'rgba(255,255,255,0.25)', textAlign: 'center', margin: 0 }}>Click to expand</p>
+          </div>
+
+          {/* Active Recon card */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <span style={{ fontFamily: 'system-ui, sans-serif', fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Active Recon</span>
+            <motion.div
+              onClick={() => setExpandedGraph('active')}
+              whileHover={{ borderColor: 'rgba(255,255,255,0.28)' }}
+              style={{ cursor: 'pointer', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 10, overflow: 'hidden', background: 'rgba(255,255,255,0.02)', aspectRatio: '1000/560' }}
+            >
+              <svg viewBox="0 0 1000 560" width="100%" height="100%" style={{ display: 'block' }}>
+                {/* target → nmap */}
+                <line x1={500} y1={75} x2={500} y2={150} stroke="rgba(255,255,255,0.55)" strokeWidth={1.5} />
+                {/* nmap → tools */}
+                {[200, 500, 800].map((tx, i) => (
+                  <line key={i} x1={500} y1={200} x2={tx} y2={280} stroke="rgba(255,255,255,0.55)" strokeWidth={1.5} />
+                ))}
+                {/* tools → NVD */}
+                {[200, 500, 800].map((tx, i) => (
+                  <line key={i} x1={tx} y1={330} x2={500} y2={400} stroke="rgba(255,255,255,0.55)" strokeWidth={1.5} />
+                ))}
+                {/* NVD → searchsploit */}
+                <line x1={500} y1={450} x2={500} y2={490} stroke="rgba(255,255,255,0.55)" strokeWidth={1.5} />
+                {/* Target block */}
+                <g transform="translate(500, 50)">
+                  <rect x={-91} y={-25} width={182} height={50} rx={10} fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.22)" strokeWidth={1} />
+                  <text textAnchor="middle" dominantBaseline="middle" fill="white" fontSize={13} fontFamily="system-ui, sans-serif">yourdomain.com</text>
+                </g>
+                {/* NMAP block */}
+                <g transform="translate(500, 175)">
+                  <rect x={-91} y={-25} width={182} height={50} rx={10} fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.22)" strokeWidth={1} />
+                  <text textAnchor="middle" dominantBaseline="middle" fill="white" fontSize={13} fontFamily="system-ui, sans-serif">NMAP Basic Scan</text>
+                </g>
+                {/* Tool blocks */}
+                {[200, 500, 800].map((tx, i) => (
+                  <g key={i} transform={`translate(${tx}, 305)`}>
+                    <rect x={-76} y={-25} width={152} height={50} rx={10} fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.22)" strokeWidth={1} />
+                    <text textAnchor="middle" dominantBaseline="middle" fill="white" fontSize={12} fontFamily="system-ui, sans-serif">
+                      {['Nikto','WhatWeb','Hydra'][i]}
+                    </text>
+                  </g>
+                ))}
+                {/* NVD block */}
+                <g transform="translate(500, 425)">
+                  <rect x={-76} y={-25} width={152} height={50} rx={10} fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.22)" strokeWidth={1} />
+                  <text textAnchor="middle" dominantBaseline="middle" fill="white" fontSize={12} fontFamily="system-ui, sans-serif">NVD CVE Lookup</text>
+                </g>
+                {/* Searchsploit block */}
+                <g transform="translate(500, 515)">
+                  <rect x={-76} y={-25} width={152} height={50} rx={10} fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.22)" strokeWidth={1} />
+                  <text textAnchor="middle" dominantBaseline="middle" fill="white" fontSize={12} fontFamily="system-ui, sans-serif">searchsploit</text>
+                </g>
+              </svg>
+            </motion.div>
+            <p style={{ fontFamily: 'system-ui, sans-serif', fontSize: 11, color: 'rgba(255,255,255,0.25)', textAlign: 'center', margin: 0 }}>Click to expand</p>
+          </div>
+        </div>
+      </SectionReveal>
+
+      {/* ── 4. Passive Recon: Step by Step ──────────────────────────────────── */}
       <SectionReveal id="tool-shodan">
-        <h2 style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 24, fontWeight: 600, color: '#ffffff', marginBottom: 24, letterSpacing: '-0.02em' }}>4. Passive Recon Commands</h2>
-        
+        <h2 style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 24, fontWeight: 600, color: '#ffffff', marginBottom: 24, letterSpacing: '-0.02em' }}>4. Passive Recon: Step by Step</h2>
+
         <TypewriterCommand attachBadge="Shodan" command="shodan host [ip]" />
-        <p style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 32 }}>Queries the global Shodan index for exposed IoT properties or historical port data without directly pinging the host.</p>
-        
-        <TypewriterCommand attachBadge="dig" command="dig [ip]" />
-        <p style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 32 }}>Queries authoritative DNS servers to rip records related to the domain.</p>
-        
-        <TypewriterCommand attachBadge="WhatWeb" command="whatweb http://[ip]" />
-        <p style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 32 }}>Pulls HTTP headers and aggressively parses them to identify backend web technologies, frameworks, and CMS versions.</p>
-        
+        <p style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 32 }}>Shodan is a search engine that continuously scans the internet and records what it finds. When we query it, we're just reading their data — nothing gets sent to the target at all.</p>
+
+        <div id="tool-whatweb">
+          <TypewriterCommand attachBadge="WhatWeb" command="whatweb http://[ip]" />
+          <p style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 32 }}>WhatWeb makes one request to the server and reads what comes back. From the response, it can figure out what software is running and which version. We need those version numbers for the vulnerability lookup that comes later.</p>
+        </div>
+
+        <TypewriterCommand attachBadge="DNS/WHOIS" command="dig any yourdomain.com" />
+        <p style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 32 }}>We ask DNS to tell us everything it knows about the domain. Subdomains, mail servers, who registered it — all public info. None of this ever touches the actual server.</p>
+
+        <div id="tool-ssl-tls">
+          <TypewriterCommand attachBadge="SSL/TLS" command="sslyze --regular yourdomain.com" />
+          <p style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 32 }}>This checks how the server handles encrypted connections. We look at whether it's using old encryption methods that have known weaknesses, and whether its certificate is still valid. A lot of servers have outdated settings here without realizing it.</p>
+        </div>
+
+        <div id="tool-http-headers">
+          <TypewriterCommand attachBadge="HTTP Headers" command="curl -I http://yourdomain.com" />
+          <p style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 32 }}>We make one request and look at what the server sends back. There are several security settings that are supposed to be in the response by default — things that tell the browser how to handle the connection safely. If they're missing, that's a misconfiguration, not a bug.</p>
+        </div>
+
         <div id="tool-nvd">
           <TypewriterCommand attachBadge="NVD" command='curl "https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=Apache+2.4.49"' />
-          <p style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 32 }}>Queries the National Vulnerability Database API directly for cross-referencing precise software strings parsed earlier in the pipeline for known exploits.</p>
+          <p style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 32 }}>We take the software versions we found and look them up in the NVD — it's a government database that tracks known vulnerabilities in software. Each entry is called a CVE and has a severity score from 0 to 10.</p>
         </div>
       </SectionReveal>
 
-      <Checkpoint 
-        question="WhatWeb returns 'Apache httpd 2.4.49' — what is the immediate next step?"
-        options={["Run gobuster to find hidden directories", "Look up Apache 2.4.49 in the NVD CVE database", "Run hydra against port 80"]}
+      <Checkpoint
+        question="WhatWeb comes back saying the server runs Apache httpd 2.4.49. What happens next?"
+        options={["Gobuster starts trying to find hidden pages", "We look up that version number in the vulnerability database", "Hydra tries to log in on port 80"]}
         correctAnswerIndex={1}
-        explanation="The version string is fed directly into the NVD API. CVE-2021-41773 affects Apache 2.4.49 specifically — without the version you cannot look up the right CVE."
+        explanation="We search the NVD for that exact version. There's a known vulnerability — CVE-2021-41773 — that only affects Apache 2.4.49 specifically. You can't find the right entry without knowing the exact version first."
       />
 
+      {/* ── 5. Active Recon: Step by Step ───────────────────────────────────── */}
       <SectionReveal id="tool-nmap">
-        <h2 style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 24, fontWeight: 600, color: '#ffffff', marginBottom: 24, letterSpacing: '-0.02em' }}>5. Active Recon Commands</h2>
-        
+        <h2 style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 24, fontWeight: 600, color: '#ffffff', marginBottom: 24, letterSpacing: '-0.02em' }}>5. Active Recon: Step by Step</h2>
+
         <TypewriterCommand attachBadge="nmap" command="nmap [ip]" />
-        <p style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 16 }}>Lightweight SYN stealth scan against the 1000 most common ports.</p>
-        
+        <p style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 16 }}>First, nmap checks which ports are open. Ports are numbered channels — different services listen on different ones. nmap probes the most common ones and sees which respond. It does this without fully connecting, so it's fast and doesn't generate much noise.</p>
+
         <TypewriterCommand attachBadge="nmap" command="nmap -A -p [open ports] [ip]" />
-        <p style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 32 }}>Aggressive script scanning, OS footprinting, and banner grabbing against newly identified open service ports.</p>
-        
+        <p style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 32 }}>Once we know which ports are open, we go back and look closer. This time nmap figures out what software is running on each one, what version, and what operating system. Claude reads this output and decides what tools to run next.</p>
+
         <div id="tool-nikto">
           <TypewriterCommand attachBadge="Nikto" command="nikto -h http://[ip]" />
-          <p style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 32 }}>Throws massive arrays of generic web-server attacks and misconfiguration checks against any identified Port 80 / 443 web servers.</p>
+          <p style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 32 }}>If port 80 or 443 is open, there's a web server. Nikto hits it with thousands of requests looking for known issues — old files, misconfigured settings, outdated software. The server will definitely notice this traffic.</p>
         </div>
-        
+
+        <div id="tool-whatweb-active">
+          <TypewriterCommand attachBadge="WhatWeb" command="whatweb -a 3 http://[ip]" />
+          <p style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 32 }}>After Nikto confirms the web server is running, we run WhatWeb again with more requests. We're double-checking the software versions — more requests means more confidence in what we find.</p>
+        </div>
+
         <div id="tool-gobuster">
           <TypewriterCommand attachBadge="Gobuster" command="gobuster dir -u http://[ip] -w /usr/share/wordlists/dirb/common.txt" />
-          <p style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 32 }}>Brute forces the target webserver using massive custom dictionaries to uncover hidden endpoints and admin panels.</p>
+          <p style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 32 }}>Gobuster tries to find pages and folders that aren't linked anywhere publicly. It goes through a big wordlist of common names and requests each one. If something responds, it exists. That's how you find admin panels and forgotten backup files.</p>
         </div>
-        
+
+        <div id="tool-ffuf">
+          <TypewriterCommand attachBadge="FFuF" command="ffuf -w /usr/share/wordlists/dirb/common.txt -u http://[ip]/FUZZ" />
+          <p style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 32 }}>FFuF does the same kind of thing as Gobuster but faster and more flexible. You can point it at any part of the URL — not just the path. Useful for finding hidden parameters and subdomains in addition to directories.</p>
+        </div>
+
         <div id="tool-hydra">
           <TypewriterCommand attachBadge="Hydra" command="hydra -l root -P /usr/share/wordlists/rockyou.txt mysql://[ip]" />
-          <p style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 32 }}>Network logon cracker blasting default and leaked passwords against exposed login nodes (SSH, MySQL, Redis).</p>
+          <p style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 32 }}>If we find a port that requires a login — like SSH on port 22 or a database port — Hydra tries to get in. It uses the RockYou list, a huge collection of real passwords from a past data breach. A lot of servers still have weak default credentials.</p>
         </div>
-        
+
         <div id="tool-metasploit">
           <TypewriterCommand attachBadge="Metasploit" command='msfconsole -x "use auxiliary/scanner/smb/smb_ms17_010; set RHOSTS [ip]; run"' />
-          <p style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 32 }}>Automatically triggers known exploit scripts programmatically when severe high-profile vulnerabilities are mapped in the reconnaissance phase.</p>
+          <p style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 32 }}>If port 445 is open, that's the Windows file sharing port, and we check for EternalBlue. EternalBlue is a vulnerability the NSA found and kept secret until it leaked. It's what WannaCry was built on. An unpatched Windows server with that port exposed can be taken over in seconds.</p>
+        </div>
+
+        <div id="tool-exploitdb">
+          <TypewriterCommand attachBadge="searchsploit" command="searchsploit apache 2.4.49" />
+          <p style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 32 }}>After finding CVEs in the NVD, we check ExploitDB to see if someone's already written working exploit code for them. A vulnerability with published exploit code is way more dangerous than a theoretical one — anyone can use it.</p>
         </div>
       </SectionReveal>
 
-      <Checkpoint 
-        question="Nmap finds port 445 open. What runs next?"
-        options={["Hydra brute force", "Nikto web scanner", "EternalBlue SMB auxiliary scan"]}
+      <Checkpoint
+        question="Nmap finds port 445 open. What should run next?"
+        options={["Hydra — tries to log in using common passwords", "Nikto — scans the web server on port 445", "Metasploit — checks if the server is vulnerable to EternalBlue"]}
         correctAnswerIndex={2}
-        explanation="Port 445 is SMB — Windows file sharing. EternalBlue (MS17-010) is the most critical known SMB exploit and is checked automatically when 445 is open via Metasploit modules."
+        explanation="Port 445 is Windows file sharing. EternalBlue is a vulnerability the NSA built and kept secret — it leaked, and then hackers used it to build WannaCry. An unpatched Windows server with this port open can be fully compromised in seconds. That's why we check it immediately."
       />
 
       <SectionReveal>
@@ -412,7 +674,7 @@ function DeveloperTab() {
           <div style={{ display: 'grid', gridTemplateColumns: '60px 100px 1fr', gap: 16, padding: '12px 16px', fontFamily: 'monospace', fontSize: 13, color: '#ffffff', background: 'rgba(0,0,0,0.2)', borderRadius: 8 }}>
             <span style={{ color: '#60a5fa' }}>22</span>
             <span>SSH</span>
-            <span style={{ color: 'rgba(255,255,255,0.6)' }}>Hydra brute force → John the Ripper (if hashes extracted)</span>
+            <span style={{ color: 'rgba(255,255,255,0.6)' }}>Hydra tries common passwords → John the Ripper cracks any password hashes we find</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '60px 100px 1fr', gap: 16, padding: '12px 16px', fontFamily: 'monospace', fontSize: 13, color: '#ffffff', background: 'rgba(0,0,0,0.2)', borderRadius: 8 }}>
             <span style={{ color: '#60a5fa' }}>80/443</span>
@@ -422,17 +684,26 @@ function DeveloperTab() {
           <div style={{ display: 'grid', gridTemplateColumns: '60px 100px 1fr', gap: 16, padding: '12px 16px', fontFamily: 'monospace', fontSize: 13, color: '#ffffff', background: 'rgba(0,0,0,0.2)', borderRadius: 8 }}>
             <span style={{ color: '#60a5fa' }}>445</span>
             <span>SMB</span>
-            <span style={{ color: 'rgba(255,255,255,0.6)' }}>Metasploit MS17-010 Scanning Module</span>
+            <span style={{ color: 'rgba(255,255,255,0.6)' }}>Metasploit checks for EternalBlue (MS17-010)</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '60px 100px 1fr', gap: 16, padding: '12px 16px', fontFamily: 'monospace', fontSize: 13, color: '#ffffff', background: 'rgba(0,0,0,0.2)', borderRadius: 8 }}>
             <span style={{ color: '#60a5fa' }}>3306</span>
             <span>MySQL</span>
-            <span style={{ color: 'rgba(255,255,255,0.6)' }}>Hydra check for blank/default credentials</span>
+            <span style={{ color: 'rgba(255,255,255,0.6)' }}>Hydra tries blank passwords, root/root, and common leaked credentials</span>
           </div>
         </div>
       </SectionReveal>
 
     </motion.div>
+    {createPortal(
+      <AnimatePresence>
+        {expandedGraph !== null && (
+          <GraphOverlay key={expandedGraph} type={expandedGraph} onClose={() => setExpandedGraph(null)} />
+        )}
+      </AnimatePresence>,
+      document.body
+    )}
+    </>
   )
 }
 
