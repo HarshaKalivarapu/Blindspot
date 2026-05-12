@@ -270,13 +270,6 @@ function Scan() {
     navigate('/')
   }
 
-  useEffect(() => {
-    if (view === 'chat' && user && !scanInserted.current) {
-      scanInserted.current = true
-      supabase.from('scans').insert({ user_id: user.id, report: null })
-    }
-  }, [view, user])
-
   const handleSend = async (e) => {
     e.preventDefault()
     const trimmed = input.trim()
@@ -304,6 +297,7 @@ function Scan() {
           level: config.level,
           intensity: config.intensity ?? 'simple',
           authorization_confirmed: isAuthorized,
+          user_id: user?.id,
         }),
       })
 

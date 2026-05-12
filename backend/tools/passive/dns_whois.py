@@ -60,7 +60,7 @@ def _whois_section(domain: str) -> list[str]:
     try:
         expiry_dt = expiry[0] if isinstance(expiry, list) else expiry
         if expiry_dt and isinstance(expiry_dt, datetime.datetime):
-            days_left = (expiry_dt - datetime.datetime.utcnow()).days
+            days_left = (expiry_dt - datetime.datetime.now(datetime.timezone.utc)).days
             if days_left < 0:
                 expiry_warning = " ⚠ EXPIRED"
             elif days_left <= 60:

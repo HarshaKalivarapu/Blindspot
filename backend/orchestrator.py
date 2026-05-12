@@ -187,7 +187,6 @@ reported — do not invent data. Omit fields that don't apply (null or empty arr
 
 {{
   "target": "{target}",
-  "scan_date": "<ISO 8601 UTC datetime>",
   "scan_type": "{scan_type}",
   "scan_mode": {scan_mode_json},
   "duration_seconds": {duration},

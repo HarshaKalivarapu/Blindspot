@@ -104,7 +104,7 @@ def _parse_cert_section(cert: dict, hostname: str, verified: bool) -> list[str]:
     try:
         not_after = datetime.datetime.strptime(not_after_str, fmt)
         not_before = datetime.datetime.strptime(not_before_str, fmt)
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now(datetime.timezone.utc)
         days_left = (not_after - now).days
 
         lines.append(f"  Valid from   : {not_before.strftime('%Y-%m-%d')}")
