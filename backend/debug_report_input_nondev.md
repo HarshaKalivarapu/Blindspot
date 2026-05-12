@@ -230,83 +230,31 @@ Here are all security findings from the scan in a compact structured format:
 
 ```json
 {
-  "target": "intellixsoftware.com",
+  "target": "samaypatel.netlify.app",
   "scan_date": null,
   "scan_type": "active",
   "scan_mode": "simple",
-  "duration_seconds": 275.7,
-  "tools_run": ["http_headers", "ssl_tls", "dns_whois", "whatweb"],
+  "duration_seconds": 164.1,
+  "tools_run": ["nvd_lookup"],
   "tool_errors": [
-    "nmap: TIMEOUT — exceeded time limit",
-    "nikto: No such file or directory",
-    "whatweb_active: TIMEOUT — exceeded time limit",
-    "shodan: 403 Forbidden — Access denied",
-    "searchsploit: No such file or directory"
+    "nmap: TIMEOUT - nmap exceeded time limit",
+    "nikto: ERROR - [Errno 2] No such file or directory: 'nikto'",
+    "whatweb_active: TIMEOUT - WhatWeb active scan exceeded time limit"
   ],
-  "open_ports": [80, 443],
-  "services": {
-    "80": {"name": "HTTP", "version": "Sucuri/Cloudproxy"},
-    "443": {"name": "HTTPS", "version": "Sucuri/Cloudproxy"}
-  },
-  "tech_stack": [
-    "WordPress 6.7.5",
-    "WooCommerce 9.6.4",
-    "jQuery 1.8.3",
-    "jQuery 3.7.1",
-    "Sucuri/Cloudproxy"
-  ],
-  "cves": [
-    {
-      "id": "CVE-2026-2437",
-      "cvss": 6.4,
-      "affected_software": "WordPress 6.7.5",
-      "description": "Stored XSS via the 'wte_trip_tax' shortcode in the WP Travel Engine plugin for WordPress in versions up to and including 6.7.5 due to insufficient input sanitization.",
-      "has_exploit": false,
-      "exploit_sources": []
-    }
-  ],
-  "ssl": {
-    "valid": true,
-    "expiry_date": "2026-07-26",
-    "days_until_expiry": 75,
-    "issues": []
-  },
-  "http_headers": {
-    "missing_security_headers": [
-      "Strict-Transport-Security",
-      "Referrer-Policy",
-      "Permissions-Policy"
-    ],
-    "info_disclosure": [
-      "Server: Sucuri/Cloudproxy",
-      "x-pingback: https://intellixsoftware.com/xmlrpc.php"
-    ]
-  },
-  "dns_whois": {
-    "registrar": "GoDaddy.com, LLC",
-    "expiry_date": "2028-12-13",
-    "days_until_expiry": null,
-    "nameservers": [
-      "ns73.domaincontrol.com",
-      "ns74.domaincontrol.com"
-    ],
-    "subdomains_found": []
-  },
-  "shodan": {
-    "country": null,
-    "isp": null,
-    "ports_indexed": [],
-    "previously_flagged_cves": []
-  },
+  "open_ports": [],
+  "services": {},
+  "tech_stack": [],
+  "cves": [],
+  "ssl": null,
+  "http_headers": null,
+  "dns_whois": null,
+  "shodan": null,
   "nikto_findings": [],
-  "hydra_results": {
-    "service": null,
-    "credentials_found": []
-  },
+  "hydra_results": null,
   "ffuf_findings": [],
   "searchsploit_results": [],
   "confirmed_exploits_count": 0,
-  "total_issues_count": 8
+  "total_issues_count": 0
 }
 ```
 

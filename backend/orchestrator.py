@@ -15,6 +15,7 @@ Environment:
 """
 
 import asyncio
+from datetime import datetime, timezone
 import json
 import os
 import sys
@@ -452,7 +453,7 @@ async def scan(req: ScanRequest):
                                 insert_row = {
                                     "user_id": req.user_id,
                                     "target": ext.get("target"),
-                                    "scan_date": ext.get("scan_date"),
+                                    "scan_date": datetime.now(timezone.utc).isoformat(),
                                     "scan_type": ext.get("scan_type"),
                                     "scan_mode": ext.get("scan_mode"),
                                     "duration_seconds": ext.get("duration_seconds"),

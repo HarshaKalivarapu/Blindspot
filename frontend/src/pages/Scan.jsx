@@ -67,7 +67,7 @@ function ScanHistoryCard({ row, onClick, onDelete, index, animated }) {
       initial={shouldAnimate.current ? { opacity: 0, y: 20 } : false}
       animate={shouldAnimate.current ? { opacity: 1, y: 0 } : undefined}
       transition={shouldAnimate.current ? { duration: 1.5, ease: 'easeOut', delay: index * 0.25 } : undefined}
-      whileHover={{ backgroundColor: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.25)' }}
+      whileHover={{ backgroundColor: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.25)', transition: { duration: 0.2 } }}
       whileTap={{ scale: 0.98 }}
       style={{
         aspectRatio: '1', display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
