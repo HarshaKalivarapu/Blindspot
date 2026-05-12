@@ -7,9 +7,11 @@ import ScanFeed from '../components/homepage/ScanFeed.jsx'
 import HeroPanel from '../components/homepage/HeroPanel.jsx'
 import ShaderBackground from '../components/homepage/ShaderBackground.jsx'
 import AuthModal from '../components/homepage/AuthModal.jsx'
+import { useAuth } from '../lib/AuthContext.jsx'
 
 export default function Home() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [phase, setPhase] = useState('intro')
   const [isModalOpen, setIsModalOpen] = useState(false)
 
@@ -105,28 +107,53 @@ export default function Home() {
                 >
                   User Guide
                 </motion.button>
-                <motion.button 
-                  type="button"
-                  onClick={() => setIsModalOpen(true)}
-                  whileHover={{ backgroundColor: '#ffffff', color: '#0a0a0a', borderColor: '#ffffff' }}
-                  initial={{ backgroundColor: 'rgba(255, 255, 255, 0.03)', color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.15)' }}
-                  transition={{ duration: 0.2 }}
-                  style={{
-                    fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                    fontSize: 14,
-                    fontWeight: 500,
-                    padding: '10px 24px',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
-                    borderRadius: 6,
-                    cursor: 'pointer',
-                    outline: 'none',
-                    letterSpacing: '0.01em',
-                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                    backdropFilter: 'blur(4px)',
-                  }}
-                >
-                  Login
-                </motion.button>
+                {user ? (
+                  <motion.button
+                    type="button"
+                    onClick={() => navigate('/scan')}
+                    whileHover={{ backgroundColor: '#ffffff', color: '#0a0a0a', borderColor: '#ffffff' }}
+                    initial={{ backgroundColor: 'rgba(255, 255, 255, 0.03)', color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.15)' }}
+                    transition={{ duration: 0.2 }}
+                    style={{
+                      fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                      fontSize: 14,
+                      fontWeight: 500,
+                      padding: '10px 24px',
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      borderRadius: 6,
+                      cursor: 'pointer',
+                      outline: 'none',
+                      letterSpacing: '0.01em',
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                      backdropFilter: 'blur(4px)',
+                    }}
+                  >
+                    Dashboard
+                  </motion.button>
+                ) : (
+                  <motion.button
+                    type="button"
+                    onClick={() => setIsModalOpen(true)}
+                    whileHover={{ backgroundColor: '#ffffff', color: '#0a0a0a', borderColor: '#ffffff' }}
+                    initial={{ backgroundColor: 'rgba(255, 255, 255, 0.03)', color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.15)' }}
+                    transition={{ duration: 0.2 }}
+                    style={{
+                      fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                      fontSize: 14,
+                      fontWeight: 500,
+                      padding: '10px 24px',
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      borderRadius: 6,
+                      cursor: 'pointer',
+                      outline: 'none',
+                      letterSpacing: '0.01em',
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                      backdropFilter: 'blur(4px)',
+                    }}
+                  >
+                    Login
+                  </motion.button>
+                )}
               </div>
             </div>
           </nav>
