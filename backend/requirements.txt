@@ -16,5 +16,5 @@ pydantic>=2.0.0
 # Supabase relies on 'pyiceberg' which lacks Python 3.14 
 # Windows C++ compatibility and will CRASH pip install.
 # If you are on Python 3.12 or 3.13, uncomment below:
-# supabase>=2.0.0
+supabase>=2.0.0
 # ----------------------------------------------------

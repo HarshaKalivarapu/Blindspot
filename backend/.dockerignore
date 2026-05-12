@@ -1,0 +1,11 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+logs/
+reports/
+debug_report_input_dev.md
+debug_report_input_nondev.md
+report-dev.md
+report-non-dev.md
