@@ -469,6 +469,45 @@ function Scan() {
               onDelete={(id) => setDeleteScanId(id)}
             />
           ))}
+
+          {/* Empty search state */}
+          {searchActive && !searchLoading && searchResults.length === 0 && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+                style={{
+                  aspectRatio: '1',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: 'rgba(255,255,255,0.02)',
+                  border: '1px dashed rgba(255,255,255,0.12)',
+                  borderRadius: 16,
+                  padding: 20,
+                  backdropFilter: 'blur(4px)',
+                }}
+              >
+                <div style={{ fontFamily: SANS, fontSize: 14, color: 'rgba(255,255,255,0.3)', textAlign: 'center', letterSpacing: '0.01em' }}>
+                  No scans found
+                </div>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3, delay: 0.05 }}
+                style={{
+                  aspectRatio: '1',
+                  backgroundColor: 'rgba(255,255,255,0.01)',
+                  border: '1px dashed rgba(255,255,255,0.06)',
+                  borderRadius: 16,
+                  backdropFilter: 'blur(4px)',
+                }}
+              />
+            </>
+          )}
           </div>
         </div>
       </div>
