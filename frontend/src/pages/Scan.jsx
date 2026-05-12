@@ -372,7 +372,7 @@ function Scan() {
                 type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Search by network or ip address"
+                placeholder="Search by network or IP address"
                 style={{
                   fontFamily: SANS, fontSize: 13, color: '#ffffff',
                   background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)',
