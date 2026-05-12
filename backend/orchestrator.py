@@ -15,6 +15,7 @@ Environment:
 """
 
 import asyncio
+from datetime import datetime, timezone
 import json
 import os
 import sys
@@ -36,6 +37,24 @@ ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-6")
 SUPABASE_URL = (os.environ.get("SUPABASE_URL") or "").strip() or None
 SUPABASE_SERVICE_ROLE_KEY = (os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or "").strip() or None
+
+SEARCH_STRIP_PREFIXES = ["https://", "http://", "www."]
+
+def clean_search_query(raw: str) -> tuple[str, str]:
+    """Returns (cleaned_query, cleaned_query_without_dots)."""
+    q = raw.strip().lower()
+    for prefix in SEARCH_STRIP_PREFIXES:
+        if q.startswith(prefix):
+            q = q[len(prefix):]
+            break
+    slash_idx = q.find("/")
+    if slash_idx != -1:
+        q = q[:slash_idx]
+    query_idx = q.find("?")
+    if query_idx != -1:
+        q = q[:query_idx]
+    q_nodots = q.replace(".", "")
+    return q, q_nodots
 
 if not ANTHROPIC_API_KEY:
     print(
@@ -310,6 +329,25 @@ async def health():
     return {"status": "ok", "model": MODEL, "key_loaded": bool(ANTHROPIC_API_KEY)}
 
 
+@app.get("/scans/search")
+async def search_scans(q: str, user_id: str):
+    if not supabase_client:
+        raise HTTPException(status_code=500, detail="Supabase not configured")
+    if not q or not user_id:
+        return []
+    q_clean, q_nodots = clean_search_query(q)
+    if not q_clean:
+        return []
+    try:
+        result = supabase_client.rpc(
+            "search_user_scans",
+            {"p_user_id": user_id, "p_query": q_clean, "p_query_nodots": q_nodots},
+        ).execute()
+        return result.data or []
+    except Exception:
+        return []
+
+
 @app.post("/scan")
 async def scan(req: ScanRequest):
     if not anthropic_client:
@@ -419,7 +457,7 @@ async def scan(req: ScanRequest):
                                 insert_row = {
                                     "user_id": req.user_id,
                                     "target": ext.get("target"),
-                                    "scan_date": ext.get("scan_date"),
+                                    "scan_date": datetime.now(timezone.utc).isoformat(),
                                     "scan_type": ext.get("scan_type"),
                                     "scan_mode": ext.get("scan_mode"),
                                     "duration_seconds": ext.get("duration_seconds"),

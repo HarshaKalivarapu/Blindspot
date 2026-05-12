@@ -1,8 +1,13 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import ShaderBackground from '../components/homepage/ShaderBackground.jsx'
 import CopyButton from '../components/ui/CopyButton.jsx'
+import { useAuth } from '../lib/AuthContext.jsx'
+
+const ARROW_H = 12
+const BAR_W = 10
 
 // Intersection Reveal Wrapper for Text Sections
 function SectionReveal({ children, id }) {
@@ -433,7 +438,25 @@ function DeveloperTab() {
 
 export default function Guide() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [activeTab, setActiveTab] = useState('non-dev') // 'non-dev' | 'dev'
+  const guideScrollRef = useRef(null)
+  const [thumbTop, setThumbTop] = useState(0)
+  const [thumbHeight, setThumbHeight] = useState(0)
+
+  const updateThumb = useCallback(() => {
+    const el = guideScrollRef.current
+    if (!el || el.scrollHeight <= el.clientHeight) { setThumbHeight(0); return }
+    const trackH = window.innerHeight - 2 * ARROW_H
+    const ratio = el.clientHeight / el.scrollHeight
+    const th = Math.max(trackH * ratio, 24)
+    const maxScroll = el.scrollHeight - el.clientHeight
+    const scrollRatio = maxScroll > 0 ? el.scrollTop / maxScroll : 0
+    setThumbHeight(th)
+    setThumbTop(ARROW_H + scrollRatio * (trackH - th))
+  }, [])
+
+  useEffect(() => { updateThumb() }, [updateThumb])
 
   return (
     <div style={{ position: 'relative', height: '100vh', width: '100vw', overflow: 'hidden', background: '#070a0d' }}>
@@ -463,13 +486,13 @@ export default function Guide() {
           justifyContent: 'space-between',
           fontFamily: 'system-ui, -apple-system, sans-serif'
         }}>
-          <div style={{ fontSize: 18, fontWeight: 600, color: '#ffffff', letterSpacing: '-0.02em', cursor: 'pointer' }} onClick={() => navigate('/')}>
+          <div style={{ fontSize: 18, fontWeight: 600, color: '#ffffff', letterSpacing: '-0.02em', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace" }} onClick={() => navigate('/')}>
             Blindspot
           </div>
           <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
             <motion.button 
               type="button"
-              onClick={() => navigate('/scan')}
+              onClick={() => navigate(user ? '/scan' : '/')}
               whileHover={{ backgroundColor: '#ffffff', color: '#0a0a0a', borderColor: '#ffffff' }}
               initial={{ backgroundColor: 'rgba(255, 255, 255, 0.03)', color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.15)' }}
               transition={{ duration: 0.2 }}
@@ -492,6 +515,9 @@ export default function Guide() {
       </nav>
 
       <div
+        ref={guideScrollRef}
+        className="pentest-scrollbar-report"
+        onScroll={updateThumb}
         style={{
           position: 'absolute',
           inset: '64px 0 0 0',
@@ -561,6 +587,42 @@ export default function Guide() {
           <div style={{ height: 120 }} />
         </div>
       </div>
+
+      {createPortal(
+        <div style={{ position: 'fixed', top: 0, right: 0, width: BAR_W, height: '100vh', zIndex: 51, pointerEvents: 'none' }}>
+          <motion.button
+            whileHover={{ backgroundColor: 'rgba(156, 163, 175, 0.25)' }}
+            onClick={() => guideScrollRef.current?.scrollBy({ top: -80, behavior: 'smooth' })}
+            style={{
+              position: 'absolute', top: 0, left: 0, right: 0, height: ARROW_H,
+              backgroundColor: 'rgba(156, 163, 175, 0.1)', border: 'none', cursor: 'pointer',
+              padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'auto',
+            }}
+          >
+            <svg width="6" height="4" viewBox="0 0 6 4"><polygon points="3,0 6,4 0,4" fill="rgba(156,163,175,0.75)" /></svg>
+          </motion.button>
+          <motion.div
+            animate={{ top: thumbTop, height: thumbHeight }}
+            transition={{ duration: 0.1, ease: 'easeOut' }}
+            style={{
+              position: 'absolute', left: 0, right: 0, borderRadius: 2,
+              background: thumbHeight > 0 ? 'rgba(156, 163, 175, 0.35)' : 'transparent',
+            }}
+          />
+          <motion.button
+            whileHover={{ backgroundColor: 'rgba(156, 163, 175, 0.25)' }}
+            onClick={() => guideScrollRef.current?.scrollBy({ top: 80, behavior: 'smooth' })}
+            style={{
+              position: 'absolute', bottom: 0, left: 0, right: 0, height: ARROW_H,
+              backgroundColor: 'rgba(156, 163, 175, 0.1)', border: 'none', cursor: 'pointer',
+              padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'auto',
+            }}
+          >
+            <svg width="6" height="4" viewBox="0 0 6 4"><polygon points="3,4 6,0 0,0" fill="rgba(156,163,175,0.75)" /></svg>
+          </motion.button>
+        </div>,
+        document.body
+      )}
     </div>
   )
 }

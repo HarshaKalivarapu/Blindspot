@@ -186,8 +186,8 @@ export default function ScanReport() {
         justifyContent: 'space-between', fontFamily: 'system-ui, -apple-system, sans-serif',
       }}>
         <div
-          style={{ fontSize: 18, fontWeight: 600, color: '#ffffff', letterSpacing: '-0.02em', cursor: 'pointer' }}
-          onClick={() => navigate('/scan')}
+          style={{ fontSize: 18, fontWeight: 600, color: '#ffffff', letterSpacing: '-0.02em', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace" }}
+          onClick={() => navigate('/')}
         >
           Blindspot
         </div>
@@ -269,7 +269,7 @@ export default function ScanReport() {
 
       {/* Phase: config */}
       {phase === 'config' && (
-        <div style={{ position: 'absolute', inset: '64px 0 0 0', overflowY: 'auto', overscrollBehavior: 'contain', zIndex: 1 }}>
+        <div className="pentest-scrollbar" style={{ position: 'absolute', inset: '64px 0 0 0', overflowY: 'auto', overscrollBehavior: 'contain', zIndex: 1 }}>
           <NewScan onSubmit={handleConfigSubmit} onBack={() => navigate('/scan')} />
         </div>
       )}
