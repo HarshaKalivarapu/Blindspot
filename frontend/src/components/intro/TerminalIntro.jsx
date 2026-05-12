@@ -13,7 +13,6 @@ export default function TerminalIntro({ onComplete }) {
   const [lines, setLines] = useState([])
   const [currentLine, setCurrentLine] = useState('')
   const [fadingOut, setFadingOut] = useState(false)
-  const cancelRef = useRef(false)
   const onCompleteRef = useRef(onComplete)
 
   useEffect(() => {
@@ -21,7 +20,7 @@ export default function TerminalIntro({ onComplete }) {
   }, [onComplete])
 
   useEffect(() => {
-    cancelRef.current = false
+    let cancelled = false
 
     const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
     // Tuned to ~2.5s total time
@@ -29,35 +28,35 @@ export default function TerminalIntro({ onComplete }) {
 
     async function runScript() {
       for (const item of SCRIPT) {
-        if (cancelRef.current) return
+        if (cancelled) return
 
         if (item.type === 'pause') {
           await delay(item.ms)
         } else {
           for (let i = 1; i <= item.text.length; i++) {
-            if (cancelRef.current) return
+            if (cancelled) return
             setCurrentLine(item.text.slice(0, i))
             await delay(randomDelay())
           }
-          if (cancelRef.current) return
+          if (cancelled) return
           setLines((prev) => [...prev, item.text])
           setCurrentLine('')
-          await delay(100) // Wait briefly before the next line types
+          await delay(100)
         }
       }
 
       // Finish with a cinematic pause to reach ~2.5s elapsed
       await delay(500)
-      if (cancelRef.current) return
+      if (cancelled) return
       setFadingOut(true)
       await delay(200)
-      if (cancelRef.current) return
+      if (cancelled) return
       onCompleteRef.current()
     }
 
     runScript()
     return () => {
-      cancelRef.current = true
+      cancelled = true
     }
   }, [])
 

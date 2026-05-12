@@ -174,10 +174,11 @@ function Scan() {
     const handleWheel = (e) => {
       if (view !== 'dashboard') return
       const el = gridRef.current
-      if (!el || el.contains(e.target)) return
+      if (!el) return
+      e.preventDefault()
       el.scrollBy({ top: e.deltaY })
     }
-    window.addEventListener('wheel', handleWheel)
+    window.addEventListener('wheel', handleWheel, { passive: false })
     return () => window.removeEventListener('wheel', handleWheel)
   }, [view])
 
