@@ -6,3 +6,28 @@ body,
   height: 100%;
   margin: 0;
 }
+
+.pentest-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.35) transparent;
+}
+.pentest-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.pentest-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.pentest-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.35);
+  border-radius: 2px;
+}
+.pentest-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.55);
+}
+
+.pentest-scrollbar-report {
+  scrollbar-width: none;
+}
+.pentest-scrollbar-report::-webkit-scrollbar {
+  display: none;
+}

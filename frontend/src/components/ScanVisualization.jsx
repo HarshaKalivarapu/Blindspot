@@ -1,6 +1,10 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import ReportRenderer from './ReportRenderer'
+
+const ARROW_H = 12
+const BAR_W = 10
 
 // ── SVG canvas dimensions ────────────────────────────────────────────────────
 const W = 1000
@@ -260,6 +264,26 @@ export default function ScanVisualization({ target, onComplete, onTabChange, ext
   const [nvdDone, setNvdDone] = useState(false)
   const [showReport, setShowReport] = useState(false)
 
+  const scrollRef = useRef(null)
+  const [thumbTop, setThumbTop] = useState(0)
+  const [thumbHeight, setThumbHeight] = useState(0)
+
+  const updateThumb = useCallback(() => {
+    const el = scrollRef.current
+    if (!el || el.scrollHeight <= el.clientHeight) { setThumbHeight(0); return }
+    const trackH = el.clientHeight - 2 * ARROW_H
+    const ratio = el.clientHeight / el.scrollHeight
+    const th = Math.max(trackH * ratio, 24)
+    const maxScroll = el.scrollHeight - el.clientHeight
+    const scrollRatio = maxScroll > 0 ? el.scrollTop / maxScroll : 0
+    setThumbHeight(th)
+    setThumbTop(ARROW_H + scrollRatio * (trackH - th))
+  }, [])
+
+  useEffect(() => {
+    if (showReport) updateThumb()
+  }, [showReport, reportDev, reportNonDev, updateThumb])
+
   // Keep refs so intervals always read the latest external state without stale closures
   const externalDoneRef = useRef(externalDone)
   useEffect(() => { externalDoneRef.current = externalDone }, [externalDone])
@@ -489,9 +513,12 @@ export default function ScanVisualization({ target, onComplete, onTabChange, ext
         {showReport && (
           <motion.div
             key="report"
+            ref={scrollRef}
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
+            className="pentest-scrollbar-report"
+            onScroll={updateThumb}
             style={{
               position: 'absolute',
               inset: 0,
@@ -510,6 +537,45 @@ export default function ScanVisualization({ target, onComplete, onTabChange, ext
           </motion.div>
         )}
       </AnimatePresence>
+      {showReport && createPortal(
+        <div style={{ position: 'fixed', top: 0, right: 0, width: BAR_W, height: '100vh', zIndex: 51, pointerEvents: 'none' }}>
+          <motion.button
+            whileHover={{ backgroundColor: 'rgba(156, 163, 175, 0.25)' }}
+            onClick={() => scrollRef.current?.scrollBy({ top: -80, behavior: 'smooth' })}
+            style={{
+              position: 'absolute', top: 0, left: 0, right: 0, height: ARROW_H,
+              backgroundColor: 'rgba(156, 163, 175, 0.1)',
+              border: 'none', cursor: 'pointer', padding: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              pointerEvents: 'auto',
+            }}
+          >
+            <svg width="6" height="4" viewBox="0 0 6 4"><polygon points="3,0 6,4 0,4" fill="rgba(156,163,175,0.75)" /></svg>
+          </motion.button>
+          <motion.div
+            animate={{ top: thumbTop, height: thumbHeight }}
+            transition={{ duration: 0.1, ease: 'easeOut' }}
+            style={{
+              position: 'absolute', left: 0, right: 0, borderRadius: 2,
+              background: thumbHeight > 0 ? 'rgba(156, 163, 175, 0.35)' : 'transparent',
+            }}
+          />
+          <motion.button
+            whileHover={{ backgroundColor: 'rgba(156, 163, 175, 0.25)' }}
+            onClick={() => scrollRef.current?.scrollBy({ top: 80, behavior: 'smooth' })}
+            style={{
+              position: 'absolute', bottom: 0, left: 0, right: 0, height: ARROW_H,
+              backgroundColor: 'rgba(156, 163, 175, 0.1)',
+              border: 'none', cursor: 'pointer', padding: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              pointerEvents: 'auto',
+            }}
+          >
+            <svg width="6" height="4" viewBox="0 0 6 4"><polygon points="3,4 6,0 0,0" fill="rgba(156,163,175,0.75)" /></svg>
+          </motion.button>
+        </div>,
+        document.body
+      )}
     </div>
   )
 }

@@ -230,31 +230,135 @@ Here are all security findings from the scan in a compact structured format:
 
 ```json
 {
-  "target": "samaypatel.netlify.app",
-  "scan_date": null,
-  "scan_type": "active",
+  "target": "youtube.com",
+  "scan_date": "2026-05-11T19:14:06.702983Z",
+  "scan_type": "passive",
   "scan_mode": "simple",
-  "duration_seconds": 164.1,
-  "tools_run": ["nvd_lookup"],
-  "tool_errors": [
-    "nmap: TIMEOUT - nmap exceeded time limit",
-    "nikto: ERROR - [Errno 2] No such file or directory: 'nikto'",
-    "whatweb_active: TIMEOUT - WhatWeb active scan exceeded time limit"
+  "duration_seconds": 101.5,
+  "tools_run": ["shodan", "dns_whois", "ssl_tls", "http_headers", "nvd_lookup"],
+  "tool_errors": ["whatweb: timed out after 30 seconds", "dns_whois: crt.sh request timed out"],
+  "open_ports": [80, 443],
+  "services": {
+    "80": {"name": "http", "version": null},
+    "443": {"name": "https", "version": null}
+  },
+  "tech_stack": ["TLSv1.3 TLS_AES_256_GCM_SHA384", "TLSv1.2", "TLSv1.1", "TLSv1.0"],
+  "cves": [
+    {
+      "id": "CVE-2016-6309",
+      "cvss": 9.8,
+      "affected_software": "TLS 1.1 / OpenSSL 1.1.0a",
+      "description": "Use-after-free in OpenSSL 1.1.0a statem/statem.c allows remote attackers to cause denial of service or execute arbitrary code via a crafted TLS session.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2008-1948",
+      "cvss": 10.0,
+      "affected_software": "TLS 1.0 / GnuTLS before 2.2.4",
+      "description": "Incorrect Server Name count calculation in GnuTLS during TLS 1.0 Client Hello extension handling allows remote attackers to exploit the server.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2010-3864",
+      "cvss": 7.6,
+      "affected_software": "TLS 1.0 / OpenSSL 0.9.8f through 1.0.0a",
+      "description": "Race conditions in OpenSSL ssl/t1_lib.c with multi-threading and internal caching enabled may allow remote attackers to execute arbitrary code via crafted client data.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2016-2850",
+      "cvss": 7.5,
+      "affected_software": "TLS 1.1 / Botan before 1.11.29",
+      "description": "Botan before 1.11.29 does not enforce TLS policy for signature algorithms and ECC curves, allowing downgrade attacks.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2016-6302",
+      "cvss": 7.5,
+      "affected_software": "TLS 1.1 / OpenSSL before 1.1.0",
+      "description": "The tls_decrypt_ticket function in OpenSSL does not validate ticket length against HMAC size, allowing remote denial of service via a short ticket.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2011-1431",
+      "cvss": 6.8,
+      "affected_software": "TLS 1.0 / netqmail 1.06-tls patch",
+      "description": "STARTTLS implementation in qmail-smtpd does not restrict I/O buffering, allowing MITM attackers to inject commands into encrypted SMTP sessions.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2012-2333",
+      "cvss": 6.8,
+      "affected_software": "TLS 1.0 / TLS 1.1 / OpenSSL before 0.9.8x, 1.0.0j, 1.0.1c",
+      "description": "Integer underflow in OpenSSL with CBC encryption allows remote attackers to cause denial of service via buffer over-read when using TLS 1.1, TLS 1.2, or DTLS.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2011-1575",
+      "cvss": 5.8,
+      "affected_software": "TLS 1.0 / Pure-FTPd before 1.0.30",
+      "description": "STARTTLS in Pure-FTPd does not restrict I/O buffering, allowing MITM attackers to insert commands into encrypted FTP sessions.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2013-5914",
+      "cvss": 6.8,
+      "affected_software": "TLS 1.1 / PolarSSL before 1.1.8",
+      "description": "Buffer overflow in ssl_read_record in PolarSSL when using TLS 1.1 may allow remote code execution via a long packet.",
+      "has_exploit": false,
+      "exploit_sources": []
+    }
   ],
-  "open_ports": [],
-  "services": {},
-  "tech_stack": [],
-  "cves": [],
-  "ssl": null,
-  "http_headers": null,
-  "dns_whois": null,
-  "shodan": null,
+  "ssl": {
+    "valid": true,
+    "expiry_date": "2026-07-13",
+    "days_until_expiry": 62,
+    "issues": [
+      "TLS 1.0 supported — deprecated protocol must be disabled",
+      "TLS 1.1 supported — deprecated protocol must be disabled",
+      "Certificate subject CN is *.google.com (wildcard, not youtube.com-specific)",
+      "Shodan tagged host as self-signed"
+    ]
+  },
+  "http_headers": {
+    "missing_security_headers": ["Referrer-Policy"],
+    "info_disclosure": ["Server: ESF"]
+  },
+  "dns_whois": {
+    "registrar": "MarkMonitor, Inc.",
+    "expiry_date": "2027-02-15",
+    "days_until_expiry": null,
+    "nameservers": [
+      "ns1.google.com",
+      "ns2.google.com",
+      "ns3.google.com",
+      "ns4.google.com"
+    ],
+    "subdomains_found": []
+  },
+  "shodan": {
+    "country": "Mexico",
+    "isp": "Google LLC",
+    "ports_indexed": [80, 443],
+    "previously_flagged_cves": []
+  },
   "nikto_findings": [],
-  "hydra_results": null,
+  "hydra_results": {
+    "service": null,
+    "credentials_found": []
+  },
   "ffuf_findings": [],
   "searchsploit_results": [],
   "confirmed_exploits_count": 0,
-  "total_issues_count": 0
+  "total_issues_count": 15
 }
 ```
 

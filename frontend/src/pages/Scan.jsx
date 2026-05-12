@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import WarningModal from '../components/WarningModal'
@@ -8,9 +8,12 @@ import ScanVisualization from '../components/ScanVisualization.jsx'
 import ScanVisualizationActive from '../components/ScanVisualizationActive.jsx'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../lib/AuthContext.jsx'
+import { createPortal } from 'react-dom'
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ?? 'http://localhost:5000'
 const SANS = 'system-ui, -apple-system, sans-serif'
+const ARROW_H = 12
+const BAR_W = 10
 
 const STRIP_PREFIXES = ['https://', 'http://', 'www.']
 
@@ -147,6 +150,34 @@ function Scan() {
   const scrollRef = useRef(null)
   const scanInserted = useRef(false)
   const animatedOnce = useRef(false)
+  const gridRef = useRef(null)
+  const [thumbTop, setThumbTop] = useState(0)
+  const [thumbHeight, setThumbHeight] = useState(0)
+
+  const updateThumb = useCallback(() => {
+    const el = gridRef.current
+    if (!el || el.scrollHeight <= el.clientHeight) { setThumbHeight(0); return }
+    const trackH = window.innerHeight - 2 * ARROW_H
+    const ratio = el.clientHeight / el.scrollHeight
+    const th = Math.max(trackH * ratio, 24)
+    const maxScroll = el.scrollHeight - el.clientHeight
+    const scrollRatio = maxScroll > 0 ? el.scrollTop / maxScroll : 0
+    setThumbHeight(th)
+    setThumbTop(ARROW_H + scrollRatio * (trackH - th))
+  }, [])
+
+  useEffect(() => { updateThumb() }, [scans, searchResults, updateThumb])
+
+  useEffect(() => {
+    const handleWheel = (e) => {
+      if (view !== 'dashboard') return
+      const el = gridRef.current
+      if (!el || el.contains(e.target)) return
+      el.scrollBy({ top: e.deltaY })
+    }
+    window.addEventListener('wheel', handleWheel)
+    return () => window.removeEventListener('wheel', handleWheel)
+  }, [view])
 
   useEffect(() => {
     if (view === 'chat') {
@@ -325,14 +356,13 @@ function Scan() {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        padding: '64px 32px',
+        padding: '0 32px',
         zIndex: 1,
-        overflowY: 'auto',
-        overscrollBehavior: 'contain',
+        overflow: 'hidden',
       }}
     >
-      <div style={{ width: '100%', maxWidth: 1000 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 40 }}>
+      <div style={{ width: '100%', maxWidth: 1000, display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '64px 8px 40px', flexShrink: 0 }}>
           <h1 style={{ fontFamily: SANS, fontSize: 36, fontWeight: 600, color: '#ffffff', letterSpacing: '-0.02em', margin: 0 }}>
             Scan History
           </h1>
@@ -375,7 +405,8 @@ function Scan() {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 24 }}>
+        <div ref={gridRef} className="pentest-scrollbar-report" onScroll={updateThumb} style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', padding: '8px 8px 32px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 24 }}>
           {/* New Scan Box */}
           <motion.button
             onClick={handleStartScan}
@@ -414,8 +445,48 @@ function Scan() {
               onDelete={(id) => setDeleteScanId(id)}
             />
           ))}
+          </div>
         </div>
       </div>
+      {createPortal(
+        <div style={{ position: 'fixed', top: 0, right: 0, width: BAR_W, height: '100vh', zIndex: 51, pointerEvents: 'none' }}>
+          <motion.button
+            whileHover={{ backgroundColor: 'rgba(156, 163, 175, 0.25)' }}
+            onClick={() => gridRef.current?.scrollBy({ top: -80, behavior: 'smooth' })}
+            style={{
+              position: 'absolute', top: 0, left: 0, right: 0, height: ARROW_H,
+              backgroundColor: 'rgba(156, 163, 175, 0.1)',
+              border: 'none', cursor: 'pointer', padding: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              pointerEvents: 'auto',
+            }}
+          >
+            <svg width="6" height="4" viewBox="0 0 6 4"><polygon points="3,0 6,4 0,4" fill="rgba(156,163,175,0.75)" /></svg>
+          </motion.button>
+          <motion.div
+            animate={{ top: thumbTop, height: thumbHeight }}
+            transition={{ duration: 0.1, ease: 'easeOut' }}
+            style={{
+              position: 'absolute', left: 0, right: 0, borderRadius: 2,
+              background: thumbHeight > 0 ? 'rgba(156, 163, 175, 0.35)' : 'transparent',
+            }}
+          />
+          <motion.button
+            whileHover={{ backgroundColor: 'rgba(156, 163, 175, 0.25)' }}
+            onClick={() => gridRef.current?.scrollBy({ top: 80, behavior: 'smooth' })}
+            style={{
+              position: 'absolute', bottom: 0, left: 0, right: 0, height: ARROW_H,
+              backgroundColor: 'rgba(156, 163, 175, 0.1)',
+              border: 'none', cursor: 'pointer', padding: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              pointerEvents: 'auto',
+            }}
+          >
+            <svg width="6" height="4" viewBox="0 0 6 4"><polygon points="3,4 6,0 0,0" fill="rgba(156,163,175,0.75)" /></svg>
+          </motion.button>
+        </div>,
+        document.body
+      )}
     </motion.div>
   )
 
