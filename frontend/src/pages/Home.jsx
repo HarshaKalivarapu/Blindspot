@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
@@ -14,6 +14,7 @@ export default function Home() {
   const { user } = useAuth()
   const [phase, setPhase] = useState('intro')
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const heroRef = useRef(null)
 
   return (
     <div style={{ background: '#0a0a0a', minHeight: '100vh' }}>
@@ -160,12 +161,15 @@ export default function Home() {
 
           {/* Centered hero */}
           <motion.div
-            initial={{ opacity: 0, filter: 'blur(12px)', zIndex: 0 }}
-            animate={{ opacity: 1, filter: 'blur(0px)', zIndex: 3 }}
+            ref={heroRef}
+            initial={{ opacity: 0, filter: 'blur(12px)' }}
+            animate={{ opacity: 1, filter: 'blur(0px)' }}
             transition={{ duration: 0.75, delay: 2.0, ease: 'easeOut' }}
+            onAnimationComplete={() => { if (heroRef.current) heroRef.current.style.filter = 'none' }}
             style={{
               position: 'absolute',
               inset: 0,
+              zIndex: 3,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',

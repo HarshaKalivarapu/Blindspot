@@ -12,6 +12,7 @@ export default function AuthModal({ isOpen, onClose }) {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [disclaimerOpen, setDisclaimerOpen] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -50,6 +51,8 @@ export default function AuthModal({ isOpen, onClose }) {
              justifyContent: 'center',
              backgroundColor: 'rgba(0, 0, 0, 0.4)',
              backdropFilter: 'blur(4px)',
+             willChange: 'opacity',
+             isolation: 'isolate',
            }}
            onClick={onClose}
         >
@@ -61,7 +64,7 @@ export default function AuthModal({ isOpen, onClose }) {
             style={{
               position: 'relative',
               width: '100%',
-              maxWidth: 420,
+              maxWidth: 480,
               borderRadius: 16,
               overflow: 'hidden',
               border: '1px solid #ffffff',
@@ -94,7 +97,7 @@ export default function AuthModal({ isOpen, onClose }) {
                   marginBottom: 32,
                 }}
               >
-                {isSignUp ? 'Sign up to configure your security scans.' : 'Log in to your account to continue scanning.'}
+                {isSignUp ? 'Sign up to configure your security scans.' : 'Sign in to begin scanning.'}
               </p>
 
               <button
@@ -133,144 +136,92 @@ export default function AuthModal({ isOpen, onClose }) {
                 {isSignUp ? 'Sign up with Google' : 'Sign in with Google'}
               </button>
 
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 24 }}>
+              {/* or email address divider — removed, Google OAuth only */}
+              {/* <div style={{ display: 'flex', alignItems: 'center', marginBottom: 24 }}>
                 <div style={{ flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.15)' }} />
                 <span style={{ color: 'rgba(255,255,255,0.5)', padding: '0 12px', fontSize: 13, fontFamily: 'system-ui, sans-serif' }}>or email address</span>
                 <div style={{ flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.15)' }} />
-              </div>
+              </div> */}
 
-              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <label style={{ fontFamily: 'system-ui, sans-serif', fontSize: 13, color: '#ffffff', fontWeight: 500, letterSpacing: '0.02em' }}>Email</label>
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@company.com"
-                    style={{
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
-                      borderRadius: 8,
-                      padding: '12px 16px',
-                      color: '#ffffff',
-                      fontFamily: 'system-ui, sans-serif',
-                      fontSize: 15,
-                      outline: 'none',
-                      transition: 'border-color 0.2s',
-                    }}
-                    onFocus={(e) => (e.target.style.borderColor = '#ffffff')}
-                    onBlur={(e) => (e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)')}
-                  />
-                </div>
+              {/* email/password form — removed, Google OAuth only */}
+              {/* <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                ...
+              </form> */}
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <label style={{ fontFamily: 'system-ui, sans-serif', fontSize: 13, color: '#ffffff', fontWeight: 500, letterSpacing: '0.02em' }}>Password</label>
-                  <input
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    style={{
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
-                      borderRadius: 8,
-                      padding: '12px 16px',
-                      color: '#ffffff',
-                      fontFamily: 'system-ui, sans-serif',
-                      fontSize: 15,
-                      outline: 'none',
-                      transition: 'border-color 0.2s',
-                    }}
-                    onFocus={(e) => (e.target.style.borderColor = '#ffffff')}
-                    onBlur={(e) => (e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)')}
-                  />
-                </div>
-
-                <AnimatePresence>
-                  {isSignUp && (
-                    <motion.div
-                      key="confirm"
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.2 }}
-                      style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: 8 }}
-                    >
-                      <label style={{ fontFamily: 'system-ui, sans-serif', fontSize: 13, color: '#ffffff', fontWeight: 500, letterSpacing: '0.02em' }}>Re-enter Password</label>
-                      <input
-                        type="password"
-                        required={isSignUp}
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="••••••••"
-                        style={{
-                          backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                          border: '1px solid rgba(255, 255, 255, 0.2)',
-                          borderRadius: 8,
-                          padding: '12px 16px',
-                          color: '#ffffff',
-                          fontFamily: 'system-ui, sans-serif',
-                          fontSize: 15,
-                          outline: 'none',
-                          transition: 'border-color 0.2s',
-                        }}
-                        onFocus={(e) => (e.target.style.borderColor = '#ffffff')}
-                        onBlur={(e) => (e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)')}
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                {error && (
-                  <p style={{ color: '#f87171', fontSize: 13, fontFamily: 'system-ui, sans-serif', margin: 0 }}>
-                    ⚠ {error}
-                  </p>
-                )}
-                <button
-                  type="submit"
-                  disabled={loading}
-                  style={{
-                    marginTop: 12,
-                    backgroundColor: '#ffffff',
-                    color: '#0a0a0a',
-                    border: 'none',
-                    borderRadius: 8,
-                    padding: '14px 0',
-                    fontFamily: 'system-ui, sans-serif',
-                    fontSize: 15,
-                    fontWeight: 600,
-                    cursor: loading ? 'not-allowed' : 'pointer',
-                    opacity: loading ? 0.6 : 1,
-                    width: '100%',
-                    transition: 'background-color 0.2s',
-                  }}
-                  onMouseEnter={(e) => { if (!loading) e.target.style.backgroundColor = '#e5e5e5' }}
-                  onMouseLeave={(e) => { if (!loading) e.target.style.backgroundColor = '#ffffff' }}
-                >
-                  {loading ? 'Please wait...' : (isSignUp ? 'Sign Up' : 'Log In')}
-                </button>
-              </form>
-
-              <div style={{ marginTop: 28, textAlign: 'center' }}>
-                <button
-                  type="button"
-                  onClick={() => setIsSignUp(!isSignUp)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: 'rgba(255, 255, 255, 0.7)',
-                    fontFamily: 'system-ui, sans-serif',
-                    fontSize: 14,
-                    cursor: 'pointer',
-                    textDecoration: 'underline',
-                    textUnderlineOffset: 4,
-                  }}
-                >
+              {/* account toggle — removed, Google OAuth only */}
+              {/* <div style={{ marginTop: 28, textAlign: 'center' }}>
+                <button type="button" onClick={() => setIsSignUp(!isSignUp)} ...>
                   {isSignUp ? 'Already have an account? Log in' : "Don't have an account? Sign up"}
                 </button>
-              </div>
+              </div> */}
+
+              <motion.button
+                type="button"
+                onClick={() => setDisclaimerOpen(o => !o)}
+                style={{
+                  marginTop: 24,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  width: '100%',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  borderRadius: disclaimerOpen ? '8px 8px 0 0' : 8,
+                  padding: '14px 18px',
+                  cursor: 'pointer',
+                }}
+              >
+                <span style={{
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  fontSize: 15,
+                  fontWeight: 600,
+                  color: 'rgba(255,255,255,0.85)',
+                  letterSpacing: '0.01em',
+                }}>
+                  Disclaimer
+                </span>
+                <motion.span
+                  animate={{ rotate: disclaimerOpen ? 180 : 0 }}
+                  transition={{ duration: 0.2 }}
+                  style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14, display: 'inline-block' }}
+                >
+                  ▾
+                </motion.span>
+              </motion.button>
+
+              <AnimatePresence>
+                {disclaimerOpen && (
+                  <motion.div
+                    key="disclaimer-body"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.25, ease: 'easeInOut' }}
+                    style={{
+                      overflow: 'hidden',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      borderTop: 'none',
+                      borderRadius: '0 0 8px 8px',
+                      backgroundColor: 'rgba(255,255,255,0.03)',
+                    }}
+                  >
+                    <p style={{
+                      fontFamily: 'system-ui, -apple-system, sans-serif',
+                      fontSize: 14,
+                      color: 'rgba(255,255,255,0.6)',
+                      margin: 0,
+                      padding: '16px 18px',
+                      lineHeight: 1.7,
+                    }}>
+                      <strong style={{ color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>Authorized Use Only.</strong>{' '}
+                      Blindspot is a security scanning platform intended solely for use on systems you own or have received explicit written authorization to test. By signing in, you confirm that you accept full legal responsibility for all scans initiated through your account. Unauthorized scanning of third-party systems is prohibited and may violate applicable laws. This platform is provided for legitimate cybersecurity purposes only. Scan results may not be fully comprehensive or 100% accurate — Blindspot was built by four college computer science students and is not a substitute for a formal security audit.
+                      <br /><br />
+                      <strong style={{ color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>Best experienced on a desktop web browser.</strong>{' '}
+                      This application is optimized for use in a modern desktop web browser. Mobile and tablet experiences may be limited.
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </motion.div>
         </motion.div>

@@ -370,14 +370,14 @@ function GraphOverlay({ type, onClose }) {
   }, [onClose])
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 200 }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 200 }} onClick={onClose}>
       {/* Animated background only — plain div outer so no transform creates a containing block */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.3 }}
-        style={{ position: 'absolute', inset: 0, background: 'rgba(7,10,13,0.97)' }}
+        style={{ position: 'absolute', inset: 0, background: 'rgba(7,15,35,0.94)', backdropFilter: 'blur(6px)' }}
       />
       <div style={{
         position: 'absolute', top: 24, left: 32, zIndex: 202,
@@ -386,20 +386,14 @@ function GraphOverlay({ type, onClose }) {
       }}>
         {type === 'passive' ? 'Passive Recon Pipeline' : 'Active Recon Pipeline'}
       </div>
-      <motion.button
-        onClick={onClose}
-        whileHover={{ backgroundColor: 'rgba(255,255,255,0.08)' }}
-        style={{
-          position: 'absolute', top: 18, right: 24, zIndex: 202,
-          background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)',
-          borderRadius: 8, padding: '8px 16px', cursor: 'pointer',
-          color: 'rgba(255,255,255,0.7)', fontFamily: 'system-ui, sans-serif',
-          fontSize: 13, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8,
-        }}
-      >
-        <span>Zoom out</span>
-        <span style={{ fontSize: 11, opacity: 0.6 }}>✕</span>
-      </motion.button>
+      <div style={{
+        position: 'absolute', top: 20, right: 28, zIndex: 202,
+        color: 'rgba(255,255,255,0.5)', fontSize: 20,
+        cursor: 'pointer', lineHeight: 1,
+        fontFamily: 'system-ui, sans-serif',
+      }}>
+        ✕
+      </div>
       <div style={{
         position: 'absolute',
         top: 64,
@@ -440,14 +434,14 @@ function DeveloperTab() {
       <SectionReveal>
         <h2 style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 24, fontWeight: 600, color: '#ffffff', marginBottom: 16, letterSpacing: '-0.02em' }}>1. What is this app?</h2>
         <p style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 15, color: 'rgba(255,255,255,0.65)', lineHeight: 1.6, marginBottom: 16 }}>
-          This is an automated penetration testing orchestrator. Claude acts as the reasoning layer, orchestrating real Linux security binaries via an MCP (Model Context Protocol) server. Each tool runs natively on the backend, and its raw standard output is fed right back into Claude to decide what branch of the logic tree to execute next down the pipeline.
+          This is an automated penetration testing tool. Claude acts as the reasoning layer, deciding which security tools to run and in what order. The tools themselves live on a separate MCP server — a protocol that lets Claude call external tools the same way it calls anything else. Claude sees a list of available tools, picks one, runs it, reads the raw output, and loops. Each result becomes the input to Claude's next decision, which is why there's no hardcoded sequence.
         </p>
       </SectionReveal>
 
       <SectionReveal>
         <h2 style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 24, fontWeight: 600, color: '#ffffff', marginBottom: 16, letterSpacing: '-0.02em' }}>2. Background on Linux Security Tools</h2>
         <p style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 15, color: 'rgba(255,255,255,0.65)', lineHeight: 1.6, marginBottom: 16 }}>
-          Most professional security auditing runs almost entirely on Linux infrastructure. Kali Linux ships as the standard distribution. The tools we automate via MCP here in the backend (nmap, gobuster, hydra, metasploit) are the exact identical binaries that professional ethical hackers spawn manually inside terminal environments.
+          Most professional security work runs on Linux. Kali Linux is the standard distribution security engineers use. The tools we automate here — nmap, gobuster, hydra, metasploit — are the exact same tools that professional ethical hackers run manually in their terminals. We wrapped each one as an MCP tool so Claude can call them directly, read their terminal output, and decide what to chain next — the same workflow a security engineer follows by hand, automated.
         </p>
       </SectionReveal>
 
