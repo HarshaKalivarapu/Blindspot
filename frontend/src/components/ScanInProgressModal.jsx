@@ -21,7 +21,7 @@ export default function ScanInProgressModal({ onStay, onLeave }) {
         </div>
 
         <p className="mt-4 text-sm leading-relaxed text-slate-200">
-          Your scan is still running. If you leave now, the results will not be saved and you will lose all progress.
+          Your scan is in progress. If you leave now, the results will not be saved and you will lose all progress.
         </p>
 
         <div className="mt-6 flex justify-end gap-2">

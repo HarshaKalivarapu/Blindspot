@@ -241,6 +241,9 @@ function ReportView({ reportNonDev, reportDev, devChunkLen, nondevChunkLen, onTa
             current={chunkLen}
             estimated={estimated}
           />
+          <p style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 12, color: 'rgba(255,255,255,0.35)', margin: 0 }}>
+            Scans can take up to 7 minutes
+          </p>
         </div>
       )}
     </div>

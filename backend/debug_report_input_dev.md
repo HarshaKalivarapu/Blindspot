@@ -318,98 +318,75 @@ Here are all security findings from the scan in a compact structured format:
 
 ```json
 {
-  "target": "google.com",
+  "target": "samaypatel.netlify.app",
   "scan_type": "passive",
   "scan_mode": "simple",
-  "duration_seconds": 49.1,
-  "tools_run": ["dns_whois", "http_headers", "nvd_lookup"],
+  "duration_seconds": 68.7,
+  "tools_run": ["whatweb", "dns_whois", "http_headers", "nvd_lookup"],
   "tool_errors": [
     "shodan: Access denied (403 Forbidden)",
-    "whatweb: WhatWeb is not installed. Run: sudo apt install whatweb",
     "ssl_tls: can't subtract offset-naive and offset-aware datetimes"
   ],
   "open_ports": [],
   "services": {},
-  "tech_stack": ["Google Web Server (gws)"],
-  "cves": [],
+  "tech_stack": ["Netlify", "Bootstrap", "HTML5"],
+  "cves": [
+    {
+      "id": "CVE-2023-38904",
+      "cvss": 5.4,
+      "affected_software": "Netlify CMS 2.10.192",
+      "description": "Cross-Site Scripting vulnerability in Netlify CMS allows a remote attacker to execute arbitrary code via a crafted payload in the body parameter of the new post function.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2022-39239",
+      "cvss": 6.1,
+      "affected_software": "netlify-ipx < 1.2.3",
+      "description": "An attacker can bypass the source image domain allowlist by sending specially crafted headers, causing the handler to load and return arbitrary images.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2024-56332",
+      "cvss": 5.3,
+      "affected_software": "Next.js 13.0.0 - 15.1.1",
+      "description": "Next.js is vulnerable to a Denial of Service attack that allows attackers to construct requests causing service disruption.",
+      "has_exploit": false,
+      "exploit_sources": []
+    },
+    {
+      "id": "CVE-2025-54793",
+      "cvss": 6.1,
+      "affected_software": "Astro 5.2.0 - 5.12.7",
+      "description": "Open Redirect vulnerability in Astro's trailing slash redirection logic when handling paths with double slashes allows attackers to redirect users to arbitrary URLs.",
+      "has_exploit": false,
+      "exploit_sources": []
+    }
+  ],
   "ssl": {
     "valid": null,
     "expiry_date": null,
     "days_until_expiry": null,
-    "issues": ["SSL/TLS scan failed: can't subtract offset-naive and offset-aware datetimes"]
+    "issues": ["ssl_tls tool errored: could not compute expiry due to datetime offset mismatch"]
   },
   "http_headers": {
     "missing_security_headers": [
-      "Strict-Transport-Security",
       "Content-Security-Policy",
+      "X-Frame-Options",
       "X-Content-Type-Options",
       "Referrer-Policy",
-      "Permissions-Policy"
+      "Permissions-Policy",
+      "X-XSS-Protection"
     ],
-    "info_disclosure": ["Server: gws"]
+    "info_disclosure": ["Server: Netlify"]
   },
   "dns_whois": {
-    "registrar": "MarkMonitor, Inc.",
-    "expiry_date": "2028-09-14",
+    "registrar": null,
+    "expiry_date": null,
     "days_until_expiry": null,
-    "nameservers": [
-      "ns1.google.com",
-      "ns2.google.com",
-      "ns3.google.com",
-      "ns4.google.com"
-    ],
-    "subdomains_found": [
-      "admin@google.com",
-      "apis.corp.google.com",
-      "bigstore-test.corp.google.com",
-      "cert-test.sandbox.google.com",
-      "corp-backups.corp.google.com",
-      "dasher-qa.corp.google.com",
-      "devconsole-testers.sandbox.google.com",
-      "developer.google.com",
-      "developers.google.com",
-      "docs-dev.corp.google.com",
-      "docs-qa.corp.google.com",
-      "drive-test.corp.google.com",
-      "ecc-test.sandbox.google.com",
-      "gaiastaging.flexpack.google.com",
-      "gaiastaging.freezone.google.com",
-      "jotspot-qa08.corp.google.com",
-      "orkut-ocdemo.corp.google.com",
-      "orkut-qa.corp.google.com",
-      "orkut-staging.corp.google.com",
-      "prom-qa.corp.google.com",
-      "prom-qa.sandbox.google.com",
-      "prom-test.corp.google.com",
-      "prom-test.sandbox.google.com",
-      "qa.adz.google.com",
-      "sites-googlegroups-qa01.corp.google.com",
-      "sites-googlegroups-qa02.corp.google.com",
-      "sites-googlegroups-qa03.corp.google.com",
-      "sites-googlegroups-qa04.corp.google.com",
-      "sites-googlegroups-qa05.corp.google.com",
-      "sites-googlegroups-qa06.corp.google.com",
-      "sites-googlegroups-qa07.corp.google.com",
-      "sites-googlegroups-qa08.corp.google.com",
-      "sites-googlegroups-tctest.corp.google.com",
-      "soaproxytest01.ext.google.com",
-      "staging-a.blogger.corp.google.com",
-      "staging-b.blogger.corp.google.com",
-      "staging-c.blogger.corp.google.com",
-      "staging-d.blogger.corp.google.com",
-      "staging-daily.blogger.corp.google.com",
-      "staging-daily.blogspot.corp.google.com",
-      "staging-gaia.blogger.corp.google.com",
-      "staging-git.corp.google.com",
-      "staging-googlesource.corp.google.com",
-      "staging-prod.blogger.corp.google.com",
-      "staging-weekly.blogger.corp.google.com",
-      "staging-weekly.blogspot.corp.google.com",
-      "test.postini.corp.google.com",
-      "webdrive-test-canary.corp.google.com",
-      "webdrive-test-prod.corp.google.com",
-      "aarjav-b480g7k2ab9@checkout.google.com"
-    ]
+    "nameservers": [],
+    "subdomains_found": []
   },
   "shodan": {
     "country": null,
@@ -425,7 +402,7 @@ Here are all security findings from the scan in a compact structured format:
   "ffuf_findings": [],
   "searchsploit_results": [],
   "confirmed_exploits_count": 0,
-  "total_issues_count": 7
+  "total_issues_count": 11
 }
 ```
 

@@ -92,13 +92,6 @@ export default function NewScan({ onSubmit, onBack }) {
       }}
     >
       <div style={{ width: '100%', maxWidth: 640 }}>
-        <button
-          type="button"
-          onClick={onBack}
-          style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 13, cursor: 'pointer', marginBottom: 24, padding: 0 }}
-        >
-          ← Back to Dashboard
-        </button>
         <h1 style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 32, fontWeight: 600, color: '#ffffff', marginBottom: 32, letterSpacing: '-0.02em' }}>
           New Scan Configuration
         </h1>
