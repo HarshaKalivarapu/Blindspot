@@ -213,4 +213,4 @@ App runs at `http://localhost:5173`
 
 ## Authors
 
-Built at HackOHI/O 2026 — The Ohio State University
+Initially built at Claude Hacks 2026 at Ohio State. Afterwards, we modified the project and got it ready for deployment.
