@@ -20,6 +20,8 @@ A passive scan means you never interact with the target's servers directly — y
 2. Only after ALL five results are returned, call:
    - `nvd_lookup` — cross-reference every software version found against the National Vulnerability Database
 
+   **IMPORTANT:** Only pass entries where you have a specific version number (e.g., `"WordPress 5.8"`, `"PHP 7.4.3"`). Do NOT pass bare technology names without versions (e.g., `"Cloudflare"`, `"jQuery"`, `"nginx"`). A name without a version causes NVD to return CVEs for unrelated third-party products that merely mention that name — those are false positives, not real findings about the target.
+
 Do NOT call `nvd_lookup` after each individual tool. One call after all five complete.
 
 ## Final response

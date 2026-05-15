@@ -22,6 +22,8 @@ An active simple scan touches the target directly. It scans the most common port
 
 3. Once all port-specific tools have finished, run `nvd_lookup` with all discovered service versions.
 
+   **IMPORTANT:** Only pass entries where you have a specific version number (e.g., `"Apache 2.4.51"`, `"OpenSSH 8.2p1"`). Do NOT pass bare technology names without versions. A name without a version causes NVD to return CVEs for unrelated third-party products that merely mention that name — those are false positives, not real findings about the target.
+
 4. Then run `searchsploit` for each significant CVE or service found to check for public exploit scripts.
 
 Do NOT run `nvd_lookup` or `searchsploit` after each individual tool. Wait until all port tools have finished.

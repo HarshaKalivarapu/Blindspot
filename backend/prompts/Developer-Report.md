@@ -36,6 +36,33 @@ Do NOT annotate: HTTP, SSH, port, IP address, nmap, Linux, Python, TCP, UDP.
 
 ---
 
+## SCORING RUBRIC
+
+The `score` field represents the target's security posture. **Higher is more secure** (10.0 = no issues found).
+
+Score by the worst confirmed finding, then deduct for supporting evidence:
+
+| Score range | What it means |
+|-------------|---------------|
+| 9.0 – 10.0 | No CVEs, no confirmed exploits, strong TLS, no critical headers missing |
+| 7.0 – 8.9  | Minor issues only — missing some optional headers, weak-but-not-broken TLS, informational findings, no CVEs ≥ CVSS 4.0 |
+| 5.0 – 6.9  | Moderate risk — CVEs with CVSS 4.0–6.9, or significant controls missing (no HTTPS, deprecated TLS 1.0/1.1), no confirmed exploits |
+| 3.0 – 4.9  | High risk — one or more CVEs with CVSS ≥ 7.0, or a confirmed working exploit exists |
+| 0.0 – 2.9  | Critical — multiple high-CVSS CVEs, confirmed exploits, or critical exposures (Telnet open, default credentials valid) |
+
+**Hard floor rule: if no CVEs with CVSS ≥ 4.0 were found AND no confirmed exploits exist, the score must be 7.5 or higher — regardless of how many headers are missing or what other informational issues were found.**
+
+**Deduction caps — none of these alone, nor all of them combined, may push the score below 7.5:**
+- Each missing security header (HSTS, CSP, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, X-Frame-Options): −0.3 each, max −1.0 total for headers
+- Version/software disclosure in response headers: −0.2
+- Weak cipher alongside strong cipher support: −0.3
+- Near-expiry certificate (> 14 days remaining): −0.3
+- Tool errors or incomplete checks: −0 (a gap in coverage is not a finding)
+
+**Always score based on confirmed, real findings from the scan data. Do not penalize for hypothetical risks.**
+
+---
+
 ## TOP-LEVEL STRUCTURE
 
 ```json

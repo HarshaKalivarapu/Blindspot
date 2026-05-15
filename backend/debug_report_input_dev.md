@@ -44,6 +44,33 @@ Do NOT annotate: HTTP, SSH, port, IP address, nmap, Linux, Python, TCP, UDP.
 
 ---
 
+## SCORING RUBRIC
+
+The `score` field represents the target's security posture. **Higher is more secure** (10.0 = no issues found).
+
+Score by the worst confirmed finding, then deduct for supporting evidence:
+
+| Score range | What it means |
+|-------------|---------------|
+| 9.0 – 10.0 | No CVEs, no confirmed exploits, strong TLS, no critical headers missing |
+| 7.0 – 8.9  | Minor issues only — missing some optional headers, weak-but-not-broken TLS, informational findings, no CVEs ≥ CVSS 4.0 |
+| 5.0 – 6.9  | Moderate risk — CVEs with CVSS 4.0–6.9, or significant controls missing (no HTTPS, deprecated TLS 1.0/1.1), no confirmed exploits |
+| 3.0 – 4.9  | High risk — one or more CVEs with CVSS ≥ 7.0, or a confirmed working exploit exists |
+| 0.0 – 2.9  | Critical — multiple high-CVSS CVEs, confirmed exploits, or critical exposures (Telnet open, default credentials valid) |
+
+**Hard floor rule: if no CVEs with CVSS ≥ 4.0 were found AND no confirmed exploits exist, the score must be 7.5 or higher — regardless of how many headers are missing or what other informational issues were found.**
+
+**Deduction caps — none of these alone, nor all of them combined, may push the score below 7.5:**
+- Each missing security header (HSTS, CSP, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, X-Frame-Options): −0.3 each, max −1.0 total for headers
+- Version/software disclosure in response headers: −0.2
+- Weak cipher alongside strong cipher support: −0.3
+- Near-expiry certificate (> 14 days remaining): −0.3
+- Tool errors or incomplete checks: −0 (a gap in coverage is not a finding)
+
+**Always score based on confirmed, real findings from the scan data. Do not penalize for hypothetical risks.**
+
+---
+
 ## TOP-LEVEL STRUCTURE
 
 ```json
@@ -318,75 +345,47 @@ Here are all security findings from the scan in a compact structured format:
 
 ```json
 {
-  "target": "samaypatel.netlify.app",
+  "target": "google.com",
   "scan_type": "passive",
   "scan_mode": "simple",
-  "duration_seconds": 68.7,
+  "duration_seconds": 63.1,
   "tools_run": ["whatweb", "dns_whois", "http_headers", "nvd_lookup"],
   "tool_errors": [
     "shodan: Access denied (403 Forbidden)",
-    "ssl_tls: can't subtract offset-naive and offset-aware datetimes"
+    "ssl_tls: can't subtract offset-naive and offset-aware datetimes",
+    "dns_whois (crt.sh): crt.sh request timed out"
   ],
   "open_ports": [],
   "services": {},
-  "tech_stack": ["Netlify", "Bootstrap", "HTML5"],
-  "cves": [
-    {
-      "id": "CVE-2023-38904",
-      "cvss": 5.4,
-      "affected_software": "Netlify CMS 2.10.192",
-      "description": "Cross-Site Scripting vulnerability in Netlify CMS allows a remote attacker to execute arbitrary code via a crafted payload in the body parameter of the new post function.",
-      "has_exploit": false,
-      "exploit_sources": []
-    },
-    {
-      "id": "CVE-2022-39239",
-      "cvss": 6.1,
-      "affected_software": "netlify-ipx < 1.2.3",
-      "description": "An attacker can bypass the source image domain allowlist by sending specially crafted headers, causing the handler to load and return arbitrary images.",
-      "has_exploit": false,
-      "exploit_sources": []
-    },
-    {
-      "id": "CVE-2024-56332",
-      "cvss": 5.3,
-      "affected_software": "Next.js 13.0.0 - 15.1.1",
-      "description": "Next.js is vulnerable to a Denial of Service attack that allows attackers to construct requests causing service disruption.",
-      "has_exploit": false,
-      "exploit_sources": []
-    },
-    {
-      "id": "CVE-2025-54793",
-      "cvss": 6.1,
-      "affected_software": "Astro 5.2.0 - 5.12.7",
-      "description": "Open Redirect vulnerability in Astro's trailing slash redirection logic when handling paths with double slashes allows attackers to redirect users to arbitrary URLs.",
-      "has_exploit": false,
-      "exploit_sources": []
-    }
-  ],
+  "tech_stack": ["gws"],
+  "cves": [],
   "ssl": {
     "valid": null,
     "expiry_date": null,
     "days_until_expiry": null,
-    "issues": ["ssl_tls tool errored: could not compute expiry due to datetime offset mismatch"]
+    "issues": ["SSL/TLS audit failed: datetime offset error — results inconclusive"]
   },
   "http_headers": {
     "missing_security_headers": [
+      "Strict-Transport-Security",
       "Content-Security-Policy",
-      "X-Frame-Options",
       "X-Content-Type-Options",
       "Referrer-Policy",
-      "Permissions-Policy",
-      "X-XSS-Protection"
+      "Permissions-Policy"
     ],
-    "info_disclosure": ["Server: Netlify"]
+    "info_disclosure": ["Server: gws"]
   },
   "dns_whois": {
-    "registrar": null,
-    "expiry_date": null,
+    "registrar": "MarkMonitor, Inc.",
+    "expiry_date": "2028-09-14",
     "days_until_expiry": null,
-    "nameservers": [],
-    "subdomains_found": []
+    "nameservers": [
+      "ns1.google.com",
+      "ns2.google.com",
+      "ns3.google.com",
+      "ns4.google.com"
+    ],
+    "subdomains_found": ["smtp.google.com"]
   },
   "shodan": {
     "country": null,
@@ -402,7 +401,7 @@ Here are all security findings from the scan in a compact structured format:
   "ffuf_findings": [],
   "searchsploit_results": [],
   "confirmed_exploits_count": 0,
-  "total_issues_count": 11
+  "total_issues_count": 6
 }
 ```
 
