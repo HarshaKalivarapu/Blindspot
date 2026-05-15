@@ -260,22 +260,25 @@ Here are all security findings from the scan in a compact structured format:
   "target": "google.com",
   "scan_type": "passive",
   "scan_mode": "simple",
-  "duration_seconds": 63.1,
-  "tools_run": ["whatweb", "dns_whois", "http_headers", "nvd_lookup"],
-  "tool_errors": [
-    "shodan: Access denied (403 Forbidden)",
-    "ssl_tls: can't subtract offset-naive and offset-aware datetimes",
-    "dns_whois (crt.sh): crt.sh request timed out"
-  ],
-  "open_ports": [],
-  "services": {},
+  "duration_seconds": 51.7,
+  "tools_run": ["shodan", "whatweb", "dns_whois", "ssl_tls", "http_headers"],
+  "tool_errors": ["dns_whois: crt.sh lookup failed — 404 Client Error: Not Found for url: https://crt.sh/?q=%25.google.com&output=json"],
+  "open_ports": [80, 443],
+  "services": {
+    "80": {"name": "http", "version": null},
+    "443": {"name": "https", "version": null}
+  },
   "tech_stack": ["gws"],
   "cves": [],
   "ssl": {
-    "valid": null,
-    "expiry_date": null,
-    "days_until_expiry": null,
-    "issues": ["SSL/TLS audit failed: datetime offset error — results inconclusive"]
+    "valid": true,
+    "expiry_date": "2026-07-13",
+    "days_until_expiry": 58,
+    "issues": [
+      "Certificate expires in 58 days",
+      "TLS 1.0 supported — deprecated",
+      "TLS 1.1 supported — deprecated"
+    ]
   },
   "http_headers": {
     "missing_security_headers": [
@@ -297,12 +300,12 @@ Here are all security findings from the scan in a compact structured format:
       "ns3.google.com",
       "ns4.google.com"
     ],
-    "subdomains_found": ["smtp.google.com"]
+    "subdomains_found": []
   },
   "shodan": {
-    "country": null,
-    "isp": null,
-    "ports_indexed": [],
+    "country": "United States",
+    "isp": "Google LLC",
+    "ports_indexed": [80, 443],
     "previously_flagged_cves": []
   },
   "nikto_findings": [],
@@ -313,7 +316,7 @@ Here are all security findings from the scan in a compact structured format:
   "ffuf_findings": [],
   "searchsploit_results": [],
   "confirmed_exploits_count": 0,
-  "total_issues_count": 6
+  "total_issues_count": 8
 }
 ```
 
