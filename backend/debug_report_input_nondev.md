@@ -257,54 +257,46 @@ Here are all security findings from the scan in a compact structured format:
 
 ```json
 {
-  "target": "google.com",
+  "target": "samaypatel.netlify.app",
   "scan_type": "passive",
   "scan_mode": "simple",
-  "duration_seconds": 51.7,
-  "tools_run": ["shodan", "whatweb", "dns_whois", "ssl_tls", "http_headers"],
-  "tool_errors": ["dns_whois: crt.sh lookup failed — 404 Client Error: Not Found for url: https://crt.sh/?q=%25.google.com&output=json"],
+  "duration_seconds": 89.4,
+  "tools_run": ["shodan", "dns_whois", "http_headers"],
+  "tool_errors": ["ssl_tls: Could not retrieve SSL certificate — Unexpected error: [Errno 101] Network is unreachable", "whatweb: No results returned"],
   "open_ports": [80, 443],
   "services": {
     "80": {"name": "http", "version": null},
     "443": {"name": "https", "version": null}
   },
-  "tech_stack": ["gws"],
+  "tech_stack": ["Netlify"],
   "cves": [],
   "ssl": {
-    "valid": true,
-    "expiry_date": "2026-07-13",
-    "days_until_expiry": 58,
-    "issues": [
-      "Certificate expires in 58 days",
-      "TLS 1.0 supported — deprecated",
-      "TLS 1.1 supported — deprecated"
-    ]
+    "valid": null,
+    "expiry_date": null,
+    "days_until_expiry": null,
+    "issues": ["SSL certificate could not be retrieved — network unreachable from scanner"]
   },
   "http_headers": {
     "missing_security_headers": [
-      "Strict-Transport-Security",
       "Content-Security-Policy",
+      "X-Frame-Options",
       "X-Content-Type-Options",
       "Referrer-Policy",
-      "Permissions-Policy"
+      "Permissions-Policy",
+      "X-XSS-Protection"
     ],
-    "info_disclosure": ["Server: gws"]
+    "info_disclosure": ["Server: Netlify"]
   },
   "dns_whois": {
-    "registrar": "MarkMonitor, Inc.",
-    "expiry_date": "2028-09-14",
+    "registrar": null,
+    "expiry_date": null,
     "days_until_expiry": null,
-    "nameservers": [
-      "ns1.google.com",
-      "ns2.google.com",
-      "ns3.google.com",
-      "ns4.google.com"
-    ],
+    "nameservers": [],
     "subdomains_found": []
   },
   "shodan": {
     "country": "United States",
-    "isp": "Google LLC",
+    "isp": "Amazon Data Services NoVa",
     "ports_indexed": [80, 443],
     "previously_flagged_cves": []
   },

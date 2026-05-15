@@ -214,10 +214,10 @@ export default function AuthModal({ isOpen, onClose }) {
                       lineHeight: 1.7,
                     }}>
                       <strong style={{ color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>Authorized Use Only.</strong>{' '}
-                      Blindspot is a security scanning platform intended solely for use on systems you own or have received explicit written authorization to test. By signing in, you confirm that you accept full legal responsibility for all scans initiated through your account. Unauthorized scanning of third-party systems is prohibited and may violate applicable laws. This platform is provided for legitimate cybersecurity purposes only. Scan results may not be fully comprehensive or 100% accurate — Blindspot was built by four college computer science students and is not a substitute for a formal security audit.
+                      Blindspot is intended solely for use on systems you own or have written authorization to test. By signing in, you accept full legal responsibility for all scans on your account. Unauthorized scanning is prohibited and may violate applicable laws. Results may not be fully comprehensive — Blindspot was built by four college computer science students and is not a substitute for a formal security audit.
                       <br /><br />
                       <strong style={{ color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>Best experienced on a desktop web browser.</strong>{' '}
-                      This application is optimized for use in a modern desktop web browser. Mobile and tablet experiences may be limited.
+                      Optimized for modern desktop browsers. Mobile and tablet experiences may be limited.
                     </p>
                   </motion.div>
                 )}

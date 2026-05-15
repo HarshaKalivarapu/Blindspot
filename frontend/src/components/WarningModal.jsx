@@ -32,7 +32,7 @@ function WarningModal({ onConfirm, onCancel }) {
         </div>
 
         <p className="text-sm leading-relaxed text-slate-200">
-          Active scanning is aggressive. Do you have legal authorization?
+          Active scanning aggressively probes your target's ports, services, and potential vulnerabilities. Only proceed on systems you own or have explicit written authorization to test — unauthorized scanning is prohibited and may violate applicable laws. If you're not authorized, go back to the dashboard.
         </p>
 
         <div className="mt-6 flex justify-end gap-2">
@@ -41,7 +41,7 @@ function WarningModal({ onConfirm, onCancel }) {
             onClick={onCancel}
             className="rounded-lg border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-700"
           >
-            No, cancel
+            Back to Dashboard
           </button>
           <button
             type="button"
