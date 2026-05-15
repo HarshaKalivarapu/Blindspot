@@ -257,52 +257,47 @@ Here are all security findings from the scan in a compact structured format:
 
 ```json
 {
-  "target": "google.com",
+  "target": "samaypatel.netlify.app",
   "scan_type": "passive",
   "scan_mode": "simple",
-  "duration_seconds": 63.1,
-  "tools_run": ["whatweb", "dns_whois", "http_headers", "nvd_lookup"],
-  "tool_errors": [
-    "shodan: Access denied (403 Forbidden)",
-    "ssl_tls: can't subtract offset-naive and offset-aware datetimes",
-    "dns_whois (crt.sh): crt.sh request timed out"
-  ],
-  "open_ports": [],
-  "services": {},
-  "tech_stack": ["gws"],
+  "duration_seconds": 89.4,
+  "tools_run": ["shodan", "dns_whois", "http_headers"],
+  "tool_errors": ["ssl_tls: Could not retrieve SSL certificate — Unexpected error: [Errno 101] Network is unreachable", "whatweb: No results returned"],
+  "open_ports": [80, 443],
+  "services": {
+    "80": {"name": "http", "version": null},
+    "443": {"name": "https", "version": null}
+  },
+  "tech_stack": ["Netlify"],
   "cves": [],
   "ssl": {
     "valid": null,
     "expiry_date": null,
     "days_until_expiry": null,
-    "issues": ["SSL/TLS audit failed: datetime offset error — results inconclusive"]
+    "issues": ["SSL certificate could not be retrieved — network unreachable from scanner"]
   },
   "http_headers": {
     "missing_security_headers": [
-      "Strict-Transport-Security",
       "Content-Security-Policy",
+      "X-Frame-Options",
       "X-Content-Type-Options",
       "Referrer-Policy",
-      "Permissions-Policy"
+      "Permissions-Policy",
+      "X-XSS-Protection"
     ],
-    "info_disclosure": ["Server: gws"]
+    "info_disclosure": ["Server: Netlify"]
   },
   "dns_whois": {
-    "registrar": "MarkMonitor, Inc.",
-    "expiry_date": "2028-09-14",
+    "registrar": null,
+    "expiry_date": null,
     "days_until_expiry": null,
-    "nameservers": [
-      "ns1.google.com",
-      "ns2.google.com",
-      "ns3.google.com",
-      "ns4.google.com"
-    ],
-    "subdomains_found": ["smtp.google.com"]
+    "nameservers": [],
+    "subdomains_found": []
   },
   "shodan": {
-    "country": null,
-    "isp": null,
-    "ports_indexed": [],
+    "country": "United States",
+    "isp": "Amazon Data Services NoVa",
+    "ports_indexed": [80, 443],
     "previously_flagged_cves": []
   },
   "nikto_findings": [],
@@ -313,7 +308,7 @@ Here are all security findings from the scan in a compact structured format:
   "ffuf_findings": [],
   "searchsploit_results": [],
   "confirmed_exploits_count": 0,
-  "total_issues_count": 6
+  "total_issues_count": 8
 }
 ```
 
