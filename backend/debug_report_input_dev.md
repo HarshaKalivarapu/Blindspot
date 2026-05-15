@@ -58,9 +58,9 @@ Score by the worst confirmed finding, then deduct for supporting evidence:
 | 3.0 – 4.9  | High risk — one or more CVEs with CVSS ≥ 7.0, or a confirmed working exploit exists |
 | 0.0 – 2.9  | Critical — multiple high-CVSS CVEs, confirmed exploits, or critical exposures (Telnet open, default credentials valid) |
 
-**Hard floor rule: if no CVEs with CVSS ≥ 4.0 were found AND no confirmed exploits exist, the score must be 7.5 or higher — regardless of how many headers are missing or what other informational issues were found.**
+**Hard floor rule: if no CVEs with CVSS ≥ 4.0 were found AND no confirmed exploits exist, the score must be 8.0 or higher — regardless of how many headers are missing or what other informational issues were found.**
 
-**Deduction caps — none of these alone, nor all of them combined, may push the score below 7.5:**
+**Deduction caps — none of these alone, nor all of them combined, may push the score below 8.0:**
 - Each missing security header (HSTS, CSP, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, X-Frame-Options): −0.3 each, max −1.0 total for headers
 - Version/software disclosure in response headers: −0.2
 - Weak cipher alongside strong cipher support: −0.3
