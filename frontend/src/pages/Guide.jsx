@@ -250,21 +250,25 @@ function NonDeveloperTab() {
       <SectionReveal>
         <h2 style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 24, fontWeight: 600, color: '#ffffff', marginBottom: 16, letterSpacing: '-0.02em' }}>5. Understanding your score</h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '60px 1fr', gap: 16 }}>
-            <span style={{ fontFamily: 'monospace', color: '#10b981', fontWeight: 600 }}>0 - 5:</span>
-            <span style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>Completely clean! Your basic security hygiene is fantastic, and no glaring holes were found. Keep it up.</span>
+          <div style={{ display: 'grid', gridTemplateColumns: '70px 1fr', gap: 16 }}>
+            <span style={{ fontFamily: 'monospace', color: '#10b981', fontWeight: 600 }}>9 – 10:</span>
+            <span style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>You're in great shape. No known vulnerabilities were found. Keep your software up to date to stay here.</span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '60px 1fr', gap: 16 }}>
-            <span style={{ fontFamily: 'monospace', color: '#f59e0b', fontWeight: 600 }}>5 - 7:</span>
-            <span style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>Some concern. You might be running slightly outdated software or have some information leaking. Get this looked at eventually.</span>
+          <div style={{ display: 'grid', gridTemplateColumns: '70px 1fr', gap: 16 }}>
+            <span style={{ fontFamily: 'monospace', color: '#f59e0b', fontWeight: 600 }}>7 – 8.9:</span>
+            <span style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>Minor issues only. Nothing critical was found, but a few small things could be tightened up. Worth addressing with your developer soon.</span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '60px 1fr', gap: 16 }}>
-            <span style={{ fontFamily: 'monospace', color: '#f97316', fontWeight: 600 }}>7 - 9:</span>
-            <span style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>Dangerous territory. You have active misconfigurations that hackers could use to take you offline. Action required quickly.</span>
+          <div style={{ display: 'grid', gridTemplateColumns: '70px 1fr', gap: 16 }}>
+            <span style={{ fontFamily: 'monospace', color: '#f97316', fontWeight: 600 }}>5 – 6.9:</span>
+            <span style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>Some risk found. Real vulnerabilities exist that should be fixed — not an emergency, but don't put this off.</span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '60px 1fr', gap: 16 }}>
-            <span style={{ fontFamily: 'monospace', color: '#ef4444', fontWeight: 600 }}>9 - 10:</span>
-            <span style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>Emergency trigger. We found a direct, critical path into your infrastructure. Drop everything and patch this immediately.</span>
+          <div style={{ display: 'grid', gridTemplateColumns: '70px 1fr', gap: 16 }}>
+            <span style={{ fontFamily: 'monospace', color: '#ef4444', fontWeight: 600 }}>3 – 4.9:</span>
+            <span style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>High risk. Serious vulnerabilities were found that an attacker could exploit. Fix these quickly.</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '70px 1fr', gap: 16 }}>
+            <span style={{ fontFamily: 'monospace', color: '#dc2626', fontWeight: 600 }}>0 – 2.9:</span>
+            <span style={{ fontFamily: 'system-ui, sans-serif', fontSize: 14, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>Emergency. We found critical, actively exploitable issues. Stop what you're doing and address this today.</span>
           </div>
         </div>
       </SectionReveal>

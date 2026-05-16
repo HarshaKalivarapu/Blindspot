@@ -345,47 +345,68 @@ Here are all security findings from the scan in a compact structured format:
 
 ```json
 {
-  "target": "samaypatel.netlify.app",
+  "target": "intellixsoftware.com",
   "scan_type": "passive",
   "scan_mode": "simple",
-  "duration_seconds": 89.4,
-  "tools_run": ["shodan", "dns_whois", "http_headers"],
-  "tool_errors": ["ssl_tls: Could not retrieve SSL certificate — Unexpected error: [Errno 101] Network is unreachable", "whatweb: No results returned"],
+  "duration_seconds": 88.3,
+  "tools_run": ["whatweb", "dns_whois", "ssl_tls", "http_headers", "nvd_lookup"],
+  "tool_errors": ["shodan: Access denied (403 Forbidden)", "dns_whois: crt.sh request timed out"],
   "open_ports": [80, 443],
   "services": {
-    "80": {"name": "http", "version": null},
-    "443": {"name": "https", "version": null}
+    "80": {"name": "http", "version": "Sucuri/Cloudproxy"},
+    "443": {"name": "https", "version": "Sucuri/Cloudproxy"}
   },
-  "tech_stack": ["Netlify"],
-  "cves": [],
+  "tech_stack": [
+    "WordPress 6.7.5",
+    "WooCommerce 9.6.4",
+    "jQuery 1.8.3",
+    "jQuery 3.7.1",
+    "Modernizr",
+    "HTML5",
+    "Sucuri/Cloudproxy"
+  ],
+  "cves": [
+    {
+      "id": "CVE-2026-2437",
+      "cvss": 6.4,
+      "affected_software": "WordPress 6.7.5",
+      "description": "Stored XSS via the 'wte_trip_tax' shortcode in the WP Travel Engine plugin in all versions up to and including 6.7.5 due to insufficient input sanitization.",
+      "has_exploit": false,
+      "exploit_sources": []
+    }
+  ],
   "ssl": {
-    "valid": null,
-    "expiry_date": null,
-    "days_until_expiry": null,
-    "issues": ["SSL certificate could not be retrieved — network unreachable from scanner"]
+    "valid": true,
+    "expiry_date": "2026-07-26",
+    "days_until_expiry": 71,
+    "issues": []
   },
   "http_headers": {
     "missing_security_headers": [
-      "Content-Security-Policy",
-      "X-Frame-Options",
-      "X-Content-Type-Options",
+      "Strict-Transport-Security",
       "Referrer-Policy",
-      "Permissions-Policy",
-      "X-XSS-Protection"
+      "Permissions-Policy"
     ],
-    "info_disclosure": ["Server: Netlify"]
+    "info_disclosure": [
+      "Server: Sucuri/Cloudproxy"
+    ]
   },
   "dns_whois": {
-    "registrar": null,
-    "expiry_date": null,
+    "registrar": "GoDaddy.com, LLC",
+    "expiry_date": "2028-12-13",
     "days_until_expiry": null,
-    "nameservers": [],
-    "subdomains_found": []
+    "nameservers": [
+      "ns73.domaincontrol.com",
+      "ns74.domaincontrol.com"
+    ],
+    "subdomains_found": [
+      "www.intellixsoftware.com"
+    ]
   },
   "shodan": {
-    "country": "United States",
-    "isp": "Amazon Data Services NoVa",
-    "ports_indexed": [80, 443],
+    "country": null,
+    "isp": null,
+    "ports_indexed": [],
     "previously_flagged_cves": []
   },
   "nikto_findings": [],
@@ -396,7 +417,7 @@ Here are all security findings from the scan in a compact structured format:
   "ffuf_findings": [],
   "searchsploit_results": [],
   "confirmed_exploits_count": 0,
-  "total_issues_count": 8
+  "total_issues_count": 7
 }
 ```
 
